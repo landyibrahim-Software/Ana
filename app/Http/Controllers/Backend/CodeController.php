@@ -2,49 +2,74 @@
 
 namespace App\Http\Controllers\Backend;
 
-use App\Models\Code;
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use App\Models\Code;
+use App\Models\Category;
+use Carbon\Carbon;
 
 class CodeController extends Controller
 {
-    public function index()
-    {
-        $codes = Code::all();
+    public function AllCode(){
+        $code = Code::with('category')->latest()->get();
+        return view('backend.code.all_code',compact('code'));
+    }
+
+    public function AddCode(){
+        $categories = Category::all();
+        return view('backend.code.add_code',compact('categories'));
+    }
+
+    public function StoreCode(Request $request){
+        Code::insert([
+            'code_name' => $request->code_name,
+            'category_id' => $request->category_id,
+            'created_at' => Carbon::now(),
+        ]);
+
+        $notification = array(
+            'message' => 'Code Inserted Successfully',
+            'alert-type' => 'success'
+        );
+
+        return redirect()->route('all.code')->with($notification);
+    }
+
+    public function EditCode($id){
+        $code = Code::findOrFail($id);
+        $categories = Category::all();
+        return view('backend.code.edit_code',compact('code','categories'));
+    }
+
+   public function UpdateCode(Request $request){
+    $code_id = $request->id;
+
+    Code::findOrFail($code_id)->update([
+        'code_name' => $request->code_name,
+        'category_id' => $request->category_id,
+    ]);
+
+    $notification = array(
+        'message' => 'کۆد بە سەرکەوتووی نوێ کرایەوە',
+        'alert-type' => 'success'
+    );
+
+    return redirect()->route('all.code')->with($notification);
+}
+
+    public function DeleteCode($id){
+        Code::findOrFail($id)->delete();
+
+        $notification = array(
+            'message' => 'Code Deleted Successfully',
+            'alert-type' => 'success'
+        );
+
+        return redirect()->back()->with($notification);
+    }
+
+    public function GetCodesByCategory($categoryId){
+        $codes = Code::where('category_id',$categoryId)->get();
         return response()->json($codes);
-    }
-
-    public function show($id)
-    {
-        $code = Code::find($id);
-        return response()->json($code);
-    }
-
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-        ]);
-        $code = Code::create($validated);
-        return response()->json($code, 201);
-    }
-
-    public function update(Request $request, $id)
-    {
-        $validated = $request->validate([
-            'name' => 'string|max:255',
-            'description' => 'nullable|string',
-        ]);
-        $code = Code::findOrFail($id);
-        $code->update($validated);
-        return response()->json($code);
-    }
-
-    public function destroy($id)
-    {
-        $code = Code::findOrFail($id);
-        $code->delete();
-        return response()->json(null, 204);
     }
 }

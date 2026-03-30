@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Code extends Model
 {
-    protected $fillable = ['name', 'category_id'];
+    use HasFactory;
+
+    protected $fillable = ['code_name', 'category_id'];
 
     public function category()
     {

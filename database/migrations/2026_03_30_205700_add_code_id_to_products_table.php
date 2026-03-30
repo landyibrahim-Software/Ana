@@ -1,31 +1,30 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
-class AddCodeIdToProductsTable extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
-     *
-     * @return void
      */
-    public function up()
+    public function up(): void
     {
-        Schema::table('products', function ($table) {
-            $table->string('code_id')->nullable();
+        Schema::table('products', function (Blueprint $table) {
+            $table->unsignedBigInteger('code_id')->nullable()->after('category_id');
+            $table->foreign('code_id')->references('id')->on('codes')->onDelete('set null');
         });
     }
 
     /**
      * Reverse the migrations.
-     *
-     * @return void
      */
-    public function down()
+    public function down(): void
     {
-        Schema::table('products', function ($table) {
+        Schema::table('products', function (Blueprint $table) {
+            $table->dropForeign(['code_id']);
             $table->dropColumn('code_id');
         });
     }
-}
+};
