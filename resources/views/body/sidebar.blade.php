@@ -107,35 +107,6 @@
         </li>
 @endif
 
- @if(Auth::user()->can('salary.menu'))
-        <li>
-            <a href="#salary" data-bs-toggle="collapse">
-                <i class="mdi mdi-email-multiple-outline"></i>
-                <span> موچەی کارمەند </span>
-                <span class="menu-arrow"></span>
-            </a>
-            <div class="collapse" id="salary">
-                <ul class="nav-second-level">
-                    <li>
-                        <a href="{{ route('add.advance.salary') }}">زیادکردنی موچە</a>
-                    </li>
-                    <li>
-                        <a href="{{ route('all.advance.salary') }}">موچەکان</a>
-                    </li>
-
-                     <li>
-                        <a href="{{ route('pay.salary') }}">پارەدان</a>
-                    </li> 
-
-                    <li>
-                        <a href="{{ route('month.salary') }}">موچەی مانگی ڕابردوو</a>
-                    </li>
-                    
-                </ul>
-            </div>
-        </li>
-@endif
-
 
  @if(Auth::user()->can('attendence.menu'))
         <li>
