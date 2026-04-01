@@ -82,6 +82,20 @@
         </div>
     </div>
 
+          <!-- ADD CODE DROPDOWN HERE -->
+          <div class="col-md-6">
+        <div class="form-group mb-3">
+            <label for="code_id" class="form-label">کۆد <span class="text-danger">*</span></label>
+            <select name="code_id" class="form-select" id="code_id">
+                    <option selected disabled >کۆدێک هەڵبژێرە</option>
+                    @foreach($codes as $code)
+        <option value="{{ $code->id }}" {{ $code->id == $product->code_id ? 'selected' : '' }}>{{ $code->code_name }}</option>
+                     @endforeach
+                </select>
+           
+        </div>
+    </div>
+    <!-- END CODE DROPDOWN -->
 
 
 
@@ -154,7 +168,48 @@
         </div>
 
 
-     
+     <!-- START COLORS SECTION -->
+     <div class="col-12">
+        <div class="form-group mb-3">
+            <label class="form-label">ڕەنگەکان <span class="text-danger">*</span></label>
+            <div id="colors-container">
+                <!-- Colors will be added here dynamically -->
+                @foreach($product->colors as $index => $color)
+                    <div class="row mb-2" id="color-existing-{{ $color->id }}">
+                        <div class="col-md-5">
+                            <input type="text" value="{{ $color->color_name }}" 
+                                   class="form-control" placeholder="ڕەنگ (مثال: سور، شین)" disabled>
+                        </div>
+                        <div class="col-md-5">
+                            <input type="number" value="{{ $color->meters }}" 
+                                   class="form-control meters-input" placeholder="متەر" 
+                                   step="0.01" disabled>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" class="btn btn-sm btn-danger" 
+                                    onclick="removeExistingColor({{ $color->id }})">
+                                <i class="mdi mdi-trash-can"></i>
+                            </button>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+            <button type="button" class="btn btn-sm btn-success" id="add-color-btn">
+                <i class="mdi mdi-plus"></i> ڕەنگ زیادبکە
+            </button>
+        </div>
+    </div>
+
+    <!-- Total Meters Display -->
+    <div class="col-md-6">
+        <div class="form-group mb-3">
+            <label for="total_meters" class="form-label">کۆ متەر</label>
+            <input type="text" class="form-control" id="total_meters" readonly value="{{ $product->colors->sum('meters') }}">
+        </div>
+    </div>
+    <!-- END COLORS SECTION -->
+
+
 
    <div class="col-md-12">
 <div class="form-group mb-3">
@@ -211,6 +266,9 @@
                 }, 
                 supplier_id: {
                     required : true,
+                },
+                code_id: {
+                    required : true,
                 }, 
                 product_code: {
                     required : true,
@@ -246,6 +304,9 @@
                 },
                 supplier_id: {
                     required : 'Please Select Supplier',
+                },
+                code_id: {
+                    required : 'Please Select Code',
                 },
                 product_code: {
                     required : 'Please Enter Product Code',
@@ -304,10 +365,64 @@
 
 </script>
 
+<!-- COLORS JAVASCRIPT -->
+<script type="text/javascript">
+let colorCount = 0;
 
+document.getElementById('add-color-btn').addEventListener('click', function() {
+    colorCount++;
+    const html = `
+        <div class="row mb-2" id="color-new-${colorCount}">
+            <div class="col-md-5">
+                <input type="text" name="colors[${colorCount}][color_name]" 
+                       class="form-control" placeholder="ڕەنگ (مثال: سور، شین)" required>
+            </div>
+            <div class="col-md-5">
+                <input type="number" name="colors[${colorCount}][meters]" 
+                       class="form-control meters-input" placeholder="متەر" 
+                       step="0.01" required onchange="calculateTotalMeters()">
+            </div>
+            <div class="col-md-2">
+                <button type="button" class="btn btn-sm btn-danger" 
+                        onclick="removeColor(${colorCount})">
+                    <i class="mdi mdi-trash-can"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    document.getElementById('colors-container').insertAdjacentHTML('beforeend', html);
+});
 
+function removeColor(id) {
+    const colorDiv = document.getElementById(`color-new-${id}`);
+    if(colorDiv) {
+        colorDiv.remove();
+        calculateTotalMeters();
+    }
+}
 
+function removeExistingColor(id) {
+    const colorDiv = document.getElementById(`color-existing-${id}`);
+    if(colorDiv) {
+        colorDiv.remove();
+        calculateTotalMeters();
+    }
+}
 
+function calculateTotalMeters() {
+    const inputs = document.querySelectorAll('.meters-input');
+    let total = 0;
+    inputs.forEach(input => {
+        total += parseFloat(input.value) || 0;
+    });
+    document.getElementById('total_meters').value = total.toFixed(2);
+}
 
+// Calculate total on page load
+document.addEventListener('DOMContentLoaded', function() {
+    calculateTotalMeters();
+});
+</script>
+<!-- END COLORS JAVASCRIPT -->
 
 @endsection

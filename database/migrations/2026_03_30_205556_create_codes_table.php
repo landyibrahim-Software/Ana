@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('codes', function (Blueprint $table) {
@@ -16,15 +13,11 @@ return new class extends Migration
             $table->string('code_name');
             $table->unsignedBigInteger('category_id');
             $table->timestamps();
-
-            // Foreign key constraint
+            
             $table->foreign('category_id')->references('id')->on('categories')->onDelete('cascade');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('codes');
