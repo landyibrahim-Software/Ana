@@ -113,7 +113,15 @@
             @enderror
         </div>
     </div>
-
+     <div class="col-md-6">
+         <div class="mb-3">
+             <label for="firstname" class="form-label">قەرزی پێشتر (دۆلار)  </label>
+             <input type="number" name="previous_due" class="form-control @error('previous_due') is-invalid @enderror" step="0.01" value="0">
+              @error('previous_due')
+       <span class="text-danger"> {{ $message }} </span>
+             @enderror
+         </div>
+     </div>
 
 
 

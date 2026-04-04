@@ -35,19 +35,31 @@ class ProductController extends Controller
 
 public function StoreProduct(Request $request){ 
 
-    $pcode = IdGenerator::generate(['table' => 'products','field' => 'product_code','length' => 4, 'prefix' => 'PC' ]);
+    // Generate product code FIRST - before any other operations
+    $pcode = IdGenerator::generate([
+        'table' => 'products',
+        'field' => 'product_code',
+        'length' => 4, 
+        'prefix' => 'PC'
+    ]);
 
+    // If IdGenerator fails, create a fallback code
+    if (empty($pcode)) {
+        $pcode = 'PC' . str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
+    }
+
+    // Handle product image
     $image = $request->file('product_image');
     $name_gen = hexdec(uniqid()).'.'.$image->getClientOriginalExtension();
     Image::make($image)->resize(300,300)->save('upload/product/'.$name_gen);
     $save_url = 'upload/product/'.$name_gen;
 
-    // Create product first
+    // Create product with ALL required fields
     $product = Product::create([
         'product_name' => $request->product_name,
         'category_id' => $request->category_id,
         'supplier_id' => $request->supplier_id,
-        'code_id' => $request->code_id,  // ADD THIS
+        'code_id' => $request->code_id,
         'product_code' => $pcode,
         'product_garage' => $request->product_garage,
         'product_store' => $request->product_store,
@@ -78,7 +90,6 @@ public function StoreProduct(Request $request){
 
     return redirect()->route('all.product')->with($notification); 
 } // End Method
-
 
 
   public function EditProduct($id){

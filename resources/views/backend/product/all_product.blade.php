@@ -41,7 +41,7 @@
                                 <th>وێنە</th>
                                 <th>ناوی بەرهەم</th>
                                 <th>جۆر</th>
-                                <th>دابینکەر</th>
+                                <th>ئۆردەر کۆد</th>
                                 <th>کۆد</th>
                                 <th>نرخ</th>
                                 <th>کردار</th>
@@ -56,8 +56,8 @@
                 <td> <img src="{{ asset($item->product_image) }}" style="width:50px; height: 40px;"> </td>
                 <td>{{ $item->product_name }}</td>
                 <td>{{ optional($item->category)->category_name }}</td>
-<td>{{ optional($item->supllier)->name }}</td>
-
+                <td>{{ optional($item->code)->code_name }}</td>
+               
                 <td>{{ $item->product_code }}</td>
                 <td>{{ $item->selling_price }}</td>
                 <td>

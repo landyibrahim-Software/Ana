@@ -92,6 +92,7 @@ Route::get('/edit/customer/{id}','EditCustomer')->name('edit.customer');
 Route::post('/update/customer','UpdateCustomer')->name('customer.update');
 Route::get('/delete/customer/{id}','DeleteCustomer')->name('delete.customer');
 Route::get('/customer/show/{id}', [CustomerController::class, 'ShowCustomer'])->name('customer.show');
+Route::post('/customer/payment', [CustomerController::class, 'PaymentCustomer'])->name('payment.customer');
 });
 
 

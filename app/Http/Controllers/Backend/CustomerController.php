@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Customer;
 use Intervention\Image\Facades\Image;
+use App\Models\Payment;
 use Carbon\Carbon;
 
 class CustomerController extends Controller
@@ -82,6 +83,7 @@ public function ShowCustomer($id)
             'shopname' => $request->shopname,
             'city' => $request->city,
             'image' => $save_url,
+            'previous_due' => $request->previous_due ?? 0,
             'created_at' => Carbon::now(), 
 
         ]);
@@ -178,7 +180,38 @@ public function ShowCustomer($id)
 
     } // End Method 
 
+public function PaymentCustomer(Request $request){
+    
+    $customer_id = $request->customer_id;
+    $payment_amount = $request->payment_amount;
+    
+    $customer = Customer::findOrFail($customer_id);
+    
+    // Get current previous_due
+    $current_previous_due = $customer->previous_due;
+    
+    // Calculate new previous_due after payment
+    $new_previous_due = max($current_previous_due - $payment_amount, 0);
+    
+    // Update customer previous_due
+    $customer->update([
+        'previous_due' => $new_previous_due,
+    ]);
+    
+    // Create payment record
+    Payment::create([
+        'customer_id' => $customer_id,
+        'payment_amount' => $payment_amount,
+        'payment_date' => now(),
+    ]);
 
+    $notification = array(
+        'message' => 'Payment of $' . number_format($payment_amount, 2) . ' Recorded Successfully',
+        'alert-type' => 'success'
+    );
+
+    return redirect()->route('customer.show', $customer_id)->with($notification);
+}
 
 }
  
