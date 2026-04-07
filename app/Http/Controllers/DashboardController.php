@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\ProductColor;
 use App\Models\Expense;
 use App\Models\Orderdetails;
+use App\Models\SupplierPayment;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -55,21 +56,20 @@ class DashboardController extends Controller
         $totalPaid = Order::whereBetween(DB::raw("STR_TO_DATE(order_date, '%Y-%m-%d')"), [$startDate, $endDate])
             ->sum('pay');
 
-        // ===== TOTAL DUE FROM ORDERS (FILTERED BY DATE) =====
+        // ===== TOTAL DUE - COMBINED =====
+        // Total due from orders (filtered)
         $totalOrderDue = Order::whereBetween(DB::raw("STR_TO_DATE(order_date, '%Y-%m-%d')"), [$startDate, $endDate])
             ->sum('due');
 
-        // ===== CUSTOMER DUE (FROM CUSTOMERS TABLE - NOT DATE FILTERED) =====
-        $customerDue = Customer::sum('due');
+        // Total due from customers (previous dues - NOT filtered by date)
         $customerPreviousDue = Customer::sum('previous_due');
-        $totalCustomerDue = $customerDue + $customerPreviousDue + $totalOrderDue;
+        
+        // COMBINED TOTAL DUE
+        $totalDue = $totalOrderDue + $customerPreviousDue;
 
-        // ===== PAYMENTS WITHOUT ORDER (FILTERED BY DATE) =====
-        $paymentsWithoutOrder = Payment::whereBetween('created_at', [$startDate, $endDate])
-            ->with('customer')
-            ->orderBy('created_at', 'desc')
-            ->get();
-        $totalPaymentsWithoutOrder = $paymentsWithoutOrder->sum('amount');
+        // ===== TOTAL PAID TO SUPPLIERS (FILTERED BY DATE) =====
+        $totalSupplierPayment = SupplierPayment::whereBetween('payment_date', [$startDate, $endDate])
+            ->sum('payment_amount');
 
         // ===== PRODUCT TOTAL METERS =====
         $productsWithMeters = DB::table('product_colors')
@@ -83,7 +83,6 @@ class DashboardController extends Controller
         $totalStockValue = Product::sum(DB::raw('product_store * buying_price'));
         $today = date('Y-m-d');
 
-        $totalDue = Order::sum('due');
         $orders = Order::with(['orderItems.product','customer'])->get();
 
         $profit = 0;
@@ -140,15 +139,21 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
+        // Recent supplier payments
+        $recentSupplierPayments = SupplierPayment::whereBetween('payment_date', [$startDate, $endDate])
+            ->with('supplier')
+            ->orderBy('payment_date', 'desc')
+            ->take(5)
+            ->get();
+
         // Pass all data to view
         return view('index', compact(
-            'totalPaid', 'totalCustomerDue', 'profit', 'loss',
+            'totalPaid', 'totalDue', 'profit', 'loss',
             'totalStockValue', 'todayOrders', 'todayExpenses', 'todaySales',
             'monthlyPaid', 'topCustomers', 'recentExpenses', 'lowStockProducts',
             'bestSellingProducts', 'filterType',
-            'totalPaymentsWithoutOrder', 'paymentsWithoutOrder', 'productsWithMeters',
-            'orders', 'totalExpenses', 'monthlyExpenses',
-            'startDate', 'endDate'
+            'productsWithMeters', 'orders', 'totalExpenses', 'monthlyExpenses',
+            'startDate', 'endDate', 'totalSupplierPayment', 'recentSupplierPayments'
         ));
     }
 }

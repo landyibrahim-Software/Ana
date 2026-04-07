@@ -186,54 +186,15 @@ $bestSellingProducts = Orderdetails::select('product_id', \DB::raw('SUM(quantity
 <div class="content">
     <div class="container-fluid">
 
-        <!-- PAGE TITLE WITH FILTER -->
+        <!-- PAGE TITLE -->
         <div class="row mb-4">
-            <div class="col-md-8">
+            <div class="col-12">
                 <div class="page-title-box">
                     <h4 class="page-title" style="font-weight: 600; color: #2c3e50;"> داشبۆردی کوتاڵی نزا </h4>
                     <p class="text-muted mb-0">تێڕوانی عام</p>
                 </div>
             </div>
-            
-            <!-- DATE FILTER DROPDOWN -->
-            <div class="col-md-4">
-                <form method="GET" action="{{ route('dashboard') }}" class="row g-2">
-                    <div class="col-md-8">
-                        <select name="filter" id="filterType" class="form-control" onchange="document.querySelector('form').submit()">
-                            <option value="today" {{ $filterType == 'today' ? 'selected' : '' }}>ئەمڕۆ</option>
-                            <option value="weekly" {{ $filterType == 'weekly' ? 'selected' : '' }}>ئەم هێمێی</option>
-                            <option value="yearly" {{ $filterType == 'yearly' ? 'selected' : '' }}>ئەم ساڵە</option>
-                            <option value="custom" {{ $filterType == 'custom' ? 'selected' : '' }}>مێژووی دیاریکراو</option>
-                        </select>
-                    </div>
-                    
-                    <!-- CUSTOM DATE RANGE (HIDDEN BY DEFAULT) -->
-                    <div id="customDateRange" class="col-12" style="display: {{ $filterType == 'custom' ? 'block' : 'none' }}; margin-top: 10px;">
-                        <div class="row g-2">
-                            <div class="col-md-5">
-                                <input type="date" name="start_date" class="form-control" placeholder="تاریخی دەستپێک" required>
-                            </div>
-                            <div class="col-md-5">
-                                <input type="date" name="end_date" class="form-control" placeholder="تاریخی کۆتایی" required>
-                            </div>
-                            <div class="col-md-2">
-                                <button type="submit" class="btn btn-primary w-100">جووتیا</button>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
         </div>
-
-        <script>
-        document.getElementById('filterType').addEventListener('change', function() {
-            if (this.value === 'custom') {
-                document.getElementById('customDateRange').style.display = 'block';
-            } else {
-                document.getElementById('customDateRange').style.display = 'none';
-            }
-        });
-        </script>
 
         <!-- ========== ROW 1: MAIN KPI CARDS (YOUR EXISTING + NEW) ========== -->
         <div class="row g-3 mb-4">
@@ -293,41 +254,6 @@ $bestSellingProducts = Orderdetails::select('product_id', \DB::raw('SUM(quantity
                         <div>
                             <h4 class="mb-1">{{ number_format($loss,2) }}</h4>
                             <p class="mb-0 opacity-75">زەرەر</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        </div> <!-- end row -->
-
-        <!-- ========== ROW 1.5: DUE AMOUNT & PAYMENTS WITHOUT ORDER ========== -->
-        <div class="row g-3 mb-4">
-            
-            <!-- CUSTOMER DUE SECTION -->
-            <div class="col-md-6 col-xl-3">
-                <div class="card widget-rounded-circle bg-info text-white">
-                    <div class="card-body d-flex align-items-center">
-                        <div class="avatar-lg rounded-circle bg-white text-info me-3">
-                            <i class="mdi mdi-receipt-text-outline"></i>
-                        </div>
-                        <div>
-                            <h4 class="mb-1">{{ number_format($totalCustomerDue, 2) }}</h4>
-                            <p class="mb-0 opacity-75">کۆی قەرزی کڕیاران</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- PAYMENTS WITHOUT ORDER SECTION -->
-            <div class="col-md-6 col-xl-3">
-                <div class="card widget-rounded-circle" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-                    <div class="card-body d-flex align-items-center">
-                        <div class="avatar-lg rounded-circle bg-white me-3" style="color: #667eea;">
-                            <i class="mdi mdi-bank-transfer"></i>
-                        </div>
-                        <div>
-                            <h4 class="mb-1">{{ number_format($totalPaymentsWithoutOrder, 2) }}</h4>
-                            <p class="mb-0 opacity-75">پارەدانی بێ داواکاری</p>
                         </div>
                     </div>
                 </div>
@@ -472,7 +398,7 @@ $bestSellingProducts = Orderdetails::select('product_id', \DB::raw('SUM(quantity
             </div>
         </div> <!-- end row -->
 
-        <!-- ========== ROW 4: EXPENSES & LOW STOCK & PAYMENTS ========== -->
+        <!-- ========== ROW 4: EXPENSES & LOW STOCK ========== -->
         <div class="row mb-4">
             <!-- Recent Expenses (NEW) -->
             <div class="col-lg-6">
@@ -512,53 +438,8 @@ $bestSellingProducts = Orderdetails::select('product_id', \DB::raw('SUM(quantity
                 </div>
             </div>
 
-            <!-- PAYMENTS WITHOUT ORDER TABLE -->
-            <div class="col-lg-6">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <h4 class="dashboard-section-title">پارەدانی دێر ئێ</h4>
-                        <div class="table-responsive">
-                            <table class="table table-sm table-hover mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>کڕیار</th>
-                                        <th class="text-end">بڕ</th>
-                                        <th>بەروار</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($paymentsWithoutOrder as $payment)
-                                    <tr>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <i class="mdi mdi-cash-check text-success me-2"></i>
-                                                <span>{{ $payment->customer->name ?? 'نەناسراو' }}</span>
-                                            </div>
-                                        </td>
-                                        <td class="text-end text-success">
-                                            <strong>+{{ number_format($payment->amount, 2) }}</strong>
-                                        </td>
-                                        <td>
-                                            <small>{{ \Carbon\Carbon::parse($payment->created_at)->format('d M Y') }}</small>
-                                        </td>
-                                    </tr>
-                                    @empty
-                                    <tr>
-                                        <td colspan="3" class="text-center text-muted">هیچ پارەدانێک نیە</td>
-                                    </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div> <!-- end row -->
-
-        <!-- ========== ROW 4.5: LOW STOCK ========== -->
-        <div class="row mb-4">
             <!-- Low Stock Alert (NEW) -->
-            <div class="col-lg-12">
+            <div class="col-lg-6">
                 <div class="card h-100">
                     <div class="card-body">
                         <h4 class="dashboard-section-title">ئاگاداری کەمبونەوە</h4>
@@ -674,43 +555,6 @@ $bestSellingProducts = Orderdetails::select('product_id', \DB::raw('SUM(quantity
                                         </tr>
                                         @endif
                                     @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div> <!-- end row -->
-
-        <!-- ========== ROW 5.5: PRODUCT TOTAL METERS ========== -->
-        <div class="row mb-4">
-            <div class="col-lg-12">
-                <div class="card">
-                    <div class="card-body">
-                        <h4 class="dashboard-section-title">کۆی ماوەی بەرهەمەکان</h4>
-                        <div class="table-responsive">
-                            <table class="table table-sm table-hover mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>ناوی بەرهەم</th>
-                                        <th class="text-end">کۆی ماوە (متر)</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($productsWithMeters as $key => $product)
-                                    <tr>
-                                        <td>{{ $key + 1 }}</td>
-                                        <td>{{ $product->product_name }}</td>
-                                        <td class="text-end">
-                                            <strong class="text-primary">{{ number_format($product->total_meters, 2) }}</strong>
-                                        </td>
-                                    </tr>
-                                    @empty
-                                    <tr>
-                                        <td colspan="3" class="text-center text-muted">هیچ بەرهەمێک نیە</td>
-                                    </tr>
-                                    @endforelse
                                 </tbody>
                             </table>
                         </div>
