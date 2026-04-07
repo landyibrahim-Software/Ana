@@ -36,35 +36,46 @@
             <!-- Financial Summary Cards -->
             <div class="col-md-9">
                 <div class="row">
-                    <!-- Previous Due Card -->
-                    <div class="col-md-4">
+                    <!-- Total Orders Card -->
+                    <div class="col-md-3">
+                        <div class="card bg-info bg-opacity-10 border-info">
+                            <div class="card-body">
+                                <h6 class="card-title text-info mb-3">کۆی داواکاریەکان</h6>
+                                <h3 class="text-info mb-0">{{ $customer->orders->count() }}</h3>
+                                <small class="text-muted">جموو داواکاریەکان</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Total Money Card -->
+                    <div class="col-md-3">
                         <div class="card bg-warning bg-opacity-10 border-warning">
                             <div class="card-body">
-                                <h6 class="card-title text-warning mb-3">قەرزی پێشتر</h6>
-                                <h3 class="text-warning mb-0">${{ number_format($customer->previous_due, 2) }}</h3>
+                                <h6 class="card-title text-warning mb-3">کۆی پێداویستی</h6>
+                                <h3 class="text-warning mb-0">${{ number_format($total_money, 2) }}</h3>
                                 <small class="text-muted">قەرزی سەرەتایی</small>
                             </div>
                         </div>
                     </div>
 
                     <!-- Total Paid Card -->
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="card bg-success bg-opacity-10 border-success">
                             <div class="card-body">
                                 <h6 class="card-title text-success mb-3">کۆی پارەی دراو</h6>
-                                <h3 class="text-success mb-0">${{ number_format($total_paid, 2) }}</h3>
-                                <small class="text-muted">لە هەموو داواکاریەکان</small>
+                                <h3 class="text-success mb-0">${{ number_format($total_paid_all, 2) }}</h3>
+                                <small class="text-muted">لە هەموو پارەدانەکان</small>
                             </div>
                         </div>
                     </div>
 
                     <!-- Total Due Card -->
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="card bg-danger bg-opacity-10 border-danger">
                             <div class="card-body">
-                                <h6 class="card-title text-danger mb-3">کۆی گشتی قەرز</h6>
+                                <h6 class="card-title text-danger mb-3">کۆی قەرز</h6>
                                 <h3 class="text-danger mb-0">${{ number_format($total_due, 2) }}</h3>
-                                <small class="text-muted">قەرزی ئێستا</small>
+                                <small class="text-muted">چقدر قەرز مابوو</small>
                             </div>
                         </div>
                     </div>
@@ -80,10 +91,6 @@
                         <h5 class="mb-0"><i class="fa fa-money"></i> پارە وەربگرە</h5>
                     </div>
                     <div class="card-body">
-                        @php
-                            $total_current_due = $total_due + $customer->previous_due;
-                        @endphp
-                        
                         <form method="POST" action="{{ route('payment.customer') }}">
                             @csrf
                             <div class="row">
@@ -92,15 +99,18 @@
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <label class="form-label">مبلغ پارە (دۆلار)</label>
-                                        <input type="number" name="payment_amount" class="form-control" step="0.01" min="0" max="{{ $total_current_due }}" placeholder="مبلغی پارە بنووسە" required>
-                                        <small class="text-muted">گەیاندی: ${{ number_format($total_current_due, 2) }}</small>
+                                        <input type="number" name="payment_amount" class="form-control" style="height: 45px;" step="0.01" min="0" max="{{ $total_due }}" placeholder="مبلغی پارە بنووسە" required>
+                                        <small class="text-muted">گەیاندی: ${{ number_format($total_due, 2) }}</small>
                                     </div>
                                 </div>
 
-                                <div class="col-md-6 d-flex align-items-end">
-                                    <button type="submit" class="btn btn-primary waves-effect waves-light w-100">
-                                        <i class="fa fa-check-circle"></i> قبوڵ کردنی پارە
-                                    </button>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">&nbsp;</label>
+                                        <button type="submit" class="btn btn-primary waves-effect waves-light w-100" style="height: 45px;">
+                                            <i class="fa fa-check-circle"></i> قبوڵ کردنی پارە
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </form>

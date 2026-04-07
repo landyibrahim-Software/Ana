@@ -15,6 +15,7 @@ use App\Http\Controllers\Backend\ExpenseController;
 use App\Http\Controllers\Backend\PosController;
 use App\Http\Controllers\Backend\OrderController;
 use App\Http\Controllers\Backend\RoleController;
+use App\Http\Controllers\Backend\SupplierPaymentController;
  
 /* 
 |--------------------------------------------------------------------------
@@ -106,6 +107,8 @@ Route::get('/edit/supplier/{id}','EditSupplier')->name('edit.supplier');
 Route::post('/update/supplier','UpdateSupplier')->name('supplier.update');
 Route::get('/delete/supplier/{id}','DeleteSupplier')->name('delete.supplier');
 Route::get('/details/supplier/{id}','DetailsSupplier')->name('details.supplier');
+Route::post('supplier/payment/store', [SupplierPaymentController::class, 'store'])->name('supplier.payment.store');
+Route::get('supplier/payment/delete/{id}', [SupplierPaymentController::class, 'delete'])->name('supplier.payment.delete');
 });
 
 

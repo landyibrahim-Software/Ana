@@ -31,6 +31,7 @@
                         <thead>
                             <tr>
                                 <th>Sl</th> 
+                                <th>ناوی کارمەندەکان</th>
                                 <th>بەروار</th>
                                 <th>کردار</th>
                             </tr>
@@ -41,6 +42,15 @@
         	@foreach($allData as $key=> $item)
             <tr>
                 <td>{{ $key+1 }}</td> 
+                <td>
+                    @php
+                        $attendances = \App\Models\Attendence::where('date', $item->date)->get();
+                        $employeeNames = $attendances->map(function($attendance) {
+                            return $attendance->employee->name ?? 'Unknown';
+                        })->implode(', ');
+                    @endphp
+                    {{ $employeeNames }}
+                </td>
                 <td>{{ date('Y-m-d', strtotime($item->date))  }}</td>
                 <td>
 <a href="{{ route('employee.attend.edit',$item->date) }}" class="btn btn-blue rounded-pill waves-effect waves-light">دەستکاریکردن</a>
@@ -66,4 +76,4 @@
                 </div> <!-- content -->
 
 
-@endsection 
+@endsection

@@ -33,7 +33,7 @@
                                 <th>Sl</th>
                                 <th>وێنە</th>
                                 <th>ناوی کڕیار</th>
-                                <th>ئیمەیڵ</th>
+                                <th>شار</th>
                                 <th>ژمارەی مۆبایل</th>
                                 <th>ناوی فرۆشگا</th>
                                 <th>کردار</th>
@@ -47,7 +47,7 @@
                 <td>{{ $key+1 }}</td>
                 <td> <img src="{{ asset($item->image) }}" style="width:50px; height: 40px;"> </td>
                 <td>{{ $item->name }}</td>
-                <td>{{ $item->email }}</td>
+                <td>{{ $item->city }}</td>
                 <td>{{ $item->phone }}</td>
                 <td>{{ $item->shopname }}</td>
                 <td>
@@ -75,4 +75,4 @@
                 </div> <!-- content -->
 
 
-@endsection 
+@endsection

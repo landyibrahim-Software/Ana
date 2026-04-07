@@ -18,7 +18,7 @@ class CustomerController extends Controller
     } // End Method 
 public function ShowCustomer($id)
 {
-    $customer = Customer::with('orders')->findOrFail($id);
+    $customer = Customer::with('orders', 'payments')->findOrFail($id);
 
     $total_orders = 0;
     $total_paid   = 0;
@@ -42,12 +42,18 @@ public function ShowCustomer($id)
         $total_paid   += $paid;
     }
 
-    // CUSTOMER DUE (ONLY PLACE IT IS CALCULATED)
-    $total_due = max($total_orders - $total_paid, 0);
+    // Card 1: Total Money = Previous Due ONLY
+    $total_money = $customer->previous_due;
+
+    // Card 2: Total Paid = All payments made
+    $total_paid_all = $customer->payments->sum('payment_amount');
+
+    // Card 3: Total Due = Previous Due - All Payments
+    $total_due = max($total_money - $total_paid_all, 0);
 
     return view(
         'backend.customer.show_customer',
-        compact('customer', 'total_paid', 'total_due')
+        compact('customer', 'total_paid_all', 'total_due', 'total_money')
     );
 }
 
@@ -187,18 +193,7 @@ public function PaymentCustomer(Request $request){
     
     $customer = Customer::findOrFail($customer_id);
     
-    // Get current previous_due
-    $current_previous_due = $customer->previous_due;
-    
-    // Calculate new previous_due after payment
-    $new_previous_due = max($current_previous_due - $payment_amount, 0);
-    
-    // Update customer previous_due
-    $customer->update([
-        'previous_due' => $new_previous_due,
-    ]);
-    
-    // Create payment record
+    // Create payment record ONLY - DO NOT CHANGE previous_due
     Payment::create([
         'customer_id' => $customer_id,
         'payment_amount' => $payment_amount,
