@@ -7,7 +7,6 @@ use App\Models\Order;
 use App\Models\Customer;
 use App\Models\Payment;
 use App\Models\Product;
-use App\Models\ProductColor;
 use App\Models\Expense;
 use App\Models\Orderdetails;
 use App\Models\SupplierPayment;
@@ -25,20 +24,24 @@ class DashboardController extends Controller
 
         // Create date range based on filter
         $startDate = null;
-        $endDate = Carbon::now();
+        $endDate = Carbon::now()->endOfDay();
 
         switch($filterType) {
             case 'today':
                 $startDate = Carbon::now()->startOfDay();
-                $endDate = Carbon::now()->endOfDay();
                 break;
-            case 'weekly':
-                $startDate = Carbon::now()->startOfWeek();
-                $endDate = Carbon::now()->endOfWeek();
+            case 'yesterday':
+                $startDate = Carbon::yesterday()->startOfDay();
+                $endDate = Carbon::yesterday()->endOfDay();
                 break;
-            case 'yearly':
-                $startDate = Carbon::now()->startOfYear();
-                $endDate = Carbon::now()->endOfYear();
+            case 'last_week':
+                $startDate = Carbon::now()->subWeek()->startOfDay();
+                break;
+            case 'last_month':
+                $startDate = Carbon::now()->subMonth()->startOfDay();
+                break;
+            case 'last_year':
+                $startDate = Carbon::now()->subYear()->startOfDay();
                 break;
             case 'custom':
                 if ($customStartDate && $customEndDate) {
@@ -56,28 +59,23 @@ class DashboardController extends Controller
         $totalPaid = Order::whereBetween(DB::raw("STR_TO_DATE(order_date, '%Y-%m-%d')"), [$startDate, $endDate])
             ->sum('pay');
 
-        // ===== TOTAL DUE - COMBINED =====
-        // Total due from orders (filtered)
-        $totalOrderDue = Order::whereBetween(DB::raw("STR_TO_DATE(order_date, '%Y-%m-%d')"), [$startDate, $endDate])
+        // ===== TOTAL DUE - COMBINED (Order Due + Customer Previous Due) =====
+        // Get order due from filtered date range
+        $orderDue = Order::whereBetween(DB::raw("STR_TO_DATE(order_date, '%Y-%m-%d')"), [$startDate, $endDate])
             ->sum('due');
 
-        // Total due from customers (previous dues - NOT filtered by date)
+        // Get customer previous due (not date filtered as it's historical)
         $customerPreviousDue = Customer::sum('previous_due');
-        
+
+        // Get customer current due
+        $customerCurrentDue = Customer::sum('due');
+
         // COMBINED TOTAL DUE
-        $totalDue = $totalOrderDue + $customerPreviousDue;
+        $totalDue = $orderDue + $customerCurrentDue + $customerPreviousDue;
 
         // ===== TOTAL PAID TO SUPPLIERS (FILTERED BY DATE) =====
         $totalSupplierPayment = SupplierPayment::whereBetween('payment_date', [$startDate, $endDate])
             ->sum('payment_amount');
-
-        // ===== PRODUCT TOTAL METERS =====
-        $productsWithMeters = DB::table('product_colors')
-            ->join('products', 'product_colors.product_id', '=', 'products.id')
-            ->select('products.id', 'products.product_name', DB::raw('SUM(product_colors.meters) as total_meters'))
-            ->groupBy('products.id', 'products.product_name')
-            ->orderBy('total_meters', 'desc')
-            ->get();
 
         // ===== KEEP YOUR EXISTING CALCULATIONS =====
         $totalStockValue = Product::sum(DB::raw('product_store * buying_price'));
@@ -112,9 +110,6 @@ class DashboardController extends Controller
 
         $totalExpenses = Expense::sum('amount');
         $todayExpenses = Expense::whereDate('date', $today)->sum('amount');
-        $monthlyExpenses = Expense::whereMonth('date', date('m'))
-            ->whereYear('date', date('Y'))
-            ->sum('amount');
 
         $recentExpenses = Expense::orderBy('created_at', 'desc')->take(5)->get();
         $lowStockProducts = Product::where('product_store', '<=', 10)->orderBy('product_store', 'asc')->take(5)->get();
@@ -139,7 +134,7 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        // Recent supplier payments
+        // Recent supplier payments (filtered)
         $recentSupplierPayments = SupplierPayment::whereBetween('payment_date', [$startDate, $endDate])
             ->with('supplier')
             ->orderBy('payment_date', 'desc')
@@ -152,7 +147,7 @@ class DashboardController extends Controller
             'totalStockValue', 'todayOrders', 'todayExpenses', 'todaySales',
             'monthlyPaid', 'topCustomers', 'recentExpenses', 'lowStockProducts',
             'bestSellingProducts', 'filterType',
-            'productsWithMeters', 'orders', 'totalExpenses', 'monthlyExpenses',
+            'orders', 'totalExpenses',
             'startDate', 'endDate', 'totalSupplierPayment', 'recentSupplierPayments'
         ));
     }

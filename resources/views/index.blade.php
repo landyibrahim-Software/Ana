@@ -92,6 +92,156 @@ $bestSellingProducts = Orderdetails::select('product_id', \DB::raw('SUM(quantity
 
 <!-- Enhanced Dashboard Styles -->
 <style>
+/* COLORFUL KPI CARDS */
+.kpi-card {
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.kpi-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+}
+
+.kpi-card .card-body {
+    padding: 25px;
+}
+
+.kpi-card h4 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.kpi-card p {
+    font-size: 0.95rem;
+    margin-bottom: 0;
+    opacity: 0.9;
+}
+
+/* Gradient Backgrounds */
+.kpi-gradient-1 {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.kpi-gradient-2 {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+}
+
+.kpi-gradient-3 {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+}
+
+.kpi-gradient-4 {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    color: white;
+}
+
+.kpi-gradient-5 {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    color: white;
+}
+
+.kpi-gradient-6 {
+    background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+    color: white;
+}
+
+.kpi-icon {
+    font-size: 3rem;
+    opacity: 0.2;
+    position: absolute;
+    top: -10px;
+    right: 20px;
+}
+
+/* BEAUTIFUL FILTER STYLES */
+.filter-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+}
+
+.filter-section h6 {
+    color: white;
+    font-weight: 600;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filter-section h6 i {
+    font-size: 1.2rem;
+}
+
+.filter-select {
+    border-radius: 8px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    padding: 10px 12px;
+    background: white;
+    color: #333;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.filter-select:focus {
+    border-color: white;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.filter-inputs {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+}
+
+.filter-inputs input {
+    border-radius: 8px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    padding: 10px 12px;
+    background: white;
+    color: #333;
+    font-weight: 500;
+    flex: 1;
+}
+
+.filter-inputs input:focus {
+    border-color: white;
+    outline: none;
+}
+
+.filter-btn {
+    background: white;
+    color: #667eea;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.filter-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.date-range-display {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.9rem;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
 /* Your existing styles - KEPT */
 .card.widget-rounded-circle {
     border-radius: 12px;
@@ -196,145 +346,197 @@ $bestSellingProducts = Orderdetails::select('product_id', \DB::raw('SUM(quantity
             </div>
         </div>
 
-        <!-- ========== ROW 1: MAIN KPI CARDS (YOUR EXISTING + NEW) ========== -->
+        <!-- ========== BEAUTIFUL DATE FILTER ========== -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="filter-section">
+                    <form method="GET" action="{{ route('dashboard') }}" id="filterForm">
+                        <h6><i class="mdi mdi-calendar-range"></i> بەروار هەڵبژێرە</h6>
+                        
+                        <div class="row g-3">
+                            <!-- Filter Dropdown -->
+                            <div class="col-md-6">
+                                <label style="color: white; font-weight: 500; display: block; margin-bottom: 8px;">
+                                    <i class="mdi mdi-filter"></i> فیلتەر
+                                </label>
+                                <select name="filter" id="filterType" class="form-control filter-select" onchange="handleFilterChange()">
+                                    <option value="today" {{ $filterType == 'today' ? 'selected' : '' }}>📅 ئەمڕۆ</option>
+                                    <option value="yesterday" {{ $filterType == 'yesterday' ? 'selected' : '' }}>📆 دوێنێ</option>
+                                    <option value="last_week" {{ $filterType == 'last_week' ? 'selected' : '' }}>📊 هێمای دواتر</option>
+                                    <option value="last_month" {{ $filterType == 'last_month' ? 'selected' : '' }}>📈 مانگی دواتر</option>
+                                    <option value="last_year" {{ $filterType == 'last_year' ? 'selected' : '' }}>📉 ساڵی دواتر</option>
+                                    <option value="custom" {{ $filterType == 'custom' ? 'selected' : '' }}>📋 دیاریکراو</option>
+                                </select>
+                            </div>
+
+                            <!-- Custom Date Range -->
+                            <div class="col-md-6" id="customDateRange" style="display: {{ $filterType == 'custom' ? 'block' : 'none' }};">
+                                <div class="filter-inputs">
+                                    <div style="flex: 1;">
+                                        <label style="color: white; font-weight: 500; display: block; margin-bottom: 8px; font-size: 0.9rem;">
+                                            <i class="mdi mdi-calendar-start"></i> سەرەتا
+                                        </label>
+                                        <input type="date" name="start_date" class="form-control" value="{{ request('start_date') }}" required>
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <label style="color: white; font-weight: 500; display: block; margin-bottom: 8px; font-size: 0.9rem;">
+                                            <i class="mdi mdi-calendar-end"></i> کۆتایی
+                                        </label>
+                                        <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}" required>
+                                    </div>
+                                    <button type="submit" class="filter-btn">✓ جووتیا</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Date Range Display -->
+                        <div class="date-range-display" id="dateRangeDisplay">
+                            <i class="mdi mdi-information"></i>
+                            @if($filterType == 'today')
+                                ئەمڕۆ: {{ \Carbon\Carbon::now()->format('Y-m-d') }}
+                            @elseif($filterType == 'yesterday')
+                                دوێنێ: {{ \Carbon\Carbon::yesterday()->format('Y-m-d') }}
+                            @elseif($filterType == 'last_week')
+                                ئەم هێمێی ({{ \Carbon\Carbon::now()->subWeek()->startOfWeek()->format('Y-m-d') }} بۆ {{ \Carbon\Carbon::now()->endOfWeek()->format('Y-m-d') }})
+                            @elseif($filterType == 'last_month')
+                                مانگی دواتر ({{ \Carbon\Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d') }} بۆ {{ \Carbon\Carbon::now()->endOfMonth()->format('Y-m-d') }})
+                            @elseif($filterType == 'last_year')
+                                ساڵی دواتر ({{ \Carbon\Carbon::now()->subYear()->startOfYear()->format('Y-m-d') }} بۆ {{ \Carbon\Carbon::now()->endOfYear()->format('Y-m-d') }})
+                            @elseif($filterType == 'custom')
+                                دیاریکراو ({{ request('start_date') }} بۆ {{ request('end_date') }})
+                            @endif
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <script>
+        function handleFilterChange() {
+            var filterType = document.getElementById('filterType').value;
+            if (filterType === 'custom') {
+                document.getElementById('customDateRange').style.display = 'block';
+            } else {
+                document.getElementById('customDateRange').style.display = 'none';
+                document.getElementById('filterForm').submit();
+            }
+        }
+        </script>
+
+        <!-- ========== ROW 1: COLORFUL KPI CARDS ========== -->
         <div class="row g-3 mb-4">
 
-            <!-- Total Paid (YOUR EXISTING) -->
-            <div class="col-md-6 col-xl-3">
-                <div class="card widget-rounded-circle bg-primary text-white">
-                    <div class="card-body d-flex align-items-center">
-                        <div class="avatar-lg rounded-circle bg-white text-primary me-3">
-                            <i class="mdi mdi-cash-multiple"></i>
-                        </div>
-                        <div>
-                            <h4 class="mb-1">{{ number_format($totalPaid,2) }}</h4>
-                            <p class="mb-0 opacity-75">کۆی گشتی پارەی دراو</p>
-                        </div>
+            <!-- Total Paid -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card kpi-card kpi-gradient-1 position-relative">
+                    <i class="mdi mdi-cash-multiple kpi-icon"></i>
+                    <div class="card-body">
+                        <h4>{{ number_format($totalPaid, 2) }}</h4>
+                        <p>کۆی گشتی پارەی دراو</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Total Due (YOUR EXISTING) -->
-            <div class="col-md-6 col-xl-3">
-                <div class="card widget-rounded-circle bg-warning text-white">
-                    <div class="card-body d-flex align-items-center">
-                        <div class="avatar-lg rounded-circle bg-white text-warning me-3">
-                            <i class="mdi mdi-alert-circle-outline"></i>
-                        </div>
-                        <div>
-                            <h4 class="mb-1">{{ number_format($totalDue,2) }}</h4>
-                            <p class="mb-0 opacity-75">کۆی گشتی قەرز</p>
-                        </div>
+            <!-- Total Due (COMBINED) -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card kpi-card kpi-gradient-2 position-relative">
+                    <i class="mdi mdi-alert-circle kpi-icon"></i>
+                    <div class="card-body">
+                        <h4>{{ number_format($totalDue, 2) }}</h4>
+                        <p>کۆی گشتی قەرز (داواکاری + کڕیار)</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Gross Profit (YOUR EXISTING - MOVED HERE) -->
-            <div class="col-md-6 col-xl-3">
-                <div class="card widget-rounded-circle bg-success text-white">
-                    <div class="card-body d-flex align-items-center">
-                        <div class="avatar-lg rounded-circle bg-white text-success me-3">
-                            <i class="mdi mdi-trending-up"></i>
-                        </div>
-                        <div>
-                            <h4 class="mb-1">{{ number_format($profit,2) }}</h4>
-                            <p class="mb-0 opacity-75">قازانج</p>
-                        </div>
+            <!-- Gross Profit -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card kpi-card kpi-gradient-3 position-relative">
+                    <i class="mdi mdi-trending-up kpi-icon"></i>
+                    <div class="card-body">
+                        <h4>{{ number_format($profit, 2) }}</h4>
+                        <p>قازانج</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Total Loss (YOUR EXISTING - MOVED HERE) -->
-            <div class="col-md-6 col-xl-3">
-                <div class="card widget-rounded-circle bg-danger text-white">
-                    <div class="card-body d-flex align-items-center">
-                        <div class="avatar-lg rounded-circle bg-white text-danger me-3">
-                            <i class="mdi mdi-trending-down"></i>
-                        </div>
-                        <div>
-                            <h4 class="mb-1">{{ number_format($loss,2) }}</h4>
-                            <p class="mb-0 opacity-75">زەرەر</p>
-                        </div>
+            <!-- Total Loss -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card kpi-card kpi-gradient-4 position-relative">
+                    <i class="mdi mdi-trending-down kpi-icon"></i>
+                    <div class="card-body">
+                        <h4>{{ number_format($loss, 2) }}</h4>
+                        <p>زەرەر</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Supplier Payments -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card kpi-card kpi-gradient-5 position-relative">
+                    <i class="mdi mdi-bank-transfer kpi-icon"></i>
+                    <div class="card-body">
+                        <h4>{{ number_format($totalSupplierPayment, 2) }}</h4>
+                        <p>پارەی تۆمار (فیلتر شدار)</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stock Value -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card kpi-card kpi-gradient-6 position-relative">
+                    <i class="mdi mdi-warehouse kpi-icon"></i>
+                    <div class="card-body">
+                        <h4>{{ number_format($totalStockValue, 2) }}</h4>
+                        <p>بەهای کاڵای ناو مەخزەن</p>
                     </div>
                 </div>
             </div>
 
         </div> <!-- end row -->
 
-        <!-- ========== ROW 2: QUICK STATS (NEW) ========== -->
+        <!-- ========== ROW 2: COLORFUL QUICK STATS ========== -->
         <div class="row g-3 mb-4">
             
             <!-- Today's Sales -->
-            <div class="col-6 col-md-4 col-lg-2">
-                <div class="card small-card border-start border-primary">
-                    <div class="card-body p-3">
-                        <div class="text-center">
-                            <div class="stats-icon text-primary mb-2">
-                                <i class="mdi mdi-cart"></i>
-                            </div>
-                            <h6 class="text-muted mb-1">فرۆشتنی ئەمڕۆ</h6>
-                            <h4 class="mb-0">{{ number_format($todaySales,2) }}</h4>
-                        </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="card kpi-card kpi-gradient-1 position-relative">
+                    <i class="mdi mdi-cart kpi-icon"></i>
+                    <div class="card-body">
+                        <h4>{{ number_format($todaySales,2) }}</h4>
+                        <p>فرۆشتنی ئەمڕۆ</p>
                     </div>
                 </div>
             </div>
 
             <!-- Today's Orders -->
-            <div class="col-6 col-md-4 col-lg-2">
-                <div class="card small-card border-start border-info">
-                    <div class="card-body p-3">
-                        <div class="text-center">
-                            <div class="stats-icon text-info mb-2">
-                                <i class="mdi mdi-receipt"></i>
-                            </div>
-                            <h6 class="text-muted mb-1">داواکاری ئەمڕۆ</h6>
-                            <h4 class="mb-0">{{ $todayOrders }}</h4>
-                        </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="card kpi-card kpi-gradient-3 position-relative">
+                    <i class="mdi mdi-receipt kpi-icon"></i>
+                    <div class="card-body">
+                        <h4>{{ $todayOrders }}</h4>
+                        <p>داواکاری ئەمڕۆ</p>
                     </div>
                 </div>
             </div>
-
- <!-- Total Stock Value -->
-<div class="col">
-    <div class="card small-card border-start border-success">
-        <div class="card-body p-3">
-            <div class="text-center">
-                <div class="stats-icon text-success mb-2">
-                    <i class="mdi mdi-warehouse"></i>
-                </div>
-                <h6 class="text-muted mb-1">بەهای کاڵای ناو مەخزەن</h6>
-                <h4 class="mb-0">{{ number_format($totalStockValue, 2) }}</h4>
-            </div>
-        </div>
-    </div>
-</div>
 
             <!-- Total Expenses -->
-            <div class="col-6 col-md-4 col-lg-2">
-                <div class="card small-card border-start border-secondary">
-                    <div class="card-body p-3">
-                        <div class="text-center">
-                            <div class="stats-icon text-secondary mb-2">
-                                <i class="mdi mdi-cash-remove"></i>
-                            </div>
-                            <h6 class="text-muted mb-1">کۆی گشتی خەرجی</h6>
-                            <h4 class="mb-0">{{ number_format($totalExpenses,2) }}</h4>
-                        </div>
+            <div class="col-md-6 col-lg-4">
+                <div class="card kpi-card kpi-gradient-5 position-relative">
+                    <i class="mdi mdi-cash-remove kpi-icon"></i>
+                    <div class="card-body">
+                        <h4>{{ number_format($totalExpenses,2) }}</h4>
+                        <p>کۆی گشتی خەرجی</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Net Profit (Profit - Expenses) -->
-            <div class="col-6 col-md-4 col-lg-2">
-                <div class="card small-card border-start border-success">
-                    <div class="card-body p-3">
-                        <div class="text-center">
-                            <div class="stats-icon text-success mb-2">
-                                <i class="mdi mdi-chart-line"></i>
-                            </div>
-                            <h6 class="text-muted mb-1">خێر-مەسروفات</h6>
-                            <h4 class="mb-0">{{ number_format($profit - $totalExpenses,2) }}</h4>
-                        </div>
+            <!-- Net Profit -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card kpi-card kpi-gradient-2 position-relative">
+                    <i class="mdi mdi-chart-line kpi-icon"></i>
+                    <div class="card-body">
+                        <h4>{{ number_format($profit - $totalExpenses,2) }}</h4>
+                        <p>خێر-مەسروفات</p>
                     </div>
                 </div>
             </div>
@@ -343,9 +545,9 @@ $bestSellingProducts = Orderdetails::select('product_id', \DB::raw('SUM(quantity
 
         <!-- ========== ROW 3: CHART & TOP CUSTOMERS ========== -->
         <div class="row mb-4">
-            <!-- Monthly Paid Chart (YOUR EXISTING) -->
+            <!-- Monthly Paid Chart -->
             <div class="col-lg-8">
-                <div class="card">
+                <div class="card" style="border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.08); border: none; border-top: 4px solid #667eea;">
                     <div class="card-body">
                         <h4 class="dashboard-section-title">کۆی گشتی پارەی مانگانە ({{ date('Y') }})</h4>
                         <div class="chart-container">
@@ -355,9 +557,9 @@ $bestSellingProducts = Orderdetails::select('product_id', \DB::raw('SUM(quantity
                 </div>
             </div>
 
-            <!-- Top Customers (NEW) -->
+            <!-- Top Customers -->
             <div class="col-lg-4">
-                <div class="card h-100">
+                <div class="card" style="border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.08); border: none; border-top: 4px solid #f5576c; height: 100%;">
                     <div class="card-body">
                         <h4 class="dashboard-section-title">باشترین کڕیار</h4>
                         <div class="table-responsive">
@@ -398,11 +600,11 @@ $bestSellingProducts = Orderdetails::select('product_id', \DB::raw('SUM(quantity
             </div>
         </div> <!-- end row -->
 
-        <!-- ========== ROW 4: EXPENSES & LOW STOCK ========== -->
+        <!-- ========== ROW 4: EXPENSES & SUPPLIER PAYMENTS ========== -->
         <div class="row mb-4">
-            <!-- Recent Expenses (NEW) -->
+            <!-- Recent Expenses -->
             <div class="col-lg-6">
-                <div class="card h-100">
+                <div class="card" style="border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.08); border: none; border-top: 4px solid #fa709a; height: 100%;">
                     <div class="card-body">
                         <h4 class="dashboard-section-title">خەرجی تازە</h4>
                         <div class="table-responsive">
@@ -438,9 +640,53 @@ $bestSellingProducts = Orderdetails::select('product_id', \DB::raw('SUM(quantity
                 </div>
             </div>
 
-            <!-- Low Stock Alert (NEW) -->
+            <!-- SUPPLIER PAYMENTS TABLE -->
             <div class="col-lg-6">
-                <div class="card h-100">
+                <div class="card" style="border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.08); border: none; border-top: 4px solid #4facfe; height: 100%;">
+                    <div class="card-body">
+                        <h4 class="dashboard-section-title">پارەی تۆماران (فیلتر شدار)</h4>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>تۆمار</th>
+                                        <th class="text-end">بڕ</th>
+                                        <th>بەروار</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($recentSupplierPayments as $payment)
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <i class="mdi mdi-bank-transfer text-success me-2"></i>
+                                                <span>{{ $payment->supplier->name ?? 'نەناسراو' }}</span>
+                                            </div>
+                                        </td>
+                                        <td class="text-end text-success">
+                                            <strong>+${{ number_format($payment->payment_amount,2) }}</strong>
+                                        </td>
+                                        <td>
+                                            <small>{{ \Carbon\Carbon::parse($payment->payment_date)->format('d M Y') }}</small>
+                                        </td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="3" class="text-center text-muted">هیچ پارەدانێک نیە</td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div> <!-- end row -->
+
+        <!-- ========== ROW 5: LOW STOCK ========== -->
+        <div class="row mb-4">
+            <div class="col-lg-12">
+                <div class="card" style="border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.08); border: none; border-top: 4px solid #43e97b;">
                     <div class="card-body">
                         <h4 class="dashboard-section-title">ئاگاداری کەمبونەوە</h4>
                         <div class="table-responsive">
@@ -501,10 +747,10 @@ $bestSellingProducts = Orderdetails::select('product_id', \DB::raw('SUM(quantity
             </div>
         </div> <!-- end row -->
 
-        <!-- ========== ROW 5: BEST SELLING PRODUCTS (NEW) ========== -->
+        <!-- ========== ROW 6: BEST SELLING PRODUCTS ========== -->
         <div class="row mb-4">
             <div class="col-lg-12">
-                <div class="card">
+                <div class="card" style="border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.08); border: none; border-top: 4px solid #30cfd0;">
                     <div class="card-body">
                         <h4 class="dashboard-section-title">باشترین بەرهەمی فرۆشراوی مانگ</h4>
                         <div class="table-responsive">
@@ -563,10 +809,10 @@ $bestSellingProducts = Orderdetails::select('product_id', \DB::raw('SUM(quantity
             </div>
         </div> <!-- end row -->
 
-        <!-- ========== ROW 6: RECENT ORDERS TABLE (YOUR EXISTING - UNCHANGED) ========== -->
+        <!-- ========== ROW 7: RECENT ORDERS TABLE ========== -->
         <div class="row">
             <div class="col-lg-12">
-                <div class="card">
+                <div class="card" style="border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.08); border: none; border-top: 4px solid #667eea;">
                     <div class="card-body">
                         <h4 class="dashboard-section-title">دۆخی فرۆشتنەکان</h4>
                         <div class="table-responsive">
@@ -632,7 +878,7 @@ $bestSellingProducts = Orderdetails::select('product_id', \DB::raw('SUM(quantity
     </div> <!-- container -->
 </div> <!-- content -->
 
-<!-- Chart.js Script (YOUR EXISTING - UNCHANGED) -->
+<!-- Chart.js Script -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 const ctx = document.getElementById('monthly-paid-chart').getContext('2d');
