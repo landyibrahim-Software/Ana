@@ -120,48 +120,6 @@
     
 
 
- <div class="col-md-6">
-        <div class="mb-3">
-            <label for="firstname" class="form-label">ناوی هەژمار    </label>
-            <input type="text" name="account_holder" class="form-control @error('account_holder') is-invalid @enderror"   >
-             @error('account_holder')
-      <span class="text-danger"> {{ $message }} </span>
-            @enderror
-        </div>
-    </div>
-
-     <div class="col-md-6">
-        <div class="mb-3">
-            <label for="firstname" class="form-label">ژمارەی هەژمار    </label>
-            <input type="text" name="account_number" class="form-control @error('account_number') is-invalid @enderror"   >
-             @error('account_number')
-      <span class="text-danger"> {{ $message }} </span>
-            @enderror
-        </div>
-    </div>
-
-      <div class="col-md-6">
-        <div class="mb-3">
-            <label for="firstname" class="form-label">ناوی بانک    </label>
-            <input type="text" name="bank_name" class="form-control @error('bank_name') is-invalid @enderror"   >
-             @error('bank_name')
-      <span class="text-danger"> {{ $message }} </span>
-            @enderror
-        </div>
-    </div>
-
-
-      <div class="col-md-6">
-        <div class="mb-3">
-            <label for="firstname" class="form-label">کاتگۆری بانک    </label>
-            <input type="text" name="bank_branch" class="form-control @error('bank_branch') is-invalid @enderror"   >
-             @error('bank_branch')
-      <span class="text-danger"> {{ $message }} </span>
-            @enderror
-        </div>
-    </div>
-
-
      <div class="col-md-6">
         <div class="mb-3">
             <label for="firstname" class="form-label">ناوی شاری دابینکەر    </label>

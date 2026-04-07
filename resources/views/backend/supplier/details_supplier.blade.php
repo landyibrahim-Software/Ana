@@ -98,43 +98,6 @@
         </div>
     </div>
 
- 
-    
-
-
- <div class="col-md-6">
-        <div class="mb-3">
-            <label for="firstname" class="form-label">ناوی هەژماری دابینکەر    </label>
-         
-
-             <p class="text-danger">{{ $supplier->account_holder }}</p>
-        </div>
-    </div>
-
-     <div class="col-md-6">
-        <div class="mb-3">
-            <label for="firstname" class="form-label">ژمارەی هەژماری دابینکەر    </label>
-           
-              <p class="text-danger">{{ $supplier->account_number }}</p>
-        </div>
-    </div>
-
-      <div class="col-md-6">
-        <div class="mb-3">
-            <label for="firstname" class="form-label">ناوی بانک    </label>
-            
-              <p class="text-danger">{{ $supplier->bank_name }}</p>
-        </div>
-    </div>
-
-
-      <div class="col-md-6">
-        <div class="mb-3">
-            <label for="firstname" class="form-label">لقی بانک    </label>
-           
-             <p class="text-danger">{{ $supplier->bank_branch }}</p>
-        </div>
-    </div>
 
 
      <div class="col-md-6">
