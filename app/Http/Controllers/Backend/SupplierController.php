@@ -28,13 +28,12 @@ class SupplierController extends Controller
 
         $validateData = $request->validate([
             'name' => 'required|max:200',
-            'email' => 'required|unique:customers|max:200',
+            'email' => 'required|unique:suppliers|max:200',
             'phone' => 'required|max:200',
             'address' => 'required|max:400',
             'shopname' => 'required|max:200',
-            'account_holder' => 'required|max:200', 
-            'account_number' => 'required', 
-            'type' => 'required', 
+            'type' => 'required',
+            'city' => 'required|max:200',
             'image' => 'required',  
         ]);
  
@@ -51,10 +50,6 @@ class SupplierController extends Controller
             'address' => $request->address,
             'shopname' => $request->shopname,
             'type' => $request->type,
-            'account_holder' => $request->account_holder,
-            'account_number' => $request->account_number,
-            'bank_name' => $request->bank_name,
-            'bank_branch' => $request->bank_branch,
             'city' => $request->city,
             'image' => $save_url,
             'created_at' => Carbon::now(), 
@@ -98,13 +93,9 @@ class SupplierController extends Controller
             'address' => $request->address,
             'shopname' => $request->shopname,
             'type' => $request->type,
-            'account_holder' => $request->account_holder,
-            'account_number' => $request->account_number,
-            'bank_name' => $request->bank_name,
-            'bank_branch' => $request->bank_branch,
             'city' => $request->city,
             'image' => $save_url,
-            'created_at' => Carbon::now(), 
+            'updated_at' => Carbon::now(), 
 
         ]);
 
@@ -125,12 +116,8 @@ class SupplierController extends Controller
             'address' => $request->address,
             'shopname' => $request->shopname,
             'type' => $request->type,
-            'account_holder' => $request->account_holder,
-            'account_number' => $request->account_number,
-            'bank_name' => $request->bank_name,
-            'bank_branch' => $request->bank_branch,
             'city' => $request->city, 
-            'created_at' => Carbon::now(), 
+            'updated_at' => Carbon::now(), 
 
         ]);
 
@@ -173,4 +160,3 @@ class SupplierController extends Controller
     } // End Method 
 
 }
- 
