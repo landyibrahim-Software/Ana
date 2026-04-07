@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Backend\EmployeeController;
 use App\Http\Controllers\Backend\CustomerController;
 use App\Http\Controllers\Backend\SupplierController;
@@ -38,9 +39,9 @@ Route::get('/', function () {
 
 
 
-Route::get('/dashboard', function () {
-    return view('index');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
 Route::get('/print-invoice/{id}', [OrderController::class, 'PrintInvoice'])
     ->name('print.invoice');
@@ -295,4 +296,4 @@ Route::get('/backup/delete/{filename}', [AdminController::class, 'DeleteDatabase
 
 
 
-}); // End User Middleware 
+}); // End User Middleware  this is web.php routes

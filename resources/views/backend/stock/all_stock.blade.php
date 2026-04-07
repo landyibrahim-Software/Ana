@@ -40,10 +40,10 @@
                                 <th>وێنە</th>
                                 <th>ناو</th>
                                 <th>جۆر</th>
-                                <th>بەرگە</th>
+                                <th>مخزن</th>
                                 <th style="min-width: 200px;">رەنگ و مەتر</th>
-                                <th style="text-align: center;">کۆ مەتر</th>
-                                <th>عدد</th> 
+                                <th style="text-align: center;">کۆی مەتر</th>
+                                <th>تۆپ</th> 
                             </tr>
                         </thead>
                     
