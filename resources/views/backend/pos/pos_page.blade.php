@@ -9,19 +9,18 @@ body {
     font-family: 'Segoe UI', sans-serif;
 }
 
-/* CARD */
 .card {
     border-radius: 18px;
     box-shadow: 0 8px 22px rgba(0,0,0,.08);
     border: none;
 }
 
-/* TABLE */
 .table thead th {
     background: linear-gradient(45deg, #0d6efd, #6610f2);
     color: #fff;
     text-align: center;
     font-size: 15px;
+    padding: 12px;
 }
 
 .table td {
@@ -30,7 +29,6 @@ body {
     padding: 12px;
 }
 
-/* BIG INPUTS */
 .table input.form-control {
     height: 50px;
     font-size: 18px;
@@ -38,17 +36,16 @@ body {
     border-radius: 14px;
 }
 
-/* TOTAL */
 .total-box {
     border-radius: 20px;
     background: linear-gradient(135deg, #6610f2, #0d6efd);
 }
+
 .total-box h1 {
     font-size: 42px;
     font-weight: bold;
 }
 
-/* PRICE ALERT */
 .price-below-cost {
     border: 2px solid red !important;
     background-color: #f8d7da !important;
@@ -56,7 +53,6 @@ body {
     font-weight: bold;
 }
 
-/* BARCODE */
 .barcode-badge {
     padding: 10px 20px;
     border-radius: 30px;
@@ -64,7 +60,6 @@ body {
     background: #f1f3f5;
 }
 
-/* SCAN EFFECT */
 .scanned-highlight {
     animation: flash 0.8s ease-in-out;
     background-color: #d1e7dd !important;
@@ -76,14 +71,186 @@ body {
     100% { background-color: #fff; }
 }
 
-/* SELECT2 */
 .select2-container .select2-selection--single {
     height: 50px;
     border-radius: 14px;
     font-size: 16px;
     padding: 10px;
 }
+
 .select2-selection__arrow {
+    height: 50px !important;
+}
+
+.colors-box {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 15px;
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+.all-colors-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    gap: 10px;
+    padding: 14px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: 2px solid #667eea;
+}
+
+.all-colors-item input[type="checkbox"] {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    flex-shrink: 0;
+    accent-color: white;
+}
+
+.all-colors-item label {
+    font-weight: 700;
+    color: white;
+    font-size: 15px;
+    margin: 0;
+    cursor: pointer;
+    flex: 1;
+}
+
+.color-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 8px;
+    background: white;
+    border: 2px solid #dee2e6;
+}
+
+.color-item:hover {
+    background: #f8f9fa;
+    border-color: #0d6efd;
+}
+
+.color-item input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.color-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 100px;
+}
+
+.color-name {
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
+}
+
+.color-available {
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.color-input-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex: 1;
+    margin-left: 10px;
+}
+
+.color-input-group label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #6c757d;
+    margin: 0;
+    min-width: 50px;
+}
+
+.customer-meter {
+    width: 70px;
+    height: 36px;
+    font-size: 14px;
+    padding: 5px;
+    border: 2px solid #dee2e6;
+    border-radius: 6px;
+    text-align: center;
+    background-color: white;
+    cursor: text;
+}
+
+.customer-meter:disabled {
+    background-color: #e9ecef;
+    cursor: not-allowed;
+    color: #6c757d;
+}
+
+.customer-meter:enabled {
+    background-color: #fff;
+    border-color: #0d6efd;
+}
+
+.customer-meter:focus {
+    border-color: #0d6efd;
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.color-remaining {
+    font-weight: 600;
+    color: #28a745;
+    font-size: 13px;
+    min-width: 70px;
+    text-align: right;
+}
+
+.color-remaining.warning {
+    color: #ff6b6b;
+}
+
+.price-total {
+    font-weight: bold;
+    color: #28a745;
+    font-size: 16px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 48px;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.product-img {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.meter-input {
+    height: 50px;
+    font-size: 18px;
+    text-align: center;
+    border-radius: 10px;
+    border: 2px solid #dee2e6;
+    background-color: #f8f9fa;
+}
+
+.price-field {
     height: 50px !important;
 }
 </style>
@@ -94,84 +261,170 @@ body {
 <div class="content">
 <div class="container-fluid">
 
-{{-- ================= TITLE ================= --}}
+{{-- TITLE --}}
 <div class="row mb-4">
     <div class="col">
         <h3 class="fw-bold">🛒 بەشی فرۆشتن</h3>
     </div>
 </div>
 
-{{-- ================= POS TABLE (FULL WIDTH) ================= --}}
+{{-- POS TABLE --}}
 <div class="row">
 <div class="col-12">
 <div class="card mb-4">
 <div class="card-body">
 
-@php $allcart = Cart::content(); @endphp
+@php 
+    $allcart = Cart::content();
+@endphp
 
+@if($allcart->count() > 0)
+<div class="table-responsive">
 <table class="table table-bordered align-middle">
 <thead>
 <tr>
     <th>ناوی ئایتم</th>
-    <th width="120">تۆپ</th>
-    <th width="160">نرخی متر</th>
-    <th width="150">بەهای کۆتایی</th>
-    <th width="120">کردار</th>
+    <th style="min-width: 500px;">مێترەی ھر رەنگ</th>
+    <th width="120">کۆی گشتی مێتر</th>
+    <th width="130">نرخی متر</th>
+    <th width="140">کۆی گشتی نرخ</th>
+    <th width="100">کردار</th>
 </tr>
 </thead>
 <tbody>
 
 @foreach($allcart as $cart)
-<form method="POST" action="{{ url('/cart-update/'.$cart->rowId) }}">
-@csrf
-<tr>
-
-<td class="fw-bold">{{ $cart->name }}</td>
-
-<td>
-<input type="number" name="qty" value="{{ $cart->qty }}" min="1" class="form-control">
-</td>
-
-<td>
-<input type="number"
-class="form-control price-field"
-value="{{ $cart->price }}"
-data-rowid="{{ $cart->rowId }}"
-data-buying="{{ $cart->options->buying_price ?? 0 }}"
-min="0"
-step="0.01">
-<div class="price-alert text-danger fw-bold"></div>
-</td>
-
-
-@php
-$subtotal = $cart->qty * $cart->price;
+@php 
+    $product = \App\Models\Product::find($cart->id);
+    $colors = ($product && $product->colors) ? $product->colors : collect();
 @endphp
 
-<td class="fw-bold text-success">{{ number_format($subtotal,2) }}</td>
+<tr class="cart-row" data-rowid="{{ $cart->rowId }}">
 
-<td>
-<button class="btn btn-success btn-sm px-3">
-<i class="fas fa-check"></i>
-</button>
-<a href="{{ url('/cart-remove/'.$cart->rowId) }}" class="btn btn-danger btn-sm px-3">
-<i class="fas fa-trash"></i>
-</a>
-</td>
+    {{-- ITEM NAME --}}
+    <td class="fw-bold">
+        {{ $cart->name }}
+    </td>
+
+    {{-- COLORS WITH INPUT FIELDS --}}
+    <td>
+        @if($colors && $colors->count() > 0)
+        <div class="colors-box">
+            
+            {{-- ALL CHECKBOX --}}
+            <div class="all-colors-item">
+                <input type="checkbox" 
+                       class="check-all"
+                       id="check-all-{{ $cart->rowId }}"
+                       data-rowid="{{ $cart->rowId }}"
+                       onchange="selectAllColors(this)">
+                <label for="check-all-{{ $cart->rowId }}">✓ ھەموو رەنگەکان</label>
+            </div>
+
+            {{-- INDIVIDUAL COLORS --}}
+            @foreach($colors as $color)
+            <div class="color-item">
+                <input type="checkbox" 
+                       class="color-check"
+                       data-color-id="{{ $color->id }}"
+                       data-color-name="{{ $color->color_name }}"
+                       data-available-meters="{{ $color->meters }}"
+                       data-rowid="{{ $cart->rowId }}"
+                       onchange="updateColorMeters(this)">
+                
+                <div class="color-info">
+                    <span class="color-name">{{ $color->color_name }}</span>
+                    <span class="color-available">دستدا: {{ $color->meters }}م</span>
+                </div>
+
+                <div class="color-input-group">
+                    <label>مێتر:</label>
+                    <input type="number" 
+                           class="customer-meter"
+                           data-color-id="{{ $color->id }}"
+                           data-rowid="{{ $cart->rowId }}"
+                           data-available="{{ $color->meters }}"
+                           placeholder="0"
+                           min="0"
+                           max="{{ $color->meters }}"
+                           step="0.01"
+                           value="0"
+                           disabled
+                           onchange="updateColorMeters(this)">
+                    <span class="color-remaining" data-color-id="{{ $color->id }}">{{ $color->meters }}م</span>
+                </div>
+            </div>
+            @endforeach
+
+        </div>
+        @else
+        <span class="text-muted">بێ رەنگ</span>
+        @endif
+    </td>
+
+    {{-- TOTAL METER --}}
+    <td>
+        <input type="number" 
+               class="form-control meter-input total-meter"
+               value="0"
+               data-rowid="{{ $cart->rowId }}"
+               readonly
+               min="0"
+               step="0.01">
+    </td>
+
+    {{-- UNIT PRICE --}}
+    <td>
+        <input type="number"
+               class="form-control price-field"
+               value="{{ $cart->price }}"
+               data-rowid="{{ $cart->rowId }}"
+               data-buying="{{ $cart->options->buying_price ?? 0 }}"
+               min="0"
+               step="0.01"
+               onchange="updateTotalPrice(this)">
+        <div class="price-alert text-danger fw-bold" style="font-size: 11px;"></div>
+    </td>
+
+    {{-- TOTAL PRICE --}}
+    <td class="price-total">
+        0.00
+    </td>
+
+    {{-- ACTIONS --}}
+    <td>
+        <form method="POST" action="{{ url('/cart-update/'.$cart->rowId) }}" style="display:inline;">
+            @csrf
+            <input type="hidden" name="qty" value="{{ $cart->qty }}">
+            <button type="submit" class="btn btn-success btn-sm px-3" title="Save">
+                <i class="fas fa-check"></i>
+            </button>
+        </form>
+        <a href="{{ url('/cart-remove/'.$cart->rowId) }}" class="btn btn-danger btn-sm px-3" title="Remove">
+            <i class="fas fa-trash"></i>
+        </a>
+    </td>
 
 </tr>
-</form>
 @endforeach
 
 </tbody>
 </table>
+</div>
+@else
+<div class="empty-state">
+    <i class="fas fa-shopping-cart"></i>
+    <h5>سەبەتەکە بەتاڵە</h5>
+    <p>لە خوار بەرهەمێک زیادبکە</p>
+</div>
+@endif
 
 </div>
 </div>
 </div>
 </div>
 
-{{-- ================= TOTAL + CUSTOMER ================= --}}
+{{-- TOTAL + CUSTOMER --}}
 <div class="row mb-4">
 
 @php
@@ -183,7 +436,7 @@ foreach($allcart as $c){
 
 <div class="col-md-6">
 <div class="total-box text-white text-center p-4 h-100">
-<h5>کۆی گشتی ئایتم {{ Cart::count() }}</h5>
+<h5>کۆی گشتی ئایتم {{ $allcart->count() }}</h5>
 <h1>{{ number_format($grandTotal,2) }}</h1>
 </div>
 </div>
@@ -197,13 +450,15 @@ foreach($allcart as $c){
 
 <label class="fw-bold mb-2">کڕیار</label>
 <select name="customer_id" class="form-select customer-select mb-3" required>
-<option></option>
-@foreach($customer as $cus)
+<option value="">-- کڕیار هەڵبژێرە --</option>
+@forelse($customer as $cus)
 <option value="{{ $cus->id }}">{{ $cus->name }}</option>
-@endforeach
+@empty
+<option disabled>کڕیار نیە</option>
+@endforelse
 </select>
 
-<button class="btn btn-primary btn-lg w-100" {{ Cart::count()==0?'disabled':'' }}>
+<button type="submit" class="btn btn-primary btn-lg w-100" {{ $allcart->count()==0?'disabled':'' }}>
 پسوڵە دروستبکە
 </button>
 
@@ -215,7 +470,7 @@ foreach($allcart as $c){
 
 </div>
 
-{{-- ================= BARCODE + PRODUCTS ================= --}}
+{{-- BARCODE + PRODUCTS --}}
 <div class="row">
 <div class="col-12">
 <div class="card">
@@ -228,28 +483,52 @@ Last Scan: <span id="last-barcode">None</span>
 </span>
 </div>
 
+@if($product && $product->count() > 0)
+<div class="table-responsive">
 <table class="table table-hover">
+<thead>
+    <tr>
+        <th width="70">وێنە</th>
+        <th>ناوی بەرهەم</th>
+        <th width="100">کردار</th>
+    </tr>
+</thead>
+<tbody>
 @foreach($product as $item)
-<tr data-code="{{ $item->product_code }}">
-<td width="70">
-<img src="{{ asset($item->product_image) }}" width="45">
-</td>
-<td class="fw-bold">{{ $item->product_name }}</td>
-<td width="90">
-<form method="POST" action="{{ url('/add-cart') }}">
-@csrf
-<input type="hidden" name="id" value="{{ $item->id }}">
-<input type="hidden" name="name" value="{{ $item->product_name }}">
-<input type="hidden" name="qty" value="1">
-<input type="hidden" name="price" value="{{ $item->selling_price }}">
-<button class="btn btn-success btn-sm">
-<i class="fas fa-plus-square"></i>
-</button>
-</form>
-</td>
-</tr>
+    @if($item && is_object($item) && isset($item->id))
+    <tr data-code="{{ $item->product_code ?? '' }}">
+    <td>
+        @if($item->product_image && file_exists(public_path($item->product_image)))
+            <img src="{{ asset($item->product_image) }}" class="product-img" alt="{{ $item->product_name ?? 'Product' }}">
+        @else
+            <img src="https://via.placeholder.com/50?text=No+Image" class="product-img" alt="No Image">
+        @endif
+    </td>
+    <td class="fw-bold">{{ $item->product_name ?? 'Unknown' }}</td>
+    <td>
+        <form method="POST" action="{{ url('/add-cart') }}" style="display:inline;">
+        @csrf
+        <input type="hidden" name="id" value="{{ $item->id }}">
+        <input type="hidden" name="name" value="{{ $item->product_name ?? 'Unknown' }}">
+        <input type="hidden" name="qty" value="1">
+        <input type="hidden" name="price" value="{{ $item->selling_price ?? 0 }}">
+        <button type="submit" class="btn btn-success btn-sm">
+        <i class="fas fa-plus-square"></i>
+        </button>
+        </form>
+    </td>
+    </tr>
+    @endif
 @endforeach
+</tbody>
 </table>
+</div>
+@else
+<div class="empty-state">
+    <i class="fas fa-box"></i>
+    <h5>بەرهەم نیە</h5>
+</div>
+@endif
 
 </div>
 </div>
@@ -259,7 +538,7 @@ Last Scan: <span id="last-barcode">None</span>
 </div>
 </div>
 
-{{-- ================= JS (ORIGINAL LOGIC KEPT) ================= --}}
+{{-- JS LOGIC --}}
 <script>
 /* CUSTOMER SEARCH */
 $('.customer-select').select2({
@@ -268,77 +547,174 @@ $('.customer-select').select2({
     width: '100%'
 });
 
-/* BARCODE */
+/* SELECT ALL COLORS */
+function selectAllColors(checkAllElement) {
+    const rowId = checkAllElement.dataset.rowid;
+    const row = document.querySelector(`tr[data-rowid="${rowId}"]`);
+    
+    if (!row) return;
+    
+    const isChecked = checkAllElement.checked;
+    const allColorCheckboxes = row.querySelectorAll('.color-check');
+    
+    // Check or uncheck all color checkboxes
+    allColorCheckboxes.forEach(checkbox => {
+        checkbox.checked = isChecked;
+        updateColorMeters(checkbox);
+    });
+}
+
+/* UPDATE COLOR METERS */
+function updateColorMeters(element) {
+    const rowId = element.dataset.rowid || element.closest('.color-item').querySelector('.color-check').dataset.rowid;
+    const row = document.querySelector(`tr[data-rowid="${rowId}"]`);
+    
+    if (!row) return;
+    
+    let totalMeters = 0;
+    
+    // Get all color items in this row
+    const colorItems = row.querySelectorAll('.color-item');
+    
+    colorItems.forEach(item => {
+        const checkbox = item.querySelector('.color-check');
+        const input = item.querySelector('.customer-meter');
+        const colorId = checkbox.dataset.colorId;
+        const availableMeters = parseFloat(checkbox.dataset.availableMeters) || 0;
+        const customerMeter = parseFloat(input.value) || 0;
+        
+        if (checkbox.checked) {
+            // Enable input when checked
+            input.disabled = false;
+            input.max = availableMeters;
+            
+            // Add customer meter to total
+            totalMeters += customerMeter;
+            
+            // Update remaining meters
+            const remaining = availableMeters - customerMeter;
+            const remainingSpan = item.querySelector(`[data-color-id="${colorId}"].color-remaining`);
+            remainingSpan.innerText = remaining.toFixed(2) + 'م';
+            
+            if (remaining < 0) {
+                remainingSpan.classList.add('warning');
+            } else {
+                remainingSpan.classList.remove('warning');
+            }
+        } else {
+            // Disable input when unchecked
+            input.disabled = true;
+            input.value = '0';
+            
+            // Reset remaining meters
+            const remainingSpan = item.querySelector(`[data-color-id="${colorId}"].color-remaining`);
+            remainingSpan.innerText = availableMeters.toFixed(2) + 'م';
+            remainingSpan.classList.remove('warning');
+        }
+    });
+    
+    // Update total meter input
+    const meterInput = row.querySelector('.total-meter');
+    if (meterInput) {
+        meterInput.value = totalMeters.toFixed(2);
+    }
+    
+    // Update total price
+    const priceField = row.querySelector('.price-field');
+    if (priceField) {
+        updateTotalPrice(priceField);
+    }
+}
+
+/* UPDATE TOTAL PRICE */
+function updateTotalPrice(priceInput) {
+    const row = priceInput.closest('tr');
+    const meterInput = row.querySelector('.total-meter');
+    const totalMeters = parseFloat(meterInput.value) || 0;
+    const unitPrice = parseFloat(priceInput.value) || 0;
+    const totalPrice = totalMeters * unitPrice;
+    
+    const priceDisplay = row.querySelector('.price-total');
+    if (priceDisplay) {
+        priceDisplay.innerText = totalPrice.toFixed(2);
+    }
+    
+    // Price warning
+    const buyingPrice = parseFloat(priceInput.dataset.buying) || 0;
+    const alertBox = priceInput.nextElementSibling;
+    
+    if (unitPrice < buyingPrice) {
+        priceInput.classList.add('price-below-cost');
+        alertBox.innerText = 'ژێر مایە';
+    } else {
+        priceInput.classList.remove('price-below-cost');
+        alertBox.innerText = '';
+    }
+}
+
+/* PRICE FIELD CHANGE */
+document.querySelectorAll('.price-field').forEach(input => {
+    input.addEventListener('change', function() {
+        updateTotalPrice(this);
+    });
+    input.addEventListener('input', function() {
+        updateTotalPrice(this);
+    });
+});
+
+/* CUSTOMER METER INPUT */
+document.querySelectorAll('.customer-meter').forEach(input => {
+    input.addEventListener('input', function() {
+        const row = this.closest('tr');
+        const checkbox = row.querySelector(`[data-color-id="${this.dataset.colorId}"]`);
+        if (checkbox) {
+            updateColorMeters(checkbox);
+        }
+    });
+});
+
+/* BARCODE SCANNER */
 let barcode = '';
 let timer = null;
 
 document.addEventListener('keydown', e => {
+    // Don't capture if user is typing in an input
+    if (e.target.tagName === 'INPUT') return;
+    
     if(timer) clearTimeout(timer);
-
+    
     if(e.key === 'Enter'){
         e.preventDefault();
-        if(barcode.length) handleBarcode(barcode);
+        if(barcode.length > 3) handleBarcode(barcode);
         barcode = '';
         return;
     }
-
-    if(e.key !== 'Shift'){
+    
+    if(e.key !== 'Shift' && e.key.length === 1){
         barcode += e.key;
     }
-
+    
     timer = setTimeout(()=> barcode='', 200);
 });
 
 function handleBarcode(code){
     document.getElementById('last-barcode').innerText = code;
     let found = false;
-
+    
     document.querySelectorAll('tr[data-code]').forEach(row => {
-        if(row.dataset.code === code){
+        if(row.dataset.code && row.dataset.code === code){
             row.classList.add('scanned-highlight');
-            row.querySelector('form').submit();
+            const form = row.querySelector('form');
+            if(form) form.submit();
             found = true;
             setTimeout(()=>row.classList.remove('scanned-highlight'),800);
         }
     });
-
+    
     if(!found){
-        alert('❌ Item does not exist');
+        alert('❌ بەرهەم نەدۆزرایەوە');
     }
 }
-
-/* PRICE WARNING + UPDATE (UNCHANGED) */
-document.querySelectorAll('.price-field').forEach(input => {
-
-    const alertBox = input.nextElementSibling;
-
-    function check(){
-        let buy = parseFloat(input.dataset.buying)||0;
-        let sell = parseFloat(input.value)||0;
-
-        if(sell < buy){
-            input.classList.add('price-below-cost');
-            alertBox.innerText = 'ژێر مایە';
-        }else{
-            input.classList.remove('price-below-cost');
-            alertBox.innerText = '';
-        }
-    }
-
-    check();
-    input.addEventListener('input', check);
-
-    input.addEventListener('change', ()=>{
-        fetch(window.location.origin + '/cart/update-price/' + input.dataset.rowid,{
-            method:'POST',
-            headers:{
-                'X-CSRF-TOKEN':'{{ csrf_token() }}',
-                'Content-Type':'application/json'
-            },
-            body:JSON.stringify({price:input.value})
-        }).then(()=>location.reload());
-    });
-});
 </script>
 
 @endsection
