@@ -1,95 +1,6 @@
 @extends('admin_dashboard')
 @section('admin')
 
-@php
-use App\Models\Order;
-use App\Models\Orderdetails;
-use App\Models\Expense;
-use App\Models\Product;
-use App\Models\Customer;
-use Carbon\Carbon;
-// Total Stock Value (Buying Price * Quantity in stock)
-$totalStockValue = Product::sum(\DB::raw('product_store * buying_price'));
-// Today
-$today = date('Y-m-d');
-
-// Totals (KEEPING YOUR EXISTING CALCULATIONS)
-$totalPaid = Order::sum('pay');
-$totalDue  = Order::sum('due');
-
-// Calculate Profit and Loss (KEEPING YOUR EXISTING CALCULATIONS)
-$orders = Order::with(['orderItems.product','customer'])->get();
-
-$profit = 0;
-$loss = 0;
-
-foreach ($orders as $order) {
-    foreach ($order->orderItems as $item) {
-        $buyingPrice = $item->product->buying_price ?? 0;
-        $sellingPrice = $item->unitcost;
-        $quantity = $item->quantity;
-
-        $orderProfit = ($sellingPrice - $buyingPrice) * $quantity;
-
-        if ($orderProfit > 0) {
-            $profit += $orderProfit;
-        } else {
-            $loss += abs($orderProfit);
-        }
-    }
-}
-
-// Monthly paid data for chart (KEEPING YOUR EXISTING CALCULATIONS)
-$monthlyPaid = [];
-for ($month = 1; $month <= 12; $month++) {
-    $monthlyPaid[] = Order::whereMonth('order_date', $month)
-        ->whereYear('order_date', date('Y'))
-        ->sum('pay');
-}
-
-// ========== NEW ADDITIONS ========== //
-
-// Expenses data (assuming 'amount' column in expenses table)
-$totalExpenses = Expense::sum('amount');
-$todayExpenses = Expense::whereDate('date', $today)->sum('amount');
-$monthlyExpenses = Expense::whereMonth('date', date('m'))
-    ->whereYear('date', date('Y'))
-    ->sum('amount');
-
-// Recent expenses
-$recentExpenses = Expense::orderBy('created_at', 'desc')->take(5)->get();
-
-// Low stock products (assuming 'product_store' is stock column)
-$lowStockProducts = Product::where('product_store', '<=', 10)->orderBy('product_store', 'asc')->take(5)->get();
-
-// Today's orders count
-$todayOrders = Order::whereDate('order_date', $today)->count();
-
-// Today's total sales
-$todaySales = Order::whereDate('order_date', $today)->sum('total');
-
-// Top customers by total spending
-$topCustomers = Order::select('customer_id', \DB::raw('SUM(pay) as total_spent'))
-    ->groupBy('customer_id')
-    ->with('customer')
-    ->orderBy('total_spent', 'desc')
-    ->take(5)
-    ->get();
-
-// Best selling products this month
-$bestSellingProducts = Orderdetails::select('product_id', \DB::raw('SUM(quantity) as total_sold'))
-    ->whereHas('order', function($query) {
-        $query->whereMonth('order_date', date('m'))
-              ->whereYear('order_date', date('Y'));
-    })
-    ->groupBy('product_id')
-    ->with('product')
-    ->orderBy('total_sold', 'desc')
-    ->take(5)
-    ->get();
-
-@endphp
-
 <!-- Enhanced Dashboard Styles -->
 <style>
 /* COLORFUL KPI CARDS */
@@ -242,15 +153,16 @@ $bestSellingProducts = Orderdetails::select('product_id', \DB::raw('SUM(quantity
     border-top: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-/* Your existing styles - KEPT */
 .card.widget-rounded-circle {
     border-radius: 12px;
     box-shadow: 0 5px 20px rgba(0,0,0,0.08);
     transition: transform 0.2s ease;
 }
+
 .card.widget-rounded-circle:hover {
     transform: translateY(-5px);
 }
+
 .card .avatar-lg {
     display: flex;
     align-items: center;
@@ -260,39 +172,46 @@ $bestSellingProducts = Orderdetails::select('product_id', \DB::raw('SUM(quantity
     height: 50px;
     border-radius: 50%;
 }
+
 .table-centered td, .table-centered th {
     vertical-align: middle !important;
 }
+
 .badge {
     font-size: 0.85rem;
     padding: 0.35em 0.65em;
 }
 
-/* NEW STYLES */
 .stats-card {
     border-left: 4px solid;
     transition: all 0.3s ease;
 }
+
 .stats-card:hover {
     transform: translateX(5px);
 }
+
 .stats-icon {
     font-size: 24px;
     opacity: 0.8;
 }
+
 .small-card {
     height: 100%;
     border: none;
     border-radius: 10px;
     overflow: hidden;
 }
+
 .small-card:hover {
     box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
 }
+
 .progress-thin {
     height: 6px;
     border-radius: 3px;
 }
+
 .product-img-sm {
     width: 40px;
     height: 40px;
@@ -300,6 +219,7 @@ $bestSellingProducts = Orderdetails::select('product_id', \DB::raw('SUM(quantity
     border-radius: 6px;
     border: 1px solid #dee2e6;
 }
+
 .customer-avatar {
     width: 45px;
     height: 45px;
@@ -311,11 +231,13 @@ $bestSellingProducts = Orderdetails::select('product_id', \DB::raw('SUM(quantity
     font-weight: bold;
     border-radius: 50%;
 }
+
 .dashboard-section-title {
     position: relative;
     padding-bottom: 10px;
     margin-bottom: 20px;
 }
+
 .dashboard-section-title:after {
     content: '';
     position: absolute;
@@ -326,6 +248,7 @@ $bestSellingProducts = Orderdetails::select('product_id', \DB::raw('SUM(quantity
     background: linear-gradient(to right, #4a81d4, #6c5ce7);
     border-radius: 3px;
 }
+
 .chart-container {
     position: relative;
     height: 300px;
@@ -426,24 +349,24 @@ $bestSellingProducts = Orderdetails::select('product_id', \DB::raw('SUM(quantity
         <!-- ========== ROW 1: COLORFUL KPI CARDS ========== -->
         <div class="row g-3 mb-4">
 
-            <!-- Total Paid -->
+            <!-- Total Paid (FROM ORDERS + CUSTOMER PAYMENTS) -->
             <div class="col-md-6 col-lg-4">
                 <div class="card kpi-card kpi-gradient-1 position-relative">
                     <i class="mdi mdi-cash-multiple kpi-icon"></i>
                     <div class="card-body">
                         <h4>{{ number_format($totalPaid, 2) }}</h4>
-                        <p>کۆی گشتی پارەی دراو</p>
+                        <p>کۆی گشتی پارەی دراو<br><small style="opacity: 0.7; font-size: 0.8rem;">(داواکاری + پارەدانی کڕیار)</small></p>
                     </div>
                 </div>
             </div>
 
-            <!-- Total Due (COMBINED) -->
+            <!-- Total Due (FROM ORDERS + CUSTOMER) -->
             <div class="col-md-6 col-lg-4">
                 <div class="card kpi-card kpi-gradient-2 position-relative">
                     <i class="mdi mdi-alert-circle kpi-icon"></i>
                     <div class="card-body">
                         <h4>{{ number_format($totalDue, 2) }}</h4>
-                        <p>کۆی گشتی قەرز (داواکاری + کڕیار)</p>
+                        <p>کۆی گشتی قەرز<br><small style="opacity: 0.7; font-size: 0.8rem;">(داواکاری + کڕیار)</small></p>
                     </div>
                 </div>
             </div>
@@ -769,7 +692,6 @@ $bestSellingProducts = Orderdetails::select('product_id', \DB::raw('SUM(quantity
                                     @foreach($bestSellingProducts as $item)
                                         @if($item->product)
                                         @php
-                                            // Estimate revenue (unitcost * quantity)
                                             $revenue = $item->unitcost * $item->total_sold;
                                         @endphp
                                         <tr>
@@ -797,7 +719,6 @@ $bestSellingProducts = Orderdetails::select('product_id', \DB::raw('SUM(quantity
                                                     {{ $item->product->product_store }}
                                                 </span>
                                             </td>
-                                            
                                         </tr>
                                         @endif
                                     @endforeach
@@ -869,7 +790,7 @@ $bestSellingProducts = Orderdetails::select('product_id', \DB::raw('SUM(quantity
                                     @endforeach
                                 </tbody>
                             </table>
-                        </div> <!-- table-responsive -->
+                        </div>
                     </div>
                 </div>
             </div>

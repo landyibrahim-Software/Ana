@@ -24,11 +24,12 @@ class DashboardController extends Controller
 
         // Create date range based on filter
         $startDate = null;
-        $endDate = Carbon::now()->endOfDay();
+        $endDate = Carbon::now();
 
         switch($filterType) {
             case 'today':
                 $startDate = Carbon::now()->startOfDay();
+                $endDate = Carbon::now()->endOfDay();
                 break;
             case 'yesterday':
                 $startDate = Carbon::yesterday()->startOfDay();
@@ -55,20 +56,26 @@ class DashboardController extends Controller
                 $startDate = Carbon::now()->startOfDay();
         }
 
-        // ===== TOTAL PAID (FILTERED BY DATE) =====
-        $totalPaid = Order::whereBetween(DB::raw("STR_TO_DATE(order_date, '%Y-%m-%d')"), [$startDate, $endDate])
+        // ===== TOTAL PAID (FROM BOTH ORDER & CUSTOMER PAYMENTS) =====
+        // Paid from orders (during invoice creation)
+        $orderPayments = Order::whereBetween(DB::raw("STR_TO_DATE(order_date, '%Y-%m-%d')"), [$startDate, $endDate])
             ->sum('pay');
 
-        // ===== TOTAL DUE - COMBINED (Order Due + Customer Previous Due) =====
-        // Get order due from filtered date range
+        // Paid from customer payments (standalone payments without invoice) - using payment_amount column
+        $customerPayments = Payment::whereBetween('payment_date', [$startDate, $endDate])
+            ->sum('payment_amount');
+
+        // COMBINED TOTAL PAID
+        $totalPaid = $orderPayments + $customerPayments;
+
+        // ===== TOTAL DUE (FROM BOTH ORDER & CUSTOMER) =====
+        // Order due from filtered date range
         $orderDue = Order::whereBetween(DB::raw("STR_TO_DATE(order_date, '%Y-%m-%d')"), [$startDate, $endDate])
             ->sum('due');
 
-        // Get customer previous due (not date filtered as it's historical)
-        $customerPreviousDue = Customer::sum('previous_due');
-
-        // Get customer current due
+        // Customer due (current due column + previous due column)
         $customerCurrentDue = Customer::sum('due');
+        $customerPreviousDue = Customer::sum('previous_due');
 
         // COMBINED TOTAL DUE
         $totalDue = $orderDue + $customerCurrentDue + $customerPreviousDue;
