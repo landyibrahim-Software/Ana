@@ -133,7 +133,6 @@
 
 @foreach($order->orderItems as $item)
 @php
-    
     $rowTotal = ($item->meters ?? $item->quantity) * $item->unitcost;
     $subTotal += $rowTotal;
 @endphp
@@ -163,16 +162,7 @@
 </div>
 
 <!-- TOTAL SUMMARY -->
-@php
-$previousDue = $order->previous_due;
-$subTotal = 0;
-foreach($order->orderItems as $item) {
-    $rowTotal = ($item->meters ?? $item->quantity) * $item->unitcost;
-    $subTotal += $rowTotal;
-}
-$grandTotal = $subTotal + $previousDue;
-@endphp
-
+<!-- Use variables passed from controller -->
 <div class="row mt-3">
     <div class="col-sm-6"></div>
     <div class="col-sm-6 text-end">
