@@ -56,49 +56,48 @@ class DashboardController extends Controller
                 $startDate = Carbon::now()->startOfDay();
         }
 
-        // ===== TOTAL PAID (FROM BOTH ORDER & CUSTOMER PAYMENTS) =====
-        // Paid from orders (during invoice creation)
+        // ===== 1. TOTAL PAID (Filtered by Date) =====
         $orderPayments = Order::whereBetween(DB::raw("STR_TO_DATE(order_date, '%Y-%m-%d')"), [$startDate, $endDate])
             ->sum('pay');
 
-        // Paid from customer payments (standalone payments without invoice) - using payment_amount column
         $customerPayments = Payment::whereBetween('payment_date', [$startDate, $endDate])
             ->sum('payment_amount');
 
-        // COMBINED TOTAL PAID
         $totalPaid = $orderPayments + $customerPayments;
 
-        // ===== TOTAL DUE (FROM BOTH ORDER & CUSTOMER) =====
-        // Order due from filtered date range
-        $orderDue = Order::whereBetween(DB::raw("STR_TO_DATE(order_date, '%Y-%m-%d')"), [$startDate, $endDate])
-            ->sum('due');
+        // ===== 2. TOTAL DUE (Current Remaining Balance from All Customers) =====
+        // Calculate for EACH customer: (previous_due + sum of all orders) - (sum of all payments + order pays)
+        $totalDue = 0;
+        $customers = Customer::all();
+        foreach ($customers as $customer) {
+            $total_spent = $customer->previous_due;
+            foreach ($customer->orders as $order) {
+                $total_spent += $order->sub_total;
+            }
+            
+            $total_paid = Payment::where('customer_id', $customer->id)->sum('payment_amount');
+            foreach ($customer->orders as $order) {
+                $total_paid += ($order->pay ?? 0);
+            }
+            
+            $customer_due = max($total_spent - $total_paid, 0);
+            $totalDue += $customer_due;
+        }
 
-        // Customer due (current due column + previous due column)
-        $customerCurrentDue = Customer::sum('due');
-        $customerPreviousDue = Customer::sum('previous_due');
-
-        // COMBINED TOTAL DUE
-        $totalDue = $orderDue + $customerCurrentDue + $customerPreviousDue;
-
-        // ===== TOTAL PAID TO SUPPLIERS (FILTERED BY DATE) =====
-        $totalSupplierPayment = SupplierPayment::whereBetween('payment_date', [$startDate, $endDate])
-            ->sum('payment_amount');
-
-        // ===== KEEP YOUR EXISTING CALCULATIONS =====
-        $totalStockValue = Product::sum(DB::raw('product_store * buying_price'));
-        $today = date('Y-m-d');
-
-        $orders = Order::with(['orderItems.product','customer'])->get();
+        // ===== 3. PROFIT & LOSS (From Filtered Orders) =====
+        $filteredOrders = Order::whereBetween(DB::raw("STR_TO_DATE(order_date, '%Y-%m-%d')"), [$startDate, $endDate])
+            ->with('orderItems.product')
+            ->get();
 
         $profit = 0;
         $loss = 0;
 
-        foreach ($orders as $order) {
+        foreach ($filteredOrders as $order) {
             foreach ($order->orderItems as $item) {
                 $buyingPrice = $item->product->buying_price ?? 0;
                 $sellingPrice = $item->unitcost;
-                $quantity = $item->quantity;
-                $orderProfit = ($sellingPrice - $buyingPrice) * $quantity;
+                $meters = $item->meters ?? $item->quantity; // Use meters if available
+                $orderProfit = ($sellingPrice - $buyingPrice) * $meters;
 
                 if ($orderProfit > 0) {
                     $profit += $orderProfit;
@@ -108,6 +107,27 @@ class DashboardController extends Controller
             }
         }
 
+        // ===== 4. SUPPLIER PAYMENTS (Filtered by Date) =====
+        $totalSupplierPayment = SupplierPayment::whereBetween('payment_date', [$startDate, $endDate])
+            ->sum('payment_amount');
+
+// ===== 5. STOCK VALUE (total_meters_from_orderdetails × buying_price per product) =====
+$totalStockValue = DB::selectOne("
+    SELECT SUM(CAST(od.meters AS DECIMAL(10,2)) * CAST(p.buying_price AS DECIMAL(10,2))) as total
+    FROM orderdetails od
+    JOIN products p ON od.product_id = p.id
+")->total ?? 0;
+
+        // ===== 6. TODAY'S SALES & ORDERS =====
+        $today = date('Y-m-d');
+        $todaySales = Order::whereDate('order_date', $today)->sum('sub_total');
+        $todayOrders = Order::whereDate('order_date', $today)->count();
+        $todayExpenses = Expense::whereDate('date', $today)->sum('amount');
+
+        // ===== 7. TOTAL EXPENSES =====
+        $totalExpenses = Expense::sum('amount');
+
+        // ===== 8. OTHER DATA =====
         $monthlyPaid = [];
         for ($month = 1; $month <= 12; $month++) {
             $monthlyPaid[] = Order::whereMonth('order_date', $month)
@@ -115,13 +135,8 @@ class DashboardController extends Controller
                 ->sum('pay');
         }
 
-        $totalExpenses = Expense::sum('amount');
-        $todayExpenses = Expense::whereDate('date', $today)->sum('amount');
-
         $recentExpenses = Expense::orderBy('created_at', 'desc')->take(5)->get();
         $lowStockProducts = Product::where('product_store', '<=', 10)->orderBy('product_store', 'asc')->take(5)->get();
-        $todayOrders = Order::whereDate('order_date', $today)->count();
-        $todaySales = Order::whereDate('order_date', $today)->sum('total');
 
         $topCustomers = Order::select('customer_id', DB::raw('SUM(pay) as total_spent'))
             ->groupBy('customer_id')
@@ -141,12 +156,13 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        // Recent supplier payments (filtered)
         $recentSupplierPayments = SupplierPayment::whereBetween('payment_date', [$startDate, $endDate])
             ->with('supplier')
             ->orderBy('payment_date', 'desc')
             ->take(5)
             ->get();
+
+        $orders = Order::with(['orderItems.product','customer'])->get();
 
         // Pass all data to view
         return view('index', compact(
