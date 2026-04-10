@@ -163,11 +163,11 @@
 </div>
 
 <!-- TOTAL SUMMARY -->
-@php
-    $previousDue = $order->customer->due + $order->customer->previous_due;
+@@php
+    // CORRECT: Use the previous_due stored in THIS order
+    $previousDue = $order->previous_due;
     $grandTotal = $subTotal + $previousDue;
 @endphp
-
 <div class="row mt-3">
     <div class="col-sm-6"></div>
     <div class="col-sm-6 text-end">

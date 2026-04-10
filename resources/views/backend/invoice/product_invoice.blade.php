@@ -159,7 +159,8 @@
 </div>
 
 @php
-    $previousDue = $customer->due + $customer->previous_due;
+    // CORRECT: Use only previous_due from customer (the balance before new orders)
+    $previousDue = $customer->previous_due;
     $grandTotal = $subTotal + $previousDue;
 @endphp
 
