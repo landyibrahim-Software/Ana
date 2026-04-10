@@ -43,12 +43,13 @@ public function FinalInvoice(Request $request)
         'metter_price'   => 0,
     ]);
 
-    // Save order items WITH meters and colors
+    // Save order items WITH meters and colors + UPDATE STOCK
     foreach ($request->items as $item) {
         $meters = $item['meters'] ?? 0;
-        $unitTotal = $meters * $item['unitcost']; // meters × price, not qty × price
+        $unitTotal = $meters * $item['unitcost']; // meters × price
         $selectedColors = $item['selected_colors'] ?? '[]';
 
+        // Save order detail
         Orderdetails::create([
             'order_id'        => $order->id,
             'product_id'      => $item['product_id'],
@@ -59,10 +60,21 @@ public function FinalInvoice(Request $request)
             'metter_price'    => 0,
             'total'           => $unitTotal,
         ]);
+
+        // 🔥 REDUCE COLOR METERS FROM STOCK
+        if (!empty($item['selected_colors'])) {
+            $colors = json_decode($item['selected_colors'], true);
+            
+            foreach ($colors as $color) {
+                // Find the color record and reduce meters
+                \App\Models\ProductColor::where('product_id', $item['product_id'])
+                    ->where('id', $color['id'])
+                    ->decrement('meters', $color['meter']);
+            }
+        }
     }
 
     // **Update customer's total due**
-    // customer->due = previous total due + current order due
     $customer->update([
         'due' => $customer->due + $currentOrderDue
     ]);

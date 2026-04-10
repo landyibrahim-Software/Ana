@@ -234,6 +234,17 @@ public function CreateInvoice(Request $request)
         // Reduce stock
         $product->product_store -= $item->qty;
         $product->save();
+        // 🔥 REDUCE COLOR METERS FROM STOCK
+if (isset($item->options['selected_colors']) && !empty($item->options['selected_colors'])) {
+    $colors = $item->options['selected_colors'];
+    
+    foreach ($colors as $color) {
+        // Find the color record and reduce meters
+        \App\Models\ProductColor::where('product_id', $product->id)
+            ->where('id', $color['id'])
+            ->decrement('meters', $color['meter']);
+    }
+}
     }
 
     // Clear cart
