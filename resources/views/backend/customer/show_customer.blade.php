@@ -138,34 +138,70 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @php
-                                        $combined_records = collect();
-                                        
-                                        // Add orders
-                                        foreach ($customer->orders as $order) {
-                                            $combined_records->push([
-                                                'type' => 'order',
-                                                'id' => $order->id,
-                                                'amount' => $order->sub_total ?? 0,
-                                                'date' => $order->created_at,
-                                                'data' => $order
-                                            ]);
-                                        }
-                                        
-                                        // Add payments
-                                        foreach ($customer->payments as $payment) {
-                                            $combined_records->push([
-                                                'type' => 'payment',
-                                                'id' => $payment->id,
-                                                'amount' => $payment->payment_amount,
-                                                'date' => $payment->payment_date,
-                                                'data' => $payment
-                                            ]);
-                                        }
-                                        
-                                        // Sort by date (newest first)
-                                        $combined_records = $combined_records->sortByDesc('date');
-                                    @endphp
+                                   @php
+    $combined_records = collect();
+    
+    // Add orders (only sub_total, NOT order->pay)
+    foreach ($customer->orders as $order) {
+        $combined_records->push([
+            'type' => 'order',
+            'id' => $order->id,
+            'amount' => $order->sub_total, // Only sub_total here
+            'date' => $order->created_at,
+            'pay' => $order->pay ?? 0,
+            'data' => $order
+        ]);
+    }
+    
+    // Add payments (from Payment table only)
+    foreach ($customer->payments as $payment) {
+        $combined_records->push([
+            'type' => 'payment',
+            'id' => $payment->id,
+            'amount' => $payment->payment_amount,
+            'date' => $payment->payment_date,
+            'data' => $payment
+        ]);
+    }
+    
+    // Sort by date (newest first)
+    $combined_records = $combined_records->sortByDesc('date');
+@endphp
+
+@forelse($combined_records as $record)
+    @if($record['type'] == 'order')
+        @php
+            $order = $record['data'];
+            $order_total = $record['amount']; // sub_total only
+            $order_paid = $record['pay']; // from order->pay
+            $order_due = max($order_total - $order_paid, 0);
+            $is_paid = $order_due == 0;
+        @endphp
+        <tr>
+            <td><span class="badge bg-info text-white">داواکاری #{{ $order->id }}</span></td>
+            <td><strong>${{ number_format($order_total, 2) }}</strong></td>
+            <td>
+                @if($is_paid)
+                    <span class="badge bg-success text-white">✓ پارە دراو</span>
+                @else
+                    <span class="badge bg-danger text-white">✗ قەرز</span>
+                @endif
+            </td>
+            <td>{{ $order->created_at->format('Y-m-d H:i') }}</td>
+        </tr>
+    @else
+        <tr class="table-success">
+            <td><span class="badge bg-success text-white">پارەدان</span></td>
+            <td><strong class="text-success">${{ number_format($record['amount'], 2) }}</strong></td>
+            <td><span class="badge bg-success text-white">✓ قبوڵ کرا</span></td>
+            <td>{{ \Carbon\Carbon::parse($record['date'])->format('Y-m-d H:i') }}</td>
+        </tr>
+    @endif
+@empty
+    <tr>
+        <td colspan="4" class="text-center text-muted py-4">هیچ داواکاری یان پارەدانێک نەدۆزرایەوە</td>
+    </tr>
+@endforelse
                                     
                                     @forelse($combined_records as $record)
                                         @if($record['type'] == 'order')

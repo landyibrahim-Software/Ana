@@ -19,24 +19,23 @@ class CustomerController extends Controller
     
 public function ShowCustomer($id)
 {
-    $customer = Customer::with('orders', 'payments')->findOrFail($id);
+    // Load customer with relationships
+    $customer = Customer::findOrFail($id);
+    $customer->load(['orders', 'payments']);
 
-    // CARD 1: Total Orders Count
+    // CARD 1: Count distinct orders
     $order_count = $customer->orders->count();
     
-    // CARD 2: Total Money = previous_due + ALL order sub_totals
+    // CARD 2: previous_due + all order sub_totals
     $total_spent = $customer->previous_due;
     foreach ($customer->orders as $order) {
         $total_spent += $order->sub_total;
     }
     
-    // CARD 3: Total Paid = all Payment records + all order->pay
+    // CARD 3: Total Paid = all Payment records only (NOT order->pay)
     $total_paid_all = Payment::where('customer_id', $customer->id)->sum('payment_amount');
-    foreach ($customer->orders as $order) {
-        $total_paid_all += ($order->pay ?? 0);
-    }
     
-    // CARD 4: Total Due = total_spent - total_paid_all
+    // CARD 4: Total Due
     $total_due = max($total_spent - $total_paid_all, 0);
 
     return view('backend.customer.show_customer', compact(
@@ -47,7 +46,6 @@ public function ShowCustomer($id)
         'total_due'
     ));
 }
-
     public function AddCustomer(){
          return view('backend.customer.add_customer');
     } // End Method 
