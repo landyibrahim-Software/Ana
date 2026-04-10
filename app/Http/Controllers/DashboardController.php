@@ -144,16 +144,27 @@ $totalStockValue = DB::selectOne("
             ->take(5)
             ->get();
 
-        $bestSellingProducts = Orderdetails::select('product_id', DB::raw('SUM(quantity) as total_sold'))
-            ->whereHas('order', function($query) {
-                $query->whereMonth('order_date', date('m'))
-                      ->whereYear('order_date', date('Y'));
-            })
-            ->groupBy('product_id')
-            ->with('product')
-            ->orderBy('total_sold', 'desc')
-            ->take(5)
-            ->get();
+        // ===== BEST SELLING PRODUCTS (WITH METERS) =====
+$bestSellingProducts = DB::table('orderdetails as od')
+    ->join('products as p', 'od.product_id', '=', 'p.id')
+    ->leftJoin('categories as c', 'p.category_id', '=', 'c.id')
+    ->selectRaw('
+        p.id,
+        p.product_name,
+        p.product_code,
+        p.product_image,
+        c.category_name,
+        p.product_store,
+        SUM(CAST(od.meters AS DECIMAL(10,2))) as total_meters_sold,
+        p.buying_price,
+        p.category_id
+    ')
+    ->whereRaw('MONTH(od.created_at) = MONTH(NOW())')
+    ->whereRaw('YEAR(od.created_at) = YEAR(NOW())')
+    ->groupBy('od.product_id', 'p.id', 'p.product_name', 'p.product_code', 'p.product_image', 'c.category_name', 'p.product_store', 'p.buying_price', 'p.category_id')
+    ->orderByRaw('SUM(CAST(od.meters AS DECIMAL(10,2))) DESC')
+    ->limit(10)
+    ->get();
 
         $recentSupplierPayments = SupplierPayment::whereBetween('payment_date', [$startDate, $endDate])
             ->with('supplier')

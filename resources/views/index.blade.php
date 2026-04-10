@@ -688,41 +688,44 @@
                                         
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    @foreach($bestSellingProducts as $item)
-                                        @if($item->product)
-                                        @php
-                                            $revenue = $item->unitcost * $item->total_sold;
-                                        @endphp
-                                        <tr>
-                                            <td>
-                                                <div class="d-flex align-items-center">
-                                                    @if($item->product->product_image)
-                                                    <img src="{{ asset($item->product->product_image) }}" 
-                                                         class="product-img-sm me-2" 
-                                                         alt="{{ $item->product->product_name }}">
-                                                    @endif
-                                                    <span>{{ $item->product->product_name }}</span>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-light text-dark">{{ $item->product->product_code }}</span>
-                                            </td>
-                                            <td>
-                                                {{ $item->product->category->name ?? 'N/A' }}
-                                            </td>
-                                            <td class="text-center">
-                                                <span class="badge bg-primary">{{ $item->total_sold }}</span>
-                                            </td>
-                                            <td class="text-center">
-                                                <span class="badge bg-{{ $item->product->product_store > 10 ? 'success' : 'warning' }}">
-                                                    {{ $item->product->product_store }}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                        @endif
-                                    @endforeach
-                                </tbody>
+                               <tbody>
+    @foreach($bestSellingProducts as $item)
+    @php
+        // Calculate remaining meters from product_colors
+        $remainingMeters = 0;
+        if($item->id) {
+            $remainingMeters = DB::table('product_colors')
+                ->where('product_id', $item->id)
+                ->sum('meters');
+        }
+    @endphp
+    <tr>
+        <td>
+            <div class="d-flex align-items-center">
+                <img src="{{ asset($item->product_image) }}" 
+                     class="product-img-sm me-2" 
+                     alt="{{ $item->product_name }}">
+                <span>{{ $item->product_name }}</span>
+            </div>
+        </td>
+        <td>
+            <span class="badge bg-light text-dark">{{ $item->product_code }}</span>
+        </td>
+        <td>
+            {{ $item->category_name ?? 'N/A' }}
+        </td>
+        <td class="text-center">
+            <span class="badge bg-primary">{{ number_format($item->total_meters_sold, 2) }} m</span>
+        </td>
+        <td class="text-center">
+            <span class="badge bg-{{ $remainingMeters > 100 ? 'success' : 'warning' }}">
+                {{ number_format($remainingMeters, 2) }} m
+            </span>
+        </td>
+    </tr>
+    @endforeach
+</tbody>
+                                   
                             </table>
                         </div>
                     </div>
