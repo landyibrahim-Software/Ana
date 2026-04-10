@@ -16,6 +16,7 @@ class CustomerController extends Controller
         $customer = Customer::latest()->get();
         return view('backend.customer.all_customer',compact('customer'));
     } // End Method 
+    
 public function ShowCustomer($id)
 {
     $customer = Customer::with('orders', 'payments')->findOrFail($id);
@@ -23,24 +24,20 @@ public function ShowCustomer($id)
     // CARD 1: Total Orders Count
     $order_count = $customer->orders->count();
     
-    // CARD 2: Total Money Owed = previous_due (original starting balance)
-    // Do NOT add orders because they're already factored into the outstanding payments
+    // CARD 2: Total Money = previous_due + ALL order sub_totals
     $total_spent = $customer->previous_due;
+    foreach ($customer->orders as $order) {
+        $total_spent += $order->sub_total;
+    }
     
-    // CARD 3: Total Paid
+    // CARD 3: Total Paid = all Payment records + all order->pay
     $total_paid_all = Payment::where('customer_id', $customer->id)->sum('payment_amount');
     foreach ($customer->orders as $order) {
         $total_paid_all += ($order->pay ?? 0);
     }
     
-    // Add all unpaid orders to total due
-    $orders_total = 0;
-    foreach ($customer->orders as $order) {
-        $orders_total += $order->sub_total;
-    }
-    
-    // CARD 4: Total Due = (previous_due + all orders) - all paid
-    $total_due = max(($total_spent + $orders_total) - $total_paid_all, 0);
+    // CARD 4: Total Due = total_spent - total_paid_all
+    $total_due = max($total_spent - $total_paid_all, 0);
 
     return view('backend.customer.show_customer', compact(
         'customer', 
@@ -201,4 +198,3 @@ public function PaymentCustomer(Request $request){
 }
 
 }
- 
