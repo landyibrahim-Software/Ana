@@ -47,16 +47,16 @@
                         </div>
                     </div>
 
-                    <!-- Card 2: Total Money (Previous Due + Orders) -->
-                    <div class="col-md-3">
-                        <div class="card bg-warning bg-opacity-10 border-warning">
-                            <div class="card-body">
-                                <h6 class="card-title text-warning mb-3">کۆی پێداویستی</h6>
-                                <h3 class="text-warning mb-0">${{ number_format($total_spent, 2) }}</h3>
-                                <small class="text-muted">قەرزی سەرەتایی + داواکاریەکان</small>
-                            </div>
-                        </div>
-                    </div>
+                   <!-- Card 2: Total Money (Previous Due + Orders) -->
+<div class="col-md-3">
+    <div class="card bg-warning bg-opacity-10 border-warning">
+        <div class="card-body">
+            <h6 class="card-title text-warning mb-3">کۆی پێداویستی</h6>
+            <h3 class="text-warning mb-0">${{ number_format($total_spent_display, 2) }}</h3>
+            <small class="text-muted">قەرزی سەرەتایی + داواکاریەکان</small>
+        </div>
+    </div>
+</div>
 
                     <!-- Card 3: Total Paid -->
                     <div class="col-md-3">

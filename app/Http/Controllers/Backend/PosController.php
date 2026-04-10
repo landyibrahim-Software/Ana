@@ -181,8 +181,23 @@ public function CreateInvoice(Request $request)
         $totalMetersAll += $totalMeters;
     }
 
-    // Add previous due
-    $previousDue = $customer->due + $customer->previous_due;
+    // ✅ CORRECT: Calculate previous due same as show_customer page
+    // Previous due = total spent (previous_due + all orders) - total paid
+    $total_spent = $customer->previous_due;
+    foreach ($customer->orders as $order) {
+        $total_spent += $order->sub_total;
+    }
+    
+    // Total paid = all payments from Payment table + order payments
+    $total_paid_all = \App\Models\Payment::where('customer_id', $customer->id)->sum('payment_amount');
+    foreach ($customer->orders as $order) {
+        $total_paid_all += ($order->pay ?? 0);
+    }
+    
+    // Previous due remaining = total spent - total paid
+    $previousDue = max($total_spent - $total_paid_all, 0);
+    
+    // Grand total = current order + previous due remaining
     $grandTotal = $subTotal + $previousDue;
 
     // Create Order
@@ -198,6 +213,7 @@ public function CreateInvoice(Request $request)
         'due'            => $grandTotal,
         'order_status'   => 'pending',
         'metter_price'   => 0,
+        'previous_due'   => $previousDue, // ✅ Store previous due
     ]);
 
     // Create Order Details with color info
@@ -232,14 +248,11 @@ public function CreateInvoice(Request $request)
             'metter_price'    => 0,
             'total'           => $itemTotal,
         ]);
-
-        // ❌ REMOVED: Stock reduction happens in FinalInvoice only!
-        // Do NOT reduce stock here - it will be reduced in FinalInvoice based on color count
     }
 
     // Clear cart
     Cart::destroy();
 
-    return view('backend.invoice.product_invoice', compact('order', 'contents', 'customer'));
+    return view('backend.invoice.product_invoice', compact('order', 'contents', 'customer', 'previousDue'));
 }
 }

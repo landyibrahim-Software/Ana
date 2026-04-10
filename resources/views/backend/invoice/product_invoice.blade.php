@@ -158,9 +158,8 @@
 </table>
 </div>
 
+<!-- Previous Due calculated in controller - use it directly -->
 @php
-    // CORRECT: Use only previous_due from customer (the balance before new orders)
-    $previousDue = $customer->previous_due;
     $grandTotal = $subTotal + $previousDue;
 @endphp
 
