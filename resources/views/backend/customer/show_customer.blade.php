@@ -36,28 +36,6 @@
             <!-- Financial Summary Cards -->
             <div class="col-md-9">
                 <div class="row">
-                    @php
-                        // CARD 1: Total Orders Count
-                        $order_count = $customer->orders->count();
-                        
-                        // CARD 2: Total Money Spent (previous_due + all orders subtotal)
-                        $total_spent = $customer->previous_due;
-                        foreach ($customer->orders as $order) {
-                            $total_spent += $order->sub_total;
-                        }
-                        
-                        // CARD 3: Total Paid (all payments)
-                        $total_paid_all = Payment::where('customer_id', $customer->id)->sum('payment_amount');
-                        
-                        // Also add payments from orders (order->pay field)
-                        foreach ($customer->orders as $order) {
-                            $total_paid_all += ($order->pay ?? 0);
-                        }
-                        
-                        // CARD 4: Total Due Remaining
-                        $total_due = max($total_spent - $total_paid_all, 0);
-                    @endphp
-
                     <!-- Card 1: Total Orders -->
                     <div class="col-md-3">
                         <div class="card bg-info bg-opacity-10 border-info">
@@ -153,10 +131,10 @@
                             <table class="table table-striped table-hover mb-0">
                                 <thead class="table-dark">
                                     <tr>
-                                        <th style="color: white;">جۆر</th>
-                                        <th style="color: white;">بڕ</th>
-                                        <th style="color: white;">دۆخ</th>
-                                        <th style="color: white;">بەرواری</th>
+                                        <th style="color: white; background-color: #343a40;">جۆر</th>
+                                        <th style="color: white; background-color: #343a40;">بڕ</th>
+                                        <th style="color: white; background-color: #343a40;">دۆخ</th>
+                                        <th style="color: white; background-color: #343a40;">بەرواری</th>
                                     </tr>
                                 </thead>
                                 <tbody>
