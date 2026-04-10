@@ -299,7 +299,7 @@ body {
     $colors = ($product && $product->colors) ? $product->colors : collect();
 @endphp
 
-<tr class="cart-row" data-rowid="{{ $cart->rowId }}">
+<tr class="cart-row" data-rowid="{{ $cart->rowId }}" data-product-id="{{ $cart->id }}">
 
     {{-- ITEM NAME --}}
     <td class="fw-bold">
@@ -428,16 +428,18 @@ body {
 <div class="row mb-4">
 
 @php
-$grandTotal = 0;
+$subTotal = 0;
 foreach($allcart as $c){
-    $grandTotal += $c->qty * $c->price;
+    $totalMeters = floatval(0);
+    $meterElements = 'tr[data-rowid="' . $c->rowId . '"] .total-meter';
+    $subTotal += $totalMeters * $c->price;
 }
 @endphp
 
 <div class="col-md-6">
 <div class="total-box text-white text-center p-4 h-100">
 <h5>کۆی گشتی ئایتم {{ $allcart->count() }}</h5>
-<h1>{{ number_format($grandTotal,2) }}</h1>
+<h1 id="grand-total">0.00</h1>
 </div>
 </div>
 
@@ -445,7 +447,7 @@ foreach($allcart as $c){
 <div class="card h-100">
 <div class="card-body">
 
-<form method="POST" action="{{ url('/create-invoice') }}">
+<form method="POST" action="{{ url('/create-invoice') }}" id="invoice-form">
 @csrf
 
 <label class="fw-bold mb-2">کڕیار</label>
@@ -458,7 +460,10 @@ foreach($allcart as $c){
 @endforelse
 </select>
 
-<button type="submit" class="btn btn-primary btn-lg w-100" {{ $allcart->count()==0?'disabled':'' }}>
+<!-- Hidden inputs for cart data -->
+<input type="hidden" id="cart-data" name="cart_data" value="">
+
+<button type="button" class="btn btn-primary btn-lg w-100" {{ $allcart->count()==0?'disabled':'' }} onclick="prepareInvoiceData()">
 پسوڵە دروستبکە
 </button>
 
@@ -557,7 +562,6 @@ function selectAllColors(checkAllElement) {
     const isChecked = checkAllElement.checked;
     const allColorCheckboxes = row.querySelectorAll('.color-check');
     
-    // Check or uncheck all color checkboxes
     allColorCheckboxes.forEach(checkbox => {
         checkbox.checked = isChecked;
         updateColorMeters(checkbox);
@@ -566,14 +570,12 @@ function selectAllColors(checkAllElement) {
 
 /* UPDATE COLOR METERS */
 function updateColorMeters(element) {
-    const rowId = element.dataset.rowid || element.closest('.color-item').querySelector('.color-check').dataset.rowid;
+    const rowId = element.dataset.rowid || element.closest('.color-item')?.querySelector('.color-check')?.dataset.rowid;
     const row = document.querySelector(`tr[data-rowid="${rowId}"]`);
     
     if (!row) return;
     
     let totalMeters = 0;
-    
-    // Get all color items in this row
     const colorItems = row.querySelectorAll('.color-item');
     
     colorItems.forEach(item => {
@@ -584,14 +586,10 @@ function updateColorMeters(element) {
         const customerMeter = parseFloat(input.value) || 0;
         
         if (checkbox.checked) {
-            // Enable input when checked
             input.disabled = false;
             input.max = availableMeters;
-            
-            // Add customer meter to total
             totalMeters += customerMeter;
             
-            // Update remaining meters
             const remaining = availableMeters - customerMeter;
             const remainingSpan = item.querySelector(`[data-color-id="${colorId}"].color-remaining`);
             remainingSpan.innerText = remaining.toFixed(2) + 'م';
@@ -602,28 +600,26 @@ function updateColorMeters(element) {
                 remainingSpan.classList.remove('warning');
             }
         } else {
-            // Disable input when unchecked
             input.disabled = true;
             input.value = '0';
             
-            // Reset remaining meters
             const remainingSpan = item.querySelector(`[data-color-id="${colorId}"].color-remaining`);
             remainingSpan.innerText = availableMeters.toFixed(2) + 'م';
             remainingSpan.classList.remove('warning');
         }
     });
     
-    // Update total meter input
     const meterInput = row.querySelector('.total-meter');
     if (meterInput) {
         meterInput.value = totalMeters.toFixed(2);
     }
     
-    // Update total price
     const priceField = row.querySelector('.price-field');
     if (priceField) {
         updateTotalPrice(priceField);
     }
+    
+    updateGrandTotal();
 }
 
 /* UPDATE TOTAL PRICE */
@@ -639,7 +635,6 @@ function updateTotalPrice(priceInput) {
         priceDisplay.innerText = totalPrice.toFixed(2);
     }
     
-    // Price warning
     const buyingPrice = parseFloat(priceInput.dataset.buying) || 0;
     const alertBox = priceInput.nextElementSibling;
     
@@ -650,6 +645,66 @@ function updateTotalPrice(priceInput) {
         priceInput.classList.remove('price-below-cost');
         alertBox.innerText = '';
     }
+    
+    updateGrandTotal();
+}
+
+/* UPDATE GRAND TOTAL */
+function updateGrandTotal() {
+    let grandTotal = 0;
+    document.querySelectorAll('.price-total').forEach(el => {
+        grandTotal += parseFloat(el.innerText) || 0;
+    });
+    document.getElementById('grand-total').innerText = grandTotal.toFixed(2);
+}
+
+/* PREPARE INVOICE DATA */
+function prepareInvoiceData() {
+    const cartData = [];
+    
+    document.querySelectorAll('.cart-row').forEach(row => {
+        const rowId = row.dataset.rowid;
+        const productId = row.dataset.productId;
+        const totalMeters = parseFloat(row.querySelector('.total-meter').value) || 0;
+        const unitPrice = parseFloat(row.querySelector('.price-field').value) || 0;
+        const productName = row.querySelector('td.fw-bold').innerText;
+        
+        const selectedColors = [];
+        const colorItems = row.querySelectorAll('.color-item');
+        
+        colorItems.forEach(item => {
+            const checkbox = item.querySelector('.color-check');
+            const input = item.querySelector('.customer-meter');
+            
+            if (checkbox.checked) {
+                selectedColors.push({
+                    id: checkbox.dataset.colorId,
+                    name: checkbox.dataset.colorName,
+                    meter: parseFloat(input.value) || 0
+                });
+            }
+        });
+        
+        if (selectedColors.length > 0) {
+            cartData.push({
+                rowId: rowId,
+                productId: productId,
+                name: productName,
+                totalMeters: totalMeters,
+                unitPrice: unitPrice,
+                totalPrice: totalMeters * unitPrice,
+                selectedColors: selectedColors
+            });
+        }
+    });
+    
+    if (cartData.length === 0) {
+        alert('❌ لە کم دوو ببە یەک رەنگ دیاری بکە');
+        return;
+    }
+    
+    document.getElementById('cart-data').value = JSON.stringify(cartData);
+    document.getElementById('invoice-form').submit();
 }
 
 /* PRICE FIELD CHANGE */
@@ -678,7 +733,6 @@ let barcode = '';
 let timer = null;
 
 document.addEventListener('keydown', e => {
-    // Don't capture if user is typing in an input
     if (e.target.tagName === 'INPUT') return;
     
     if(timer) clearTimeout(timer);
@@ -715,6 +769,11 @@ function handleBarcode(code){
         alert('❌ بەرهەم نەدۆزرایەوە');
     }
 }
+
+// Initialize grand total on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateGrandTotal();
+});
 </script>
 
 @endsection

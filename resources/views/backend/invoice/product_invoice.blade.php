@@ -38,6 +38,15 @@
     font-size:14px;
     line-height:1.8;
 }
+
+.color-badge {
+    display: inline-block;
+    background: #e9ecef;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    margin: 2px;
+}
 </style>
 
 <div class="content">
@@ -45,9 +54,9 @@
 
 <div class="row mb-2">
     <div class="col-12 text-end">
-            <h4 class="page-title">پسوڵەی کڕیار</h4>
-        </div>
+        <h4 class="page-title">پسوڵەی کڕیار</h4>
     </div>
+</div>
 
 <div class="card">
 <div class="card-body" style="direction:rtl">
@@ -61,9 +70,6 @@
             <strong>بەرواری پسوڵە:</strong>
             {{ date('Y/m/d') }}
         </p>
-
-        
-
 
         <p class="mt-2">
             <strong>ناوی کڕیار:</strong> {{ $customer->name }}
@@ -91,7 +97,6 @@
                     &nbsp;&nbsp;
                     <i class="fas fa-phone"></i> 07501792101
                 </small>
-               
             </div>
         </div>
     </div>
@@ -104,9 +109,9 @@
 <tr>
     <th>#</th>
     <th>ئایتم</th>
-    <th>تؤپ</th>
+    <th>رەنگەکان</th>
     <th>نرخی متر</th>
-    <th> متر</th>
+    <th>کۆی متر</th>
     <th>کۆی گشتی</th>
 </tr>
 </thead>
@@ -119,17 +124,36 @@
 
 @foreach($contents as $item)
 @php
-    $qtyTotal   = $item->metter * $item->price;
-    $subTotal  += $qtyTotal;
+    // Get product for color info
+    $product = \App\Models\Product::find($item->id);
+    
+    // Total meters from cart (calculated in POS)
+    $totalMeters = $item->options['total_meters'] ?? 0;
+    
+    // Calculate row total: total_meters × unit_price
+    $rowTotal = $totalMeters * $item->price;
+    $subTotal += $rowTotal;
 @endphp
 
 <tr>
     <td>{{ $sl++ }}</td>
-    <td>{{ $item->name }}</td>
-    <td>{{ $item->qty }}</td>
-    <td>{{ number_format($item->price,2) }}</td>
-    <td>{{ number_format($item->metter,2) }}</td>
-    <td>{{ number_format($qtyTotal,2) }}</td>
+    <td>
+        <strong>{{ $item->name }}</strong>
+    </td>
+    <td>
+        @if(isset($item->options['selected_colors']) && count($item->options['selected_colors']) > 0)
+            @foreach($item->options['selected_colors'] as $color)
+                <span class="color-badge">
+                    {{ $color['name'] }}: {{ $color['meter'] }}م
+                </span>
+            @endforeach
+        @else
+            <span class="text-muted">بێ رەنگ</span>
+        @endif
+    </td>
+    <td>{{ number_format($item->price, 2) }}</td>
+    <td>{{ number_format($totalMeters, 2) }}</td>
+    <td>{{ number_format($rowTotal, 2) }}</td>
 </tr>
 @endforeach
 </tbody>
@@ -137,29 +161,28 @@
 </div>
 
 @php
-    $previousDue = $customer->orders->sum('due');
+    $previousDue = $customer->due + $customer->previous_due;
     $grandTotal = $subTotal + $previousDue;
 @endphp
 
 <!-- TOTAL -->
 <div class="row mt-3" style="direction: rtl;">
     <div class="col-12 text-end">
-        <p> قەرزی پێشوو: <b>USD{{ number_format($previousDue,2) }}</b></p>
-        <h3> کۆی گشتی: <b>USD{{ number_format($grandTotal,2) }} </b></h3>
-        <p>قەرزی ماوە: <b id="remaining-due">USD{{ number_format($grandTotal,2) }}</b></p>
+        <p>قەرزی پێشوو: <b>{{ number_format($previousDue, 2) }}</b></p>
+        <h3>کۆی کاڵا: <b>{{ number_format($subTotal, 2) }}</b></h3>
+        <h3>کۆی گشتی: <b>{{ number_format($grandTotal, 2) }}</b></h3>
+        <p>قەرزی ماوە: <b id="remaining-due">{{ number_format($grandTotal, 2) }}</b></p>
     </div>
 </div>
-
 
 <!-- ACTIONS -->
 <div class="mt-4 text-end">
     <button class="btn btn-primary" onclick="window.print()">چاپکردن</button>
     <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#paymentModal">
-        دروستکردنی پسوڵە
+        پارەدان
     </button>
 </div>
 
-</div>
 </div>
 </div>
 </div>
@@ -179,36 +202,38 @@
 <!-- REQUIRED ORDER DATA -->
 <input type="hidden" name="customer_id" value="{{ $customer->id }}">
 <input type="hidden" name="order_date" value="{{ date('Y-m-d') }}">
-<input type="hidden" name="order_status" value="pending">
+<input type="hidden" name="order_status" value="complete">
 <input type="hidden" name="total_products" value="{{ count($contents) }}">
 <input type="hidden" name="sub_total" value="{{ $subTotal }}">
 <input type="hidden" name="total" value="{{ $grandTotal }}">
+<input type="hidden" name="payment_status" value="pending">
 
 <div class="mb-3">
     <label>جۆری پارەدان</label>
-    <select name="payment_status" class="form-select" required>
+    <select name="payment_method" class="form-select" required>
+        <option value="">-- هەڵبژێرە --</option>
         <option value="HandCash">دەستی</option>
         <option value="Cheque">چەک</option>
-        <option value="Due">قەرز</option>
+        <option value="Bank">بانک</option>
     </select>
 </div>
 
 <div class="mb-3">
-    <label>پارەدان</label>
-    <input type="number" name="pay" id="pay-amount" class="form-control" value="0" min="0"
-       step="0.01" >
+    <label>پارەی دراو</label>
+    <input type="number" name="pay" id="pay-amount" class="form-control" value="0" min="0" step="0.01" required>
 </div>
 
-{{-- SEND ITEMS --}}
+<!-- SEND ITEMS WITH METERS -->
 @foreach($contents as $index => $item)
     <input type="hidden" name="items[{{ $index }}][product_id]" value="{{ $item->id }}">
     <input type="hidden" name="items[{{ $index }}][quantity]" value="{{ $item->qty }}">
     <input type="hidden" name="items[{{ $index }}][unitcost]" value="{{ $item->price }}">
-    <input type="hidden" name="items[{{ $index }}][metter]" value="{{ $item->metter }}">
+    <input type="hidden" name="items[{{ $index }}][meters]" value="{{ $item->options['total_meters'] ?? 0 }}">
+    <input type="hidden" name="items[{{ $index }}][selected_colors]" value="{{ json_encode($item->options['selected_colors'] ?? []) }}">
 @endforeach
 
 <div class="text-center mt-3">
-    <p>USDقەرزی ماوە: <b id="dynamic-remaining">{{ number_format($grandTotal,2) }}</b></p>
+    <p>قەرزی ماوە: <b id="dynamic-remaining">{{ number_format($grandTotal, 2) }}</b></p>
     <button type="submit" class="btn btn-primary">تەواوبوو</button>
 </div>
 

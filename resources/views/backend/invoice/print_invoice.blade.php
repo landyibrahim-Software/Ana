@@ -58,12 +58,19 @@
     font-size: 14px;
     padding: 5px 10px;
 }
+
+.color-badge {
+    display: inline-block;
+    background: #e9ecef;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    margin: 2px;
+}
 </style>
 
 <div class="content">
 <div class="container-fluid">
-
-
 
 <div class="card">
 <div class="card-body">
@@ -78,16 +85,14 @@
             <h2>کوتاڵی نزا</h2>
             <div class="phone-list">
                 <small><i class="fas fa-phone"></i> 07708130060 &nbsp; <i class="fas fa-phone"></i> 07501792101</small>
-               
             </div>
         </div>
     </div>
 
     <!-- RIGHT: Invoice Info -->
     <div class="text-right">
-        <p><strong>بەرواری پسوڵە:</strong> {{ date('d-F-Y', strtotime($order->order_date)) }}</p>
-        <p><strong>ژمارەی پسوڵە:</strong> 
-        {{ $order->invoice_no }}</p>
+        <p><strong>بەرواری پسوڵە:</strong> {{ \Carbon\Carbon::parse($order->order_date)->format('d-m-Y') }}</p>
+        <p><strong>ژمارەی پسوڵە:</strong> {{ $order->invoice_no }}</p>
     </div>
 
 </div>
@@ -104,8 +109,8 @@
         <p><strong>مۆبایل:</strong> {{ $order->customer->phone ?? '—' }}</p>
     </div>
 
-
 </div>
+
 <!-- ITEMS TABLE -->
 <div class="table-responsive mt-4">
 <table class="table table-bordered text-center">
@@ -113,9 +118,9 @@
 <tr>
     <th>#</th>
     <th>ئایتم</th>
-    <th>تۆپ</th>
+    <th>رەنگەکان</th>
     <th>نرخی متر</th>
-     <th>متر</th>
+    <th>کۆی متر</th>
     <th>کۆی گشتی</th>
 </tr>
 </thead>
@@ -128,14 +133,27 @@
 
 @foreach($order->orderItems as $item)
 @php
-    $rowTotal = $item->quantity * $item->unitcost;
+    // Calculate total: meters × unitcost
+    $rowTotal = ($item->meters ?? $item->quantity) * $item->unitcost;
     $subTotal += $rowTotal;
 @endphp
 <tr>
     <td>{{ $sl++ }}</td>
-    <td>{{ optional($item->product)->product_name ?? 'Deleted Product' }}</td>
-    <td>{{ $item->quantity }}</td>
+    <td><strong>{{ optional($item->product)->product_name ?? 'Deleted Product' }}</strong></td>
+    <td>
+        @if($item->selected_colors)
+            @php $colors = json_decode($item->selected_colors, true); @endphp
+            @foreach($colors as $color)
+                <span class="color-badge">
+                    {{ $color['name'] }}: {{ $color['meter'] }}م
+                </span>
+            @endforeach
+        @else
+            <span class="text-muted">بێ رەنگ</span>
+        @endif
+    </td>
     <td>{{ number_format($item->unitcost, 2) }}</td>
+    <td>{{ number_format($item->meters ?? $item->quantity, 2) }}</td>
     <td>{{ number_format($rowTotal, 2) }}</td>
 </tr>
 @endforeach
@@ -144,20 +162,22 @@
 </table>
 </div>
 
-
-
 <!-- TOTAL SUMMARY -->
+@php
+    $previousDue = $order->customer->due + $order->customer->previous_due;
+    $grandTotal = $subTotal + $previousDue;
+@endphp
+
 <div class="row mt-3">
     <div class="col-sm-6"></div>
     <div class="col-sm-6 text-end">
-        <p> USDقەرزی پێشوو: <b>{{ number_format($previousDue, 2) }}</b></p>
-        <p> USDکۆی کاڵا: <b>{{ number_format($order->sub_total, 2) }}</b></p>
-        <h4>USDکۆی گشتی: <b>{{ number_format($order->sub_total + $previousDue, 2) }}</b></h4>
-        <p>USDپارەی دراو: <b>{{ number_format($order->pay, 2) }}</b></p>
-        <p>USDقەرزی ماوە: <b>{{ number_format($grandTotal - $order->pay, 2) }}</b></p>
+        <p>قەرزی پێشوو: <b>{{ number_format($previousDue, 2) }}</b></p>
+        <p>کۆی کاڵا: <b>{{ number_format($subTotal, 2) }}</b></p>
+        <h4>کۆی گشتی: <b>{{ number_format($grandTotal, 2) }}</b></h4>
+        <p>پارەی دراو: <b>{{ number_format($order->pay, 2) }}</b></p>
+        <p>قەرزی ماوە: <b>{{ number_format($grandTotal - $order->pay, 2) }}</b></p>
     </div>
 </div>
-
 
 <!-- PRINT -->
 <div class="mt-4 text-end d-print-none">

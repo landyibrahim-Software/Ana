@@ -131,70 +131,81 @@ class PosController extends Controller
     /* ===============================
         CREATE INVOICE & UPDATE STOCK
     ================================ */
-    public function CreateInvoice(Request $request)
-    {
-        $contents = Cart::content();
-        $customer = Customer::findOrFail($request->customer_id);
+   public function CreateInvoice(Request $request)
+{
+    $contents = Cart::content();
+    $customer = Customer::findOrFail($request->customer_id);
 
-        if ($contents->count() == 0) {
+    if ($contents->count() == 0) {
+        return redirect()->back()->with([
+            'message' => 'Cart is empty',
+            'alert-type' => 'error'
+        ]);
+    }
+
+    // Calculate total from cart with meters
+    $grandTotal = 0;
+    foreach ($contents as $item) {
+        $totalMeters = $item->options['total_meters'] ?? 0;
+        $grandTotal += $totalMeters * $item->price;
+    }
+
+    // Add previous due
+    $previousDue = $customer->due + $customer->previous_due;
+    $grandTotal += $previousDue;
+
+    // Create Order
+    $order = Order::create([
+        'customer_id'    => $customer->id,
+        'order_date'     => now()->format('Y-m-d'),
+        'total_products' => $contents->count(),
+        'sub_total'      => $grandTotal - $previousDue,
+        'invoice_no'     => 'INV-' . time(),
+        'total'          => $grandTotal,
+        'payment_status' => 'pending',
+        'pay'            => 0,
+        'due'            => $grandTotal,
+        'order_status'   => 'pending',
+    ]);
+
+    // Create Order Details with color info
+    foreach ($contents as $item) {
+        $product = Product::find($item->id);
+
+        if (!$product) {
             return redirect()->back()->with([
-                'message' => 'Cart is empty',
+                'message' => 'Product not found: ' . $item->name,
                 'alert-type' => 'error'
             ]);
         }
 
-        // Create Order
-        $order = Order::create([
-            'customer_id'    => $customer->id,
-            'order_date'     => now()->format('Y-m-d'),
-            'total_products' => $contents->count(),
-            'sub_total'      => Cart::subtotal(),
-            'invoice_no'     => 'INV-' . time(),
-            'total'          => Cart::total(),
-            'payment_status' => 'pending',
-            'pay'            => 0,
-            'due'            => Cart::total(),
-            'order_status'   => 'pending',
-        ]);
-
-        // Create Order Details & Update Stock
-        foreach ($contents as $item) {
-            $product = Product::find($item->id);
-
-            if (!$product) {
-                return redirect()->back()->with([
-                    'message' => 'Product not found: ' . $item->name,
-                    'alert-type' => 'error'
-                ]);
-            }
-
-            if ($item->qty > $product->product_store) {
-                return redirect()->back()->with([
-                    'message' => 'Not enough stock for ' . $product->product_name,
-                    'alert-type' => 'error'
-                ]);
-            }
-
-            // Get total meters from cart options (if color selection was used)
-            $totalMeters = $item->options->total_meters ?? $item->qty;
-
-            // Create order detail
-            Orderdetails::create([
-                'order_id'   => $order->id,
-                'product_id' => $product->id,
-                'quantity'   => $item->qty,
-                'unitcost'   => $item->price,
-                'meters'     => $totalMeters, // Store total meters from color selection
+        if ($item->qty > $product->product_store) {
+            return redirect()->back()->with([
+                'message' => 'Not enough stock for ' . $product->product_name,
+                'alert-type' => 'error'
             ]);
-
-            // Reduce stock
-            $product->product_store -= $item->qty;
-            $product->save();
         }
 
-        // Clear cart AFTER everything is saved
-        Cart::destroy();
+        $totalMeters = $item->options['total_meters'] ?? 0;
+        $selectedColors = json_encode($item->options['selected_colors'] ?? []);
 
-        return view('backend.invoice.product_invoice', compact('order', 'contents', 'customer'));
+        Orderdetails::create([
+            'order_id'        => $order->id,
+            'product_id'      => $product->id,
+            'quantity'        => $item->qty,
+            'unitcost'        => $item->price,
+            'meters'          => $totalMeters,
+            'selected_colors' => $selectedColors,
+        ]);
+
+        // Reduce stock
+        $product->product_store -= $item->qty;
+        $product->save();
     }
+
+    // Clear cart
+    Cart::destroy();
+
+    return view('backend.invoice.product_invoice', compact('order', 'contents', 'customer'));
+}
 }
