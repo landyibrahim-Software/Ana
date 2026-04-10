@@ -233,10 +233,8 @@ public function CreateInvoice(Request $request)
             'total'           => $itemTotal,
         ]);
 
-        // Reduce stock
-        $product->product_store -= $item->qty;
-        $product->save();
-    
+        // ❌ REMOVED: Stock reduction happens in FinalInvoice only!
+        // Do NOT reduce stock here - it will be reduced in FinalInvoice based on color count
     }
 
     // Clear cart
