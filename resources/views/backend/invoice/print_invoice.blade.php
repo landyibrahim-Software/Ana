@@ -133,7 +133,7 @@
 
 @foreach($order->orderItems as $item)
 @php
-    // Calculate total: meters × unitcost
+    
     $rowTotal = ($item->meters ?? $item->quantity) * $item->unitcost;
     $subTotal += $rowTotal;
 @endphp
@@ -163,11 +163,16 @@
 </div>
 
 <!-- TOTAL SUMMARY -->
-@@php
-    // CORRECT: Use the previous_due stored in THIS order
-    $previousDue = $order->previous_due;
-    $grandTotal = $subTotal + $previousDue;
+@php
+$previousDue = $order->previous_due;
+$subTotal = 0;
+foreach($order->orderItems as $item) {
+    $rowTotal = ($item->meters ?? $item->quantity) * $item->unitcost;
+    $subTotal += $rowTotal;
+}
+$grandTotal = $subTotal + $previousDue;
 @endphp
+
 <div class="row mt-3">
     <div class="col-sm-6"></div>
     <div class="col-sm-6 text-end">
