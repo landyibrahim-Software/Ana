@@ -9,7 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      *
-     * @return void
+     * @[email protected]
      */
     public function up()
     {
@@ -19,6 +19,9 @@ return new class extends Migration
             $table->integer('product_id');
             $table->string('quantity')->nullable();
             $table->string('unitcost')->nullable();
+            $table->decimal('meters', 10, 2)->nullable()->default(0);
+            $table->longText('selected_colors')->nullable();
+            $table->decimal('metter_price', 10, 2)->nullable()->default(0);
             $table->string('total')->nullable();
             $table->timestamps();
         });

@@ -85,12 +85,7 @@ class PosController extends Controller
         return response()->json(['status' => 'success']);
     }
 
-    /* ===============================
-        UPDATE CART QTY
-    ================================ */
-  /* ===============================
-    UPDATE CART QTY
-================================ */
+
 /* ===============================
     UPDATE CART QTY
 ================================ */
@@ -162,7 +157,7 @@ public function CartUpdate(Request $request, $rowId)
     /* ===============================
         CREATE INVOICE & UPDATE STOCK
     ================================ */
- public function CreateInvoice(Request $request)
+public function CreateInvoice(Request $request)
 {
     $contents = Cart::content();
     $customer = Customer::findOrFail($request->customer_id);
@@ -188,7 +183,7 @@ public function CartUpdate(Request $request, $rowId)
     $previousDue = $customer->due + $customer->previous_due;
     $grandTotal = $subTotal + $previousDue;
 
-    // Create Order with metter_price
+    // Create Order
     $order = Order::create([
         'customer_id'    => $customer->id,
         'order_date'     => now()->format('Y-m-d'),
@@ -200,7 +195,7 @@ public function CartUpdate(Request $request, $rowId)
         'pay'            => 0,
         'due'            => $grandTotal,
         'order_status'   => 'pending',
-        'metter_price'   => 0,  // Default value for metter_price
+        'metter_price'   => 0,
     ]);
 
     // Create Order Details with color info
@@ -223,6 +218,7 @@ public function CartUpdate(Request $request, $rowId)
 
         $totalMeters = $item->options['total_meters'] ?? 0;
         $selectedColors = json_encode($item->options['selected_colors'] ?? []);
+        $itemTotal = $totalMeters * $item->price;
 
         Orderdetails::create([
             'order_id'        => $order->id,
@@ -231,6 +227,8 @@ public function CartUpdate(Request $request, $rowId)
             'unitcost'        => $item->price,
             'meters'          => $totalMeters,
             'selected_colors' => $selectedColors,
+            'metter_price'    => 0,
+            'total'           => $itemTotal,
         ]);
 
         // Reduce stock

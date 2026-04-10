@@ -13,6 +13,9 @@ class Orderdetails extends Model
         'product_id',
         'quantity',
         'unitcost',
+        'meters',
+        'selected_colors',
+        'metter_price',
         'total',
     ];
 
