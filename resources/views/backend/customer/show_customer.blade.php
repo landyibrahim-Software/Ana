@@ -47,16 +47,16 @@
                         </div>
                     </div>
 
-                   <!-- Card 2: Total Money (Previous Due + Orders) -->
-<div class="col-md-3">
-    <div class="card bg-warning bg-opacity-10 border-warning">
-        <div class="card-body">
-            <h6 class="card-title text-warning mb-3">کۆی پێداویستی</h6>
-            <h3 class="text-warning mb-0">${{ number_format($total_spent_display, 2) }}</h3>
-            <small class="text-muted">قەرزی سەرەتایی + داواکاریەکان</small>
-        </div>
-    </div>
-</div>
+                    <!-- Card 2: Total Money (Previous Due + Orders) -->
+                    <div class="col-md-3">
+                        <div class="card bg-warning bg-opacity-10 border-warning">
+                            <div class="card-body">
+                                <h6 class="card-title text-warning mb-3">کۆی پێداویستی</h6>
+                                <h3 class="text-warning mb-0">${{ number_format($total_spent, 2) }}</h3>
+                                <small class="text-muted">قەرزی سەرەتایی + داواکاریەکان</small>
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- Card 3: Total Paid -->
                     <div class="col-md-3">
@@ -99,7 +99,7 @@
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <label class="form-label">مبلغ پارە (دۆلار)</label>
-                                        <input type="number" name="payment_amount" class="form-control" style="height: 45px;" step="0.01" min="0" max="{{ $total_due }}" placeholder="مبلغی پارە بنوسە" required>
+                                        <input type="number" name="payment_amount" class="form-control" style="height: 45px;" step="0.01" min="0" placeholder="مبلغی پارە بنوسە" required>
                                         <small class="text-muted">گەیاندی: ${{ number_format($total_due, 2) }}</small>
                                     </div>
                                 </div>
