@@ -208,6 +208,19 @@
 <input type="hidden" name="total" value="{{ $grandTotal }}">
 <input type="hidden" name="payment_status" value="pending">
 
+<!-- SEND ITEMS WITH METERS -->
+@foreach($contents as $index => $item)
+    @php
+        $selectedColors = $item->options['selected_colors'] ?? [];
+        $selectedColorsJson = json_encode($selectedColors);
+    @endphp
+    <input type="hidden" name="items[{{ $index }}][product_id]" value="{{ $item->id }}">
+    <input type="hidden" name="items[{{ $index }}][quantity]" value="{{ $item->qty }}">
+    <input type="hidden" name="items[{{ $index }}][unitcost]" value="{{ $item->price }}">
+    <input type="hidden" name="items[{{ $index }}][meters]" value="{{ $item->options['total_meters'] ?? 0 }}">
+    <input type="hidden" name="items[{{ $index }}][selected_colors]" value="{{ $selectedColorsJson }}">
+@endforeach
+
 <div class="mb-3">
     <label>جۆری پارەدان</label>
     <select name="payment_method" class="form-select" required>
@@ -222,15 +235,6 @@
     <label>پارەی دراو</label>
     <input type="number" name="pay" id="pay-amount" class="form-control" value="0" min="0" step="0.01" required>
 </div>
-
-<!-- SEND ITEMS WITH METERS -->
-@foreach($contents as $index => $item)
-    <input type="hidden" name="items[{{ $index }}][product_id]" value="{{ $item->id }}">
-    <input type="hidden" name="items[{{ $index }}][quantity]" value="{{ $item->qty }}">
-    <input type="hidden" name="items[{{ $index }}][unitcost]" value="{{ $item->price }}">
-    <input type="hidden" name="items[{{ $index }}][meters]" value="{{ $item->options['total_meters'] ?? 0 }}">
-    <input type="hidden" name="items[{{ $index }}][selected_colors]" value="{{ json_encode($item->options['selected_colors'] ?? []) }}">
-@endforeach
 
 <div class="text-center mt-3">
     <p>قەرزی ماوە: <b id="dynamic-remaining">{{ number_format($grandTotal, 2) }}</b></p>
