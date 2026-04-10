@@ -36,29 +36,51 @@
             <!-- Financial Summary Cards -->
             <div class="col-md-9">
                 <div class="row">
-                    <!-- Total Orders Card -->
+                    @php
+                        // CARD 1: Total Orders Count
+                        $order_count = $customer->orders->count();
+                        
+                        // CARD 2: Total Money Spent (previous_due + all orders subtotal)
+                        $total_spent = $customer->previous_due;
+                        foreach ($customer->orders as $order) {
+                            $total_spent += $order->sub_total;
+                        }
+                        
+                        // CARD 3: Total Paid (all payments)
+                        $total_paid_all = Payment::where('customer_id', $customer->id)->sum('payment_amount');
+                        
+                        // Also add payments from orders (order->pay field)
+                        foreach ($customer->orders as $order) {
+                            $total_paid_all += ($order->pay ?? 0);
+                        }
+                        
+                        // CARD 4: Total Due Remaining
+                        $total_due = max($total_spent - $total_paid_all, 0);
+                    @endphp
+
+                    <!-- Card 1: Total Orders -->
                     <div class="col-md-3">
                         <div class="card bg-info bg-opacity-10 border-info">
                             <div class="card-body">
                                 <h6 class="card-title text-info mb-3">کۆی داواکاریەکان</h6>
-                                <h3 class="text-info mb-0">{{ $customer->orders->count() }}</h3>
+                                <h3 class="text-info mb-0">{{ $order_count }}</h3>
                                 <small class="text-muted">جموو داواکاریەکان</small>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Total Money Card -->
+                    <!-- Card 2: Total Money (Previous Due + Orders) -->
                     <div class="col-md-3">
                         <div class="card bg-warning bg-opacity-10 border-warning">
                             <div class="card-body">
                                 <h6 class="card-title text-warning mb-3">کۆی پێداویستی</h6>
-                                <h3 class="text-warning mb-0">${{ number_format($total_money, 2) }}</h3>
-                                <small class="text-muted">قەرزی سەرەتایی</small>
+                                <h3 class="text-warning mb-0">${{ number_format($total_spent, 2) }}</h3>
+                                <small class="text-muted">قەرزی سەرەتایی + داواکاریەکان</small>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Total Paid Card -->
+                    <!-- Card 3: Total Paid -->
                     <div class="col-md-3">
                         <div class="card bg-success bg-opacity-10 border-success">
                             <div class="card-body">
@@ -69,7 +91,7 @@
                         </div>
                     </div>
 
-                    <!-- Total Due Card -->
+                    <!-- Card 4: Total Due Remaining -->
                     <div class="col-md-3">
                         <div class="card bg-danger bg-opacity-10 border-danger">
                             <div class="card-body">
@@ -99,7 +121,7 @@
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <label class="form-label">مبلغ پارە (دۆلار)</label>
-                                        <input type="number" name="payment_amount" class="form-control" style="height: 45px;" step="0.01" min="0" max="{{ $total_due }}" placeholder="مبلغی پارە بنووسە" required>
+                                        <input type="number" name="payment_amount" class="form-control" style="height: 45px;" step="0.01" min="0" max="{{ $total_due }}" placeholder="مبلغی پارە بنوسە" required>
                                         <small class="text-muted">گەیاندی: ${{ number_format($total_due, 2) }}</small>
                                     </div>
                                 </div>
@@ -129,12 +151,12 @@
                     <div class="card-body">
                         <div class="table-responsive">
                             <table class="table table-striped table-hover mb-0">
-                                <thead class="table-light">
+                                <thead class="table-dark">
                                     <tr>
-                                        <th>جۆر</th>
-                                        <th>بڕ</th>
-                                        <th>دۆخ</th>
-                                        <th>بەرواری</th>
+                                        <th style="color: white;">جۆر</th>
+                                        <th style="color: white;">بڕ</th>
+                                        <th style="color: white;">دۆخ</th>
+                                        <th style="color: white;">بەرواری</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -146,7 +168,7 @@
                                             $combined_records->push([
                                                 'type' => 'order',
                                                 'id' => $order->id,
-                                                'amount' => $order->total_amount ?? 0,
+                                                'amount' => $order->sub_total ?? 0,
                                                 'date' => $order->created_at,
                                                 'data' => $order
                                             ]);
@@ -171,28 +193,28 @@
                                         @if($record['type'] == 'order')
                                             @php
                                                 $order = $record['data'];
-                                                $order_total = $order->total_amount;
-                                                $order_paid = $order->paid_amount;
+                                                $order_total = $order->sub_total ?? 0;
+                                                $order_paid = $order->pay ?? 0;
                                                 $order_due = max($order_total - $order_paid, 0);
                                                 $is_paid = $order_due == 0;
                                             @endphp
                                             <tr>
-                                                <td><span class="badge badge-info">داواکاری #{{ $order->id }}</span></td>
-                                                <td>${{ number_format($order_total, 2) }}</td>
+                                                <td><span class="badge bg-info text-white">داواکاری #{{ $order->id }}</span></td>
+                                                <td><strong>${{ number_format($order_total, 2) }}</strong></td>
                                                 <td>
                                                     @if($is_paid)
-                                                        <span class="badge badge-success">✓ پارە دراو</span>
+                                                        <span class="badge bg-success text-white">✓ پارە دراو</span>
                                                     @else
-                                                        <span class="badge badge-danger">✗ قەرز</span>
+                                                        <span class="badge bg-danger text-white">✗ قەرز</span>
                                                     @endif
                                                 </td>
                                                 <td>{{ $order->created_at->format('Y-m-d H:i') }}</td>
                                             </tr>
                                         @else
                                             <tr class="table-success">
-                                                <td><span class="badge badge-success">پارەدان</span></td>
+                                                <td><span class="badge bg-success text-white">پارەدان</span></td>
                                                 <td><strong class="text-success">${{ number_format($record['amount'], 2) }}</strong></td>
-                                                <td><span class="badge badge-success">✓ قبوڵ کرا</span></td>
+                                                <td><span class="badge bg-success text-white">✓ قبوڵ کرا</span></td>
                                                 <td>{{ \Carbon\Carbon::parse($record['date'])->format('Y-m-d H:i') }}</td>
                                             </tr>
                                         @endif

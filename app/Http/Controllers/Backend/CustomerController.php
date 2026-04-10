@@ -19,42 +19,7 @@ class CustomerController extends Controller
 public function ShowCustomer($id)
 {
     $customer = Customer::with('orders', 'payments')->findOrFail($id);
-
-    $total_orders = 0;
-    $total_paid   = 0;
-
-    foreach ($customer->orders as $order) {
-
-        // SAFETY: convert nulls to 0
-        $qty         = $order->qty ?? 0;
-        $price       = $order->price ?? 0;
-        $paid        = $order->pay ?? 0;
-
-        // CALCULATE ORDER TOTAL
-        $order_total = ($qty * $price);
-
-        // ATTACH for Blade
-        $order->total_amount = $order_total;
-        $order->paid_amount  = $paid;
-
-        // GLOBAL TOTALS
-        $total_orders += $order_total;
-        $total_paid   += $paid;
-    }
-
-    // Card 1: Total Money = Previous Due ONLY
-    $total_money = $customer->previous_due;
-
-    // Card 2: Total Paid = All payments made
-    $total_paid_all = $customer->payments->sum('payment_amount');
-
-    // Card 3: Total Due = Previous Due - All Payments
-    $total_due = max($total_money - $total_paid_all, 0);
-
-    return view(
-        'backend.customer.show_customer',
-        compact('customer', 'total_paid_all', 'total_due', 'total_money')
-    );
+    return view('backend.customer.show_customer', compact('customer'));
 }
 
 
