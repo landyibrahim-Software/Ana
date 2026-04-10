@@ -28,6 +28,9 @@ public function FinalInvoice(Request $request)
     // Current order due = total - pay
     $currentOrderDue = $currentOrderTotal - $pay;
 
+    // Calculate previous due BEFORE creating order
+    $previousDue = $customer->due + $customer->previous_due;
+
     // Save the order
     $order = Order::create([
         'customer_id'    => $customer->id,
@@ -40,6 +43,7 @@ public function FinalInvoice(Request $request)
         'payment_status' => $request->payment_status,
         'pay'            => $pay,
         'due'            => $currentOrderDue,
+        'previous_due'   => $previousDue, // ✅ Store previous due in order
         'metter_price'   => 0,
     ]);
 
@@ -106,29 +110,22 @@ public function FinalInvoice(Request $request)
 
 
 
-
 public function PrintInvoice($id)
 {
     // Load order with customer and order items
-     $order = Order::with([
+    $order = Order::with([
         'customer',
-        'orderItems.product' // ✅ THIS LINE FIXES EVERYTHING
+        'orderItems.product'
     ])->findOrFail($id);
 
-
-    // Calculate previous due: all orders before this one for this customer
-    $previousDue = Order::where('customer_id', $order->customer_id)
-                        ->where('id', '<', $order->id)
-                        ->sum('due');
-
+    // ✅ CORRECT: Use the previous_due stored in this order when it was created
+    $previousDue = $order->previous_due;
+    
     // Grand total = current order subtotal + previous due
     $grandTotal = $order->sub_total + $previousDue;
 
     return view('backend.invoice.print_invoice', compact('order', 'previousDue', 'grandTotal'));
 }
-
-
-
 
 
 
@@ -258,4 +255,3 @@ $pdf = Pdf::loadView(
 
 
 }
- 

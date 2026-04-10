@@ -19,6 +19,7 @@ class Order extends Model
         'payment_status',
         'pay',
         'due',
+        'previous_due',
         'metter_price',
     ];
 
