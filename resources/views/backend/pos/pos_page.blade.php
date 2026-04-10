@@ -400,6 +400,7 @@ body {
                value="{{ $cart->price }}"
                data-rowid="{{ $cart->rowId }}"
                data-buying="{{ $cart->options->buying_price ?? 0 }}"
+               data-original-price="{{ $cart->price }}"
                min="0"
                step="0.01"
                onchange="updateTotalPrice(this)"
@@ -414,9 +415,10 @@ body {
 
     {{-- ACTIONS --}}
     <td>
-        <form method="POST" action="{{ url('/cart-update/'.$cart->rowId) }}" style="display:inline;" onsubmit="saveColorDataBeforeSubmit(event)">
+        <form method="POST" action="{{ url('/cart-update/'.$cart->rowId) }}" style="display:inline;" onsubmit="saveColorDataAndPriceBeforeSubmit(event)">
             @csrf
             <input type="hidden" name="qty" value="{{ $cart->qty }}">
+            <input type="hidden" name="price" id="price-input-{{ $cart->rowId }}" value="{{ $cart->price }}">
             <input type="hidden" name="color_data" id="color-data-{{ $cart->rowId }}" value="">
             <button type="submit" class="btn btn-success btn-sm px-3" title="Save">
                 <i class="fas fa-check"></i>
@@ -678,8 +680,8 @@ function updateGrandTotal() {
     document.getElementById('grand-total').innerText = grandTotal.toFixed(2);
 }
 
-/* SAVE COLOR DATA BEFORE FORM SUBMIT */
-function saveColorDataBeforeSubmit(event) {
+/* SAVE COLOR DATA AND PRICE BEFORE FORM SUBMIT */
+function saveColorDataAndPriceBeforeSubmit(event) {
     event.preventDefault();
     
     const form = event.target;
@@ -691,6 +693,7 @@ function saveColorDataBeforeSubmit(event) {
         return;
     }
     
+    // Collect color data
     const selectedColors = [];
     let totalMeters = 0;
     
@@ -709,12 +712,20 @@ function saveColorDataBeforeSubmit(event) {
         }
     });
     
+    // Set color data
     const colorDataInput = form.querySelector('[name="color_data"]');
     if (colorDataInput) {
         colorDataInput.value = JSON.stringify({
             selected_colors: selectedColors,
             total_meters: totalMeters
         });
+    }
+    
+    // Set price
+    const priceInput = row.querySelector('.price-field');
+    const priceHiddenInput = form.querySelector('[name="price"]');
+    if (priceInput && priceHiddenInput) {
+        priceHiddenInput.value = parseFloat(priceInput.value) || 0;
     }
     
     form.submit();

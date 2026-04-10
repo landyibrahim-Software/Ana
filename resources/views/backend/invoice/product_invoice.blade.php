@@ -76,7 +76,7 @@
         </p>
 
         <p>
-            <strong>ناوی فرۆشگا:</strong> {{ $customer->shopname ?? '—' }}
+            <strong>نا��ی فرۆشگا:</strong> {{ $customer->shopname ?? '—' }}
         </p>
 
         <p>
@@ -124,14 +124,12 @@
 
 @foreach($contents as $item)
 @php
-    // Get product for color info
-    $product = \App\Models\Product::find($item->id);
-    
-    // Total meters from cart (calculated in POS)
-    $totalMeters = $item->options['total_meters'] ?? 0;
+    // Get meter data from cart options
+    $totalMeters = floatval($item->options['total_meters'] ?? 0);
+    $selectedColors = $item->options['selected_colors'] ?? [];
     
     // Calculate row total: total_meters × unit_price
-    $rowTotal = $totalMeters * $item->price;
+    $rowTotal = $totalMeters * floatval($item->price);
     $subTotal += $rowTotal;
 @endphp
 
@@ -141,10 +139,10 @@
         <strong>{{ $item->name }}</strong>
     </td>
     <td>
-        @if(isset($item->options['selected_colors']) && count($item->options['selected_colors']) > 0)
-            @foreach($item->options['selected_colors'] as $color)
+        @if(is_array($selectedColors) && count($selectedColors) > 0)
+            @foreach($selectedColors as $color)
                 <span class="color-badge">
-                    {{ $color['name'] }}: {{ $color['meter'] }}م
+                    {{ $color['name'] ?? $color['color_name'] }}: {{ $color['meter'] }}م
                 </span>
             @endforeach
         @else
@@ -208,17 +206,18 @@
 <input type="hidden" name="total" value="{{ $grandTotal }}">
 <input type="hidden" name="payment_status" value="pending">
 
-<!-- SEND ITEMS WITH METERS -->
+<!-- SEND ITEMS WITH METERS AND COLORS -->
 @foreach($contents as $index => $item)
     @php
-        $selectedColors = $item->options['selected_colors'] ?? [];
-        $selectedColorsJson = json_encode($selectedColors);
+        $itemTotalMeters = floatval($item->options['total_meters'] ?? 0);
+        $itemSelectedColors = $item->options['selected_colors'] ?? [];
+        $itemSelectedColorsJson = json_encode($itemSelectedColors);
     @endphp
     <input type="hidden" name="items[{{ $index }}][product_id]" value="{{ $item->id }}">
     <input type="hidden" name="items[{{ $index }}][quantity]" value="{{ $item->qty }}">
     <input type="hidden" name="items[{{ $index }}][unitcost]" value="{{ $item->price }}">
-    <input type="hidden" name="items[{{ $index }}][meters]" value="{{ $item->options['total_meters'] ?? 0 }}">
-    <input type="hidden" name="items[{{ $index }}][selected_colors]" value="{{ $selectedColorsJson }}">
+    <input type="hidden" name="items[{{ $index }}][meters]" value="{{ $itemTotalMeters }}">
+    <input type="hidden" name="items[{{ $index }}][selected_colors]" value="{{ $itemSelectedColorsJson }}">
 @endforeach
 
 <div class="mb-3">

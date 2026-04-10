@@ -126,10 +126,13 @@ public function CartUpdate(Request $request, $rowId)
         }
     }
 
-    // Update cart - THIS IS THE KEY PART
+    // Get the new price from the request, or keep the old one
+    $newPrice = $request->has('price') ? floatval($request->price) : $item->price;
+
+    // Update cart - with NEW PRICE support
     Cart::update($rowId, [
         'qty' => $request->qty ?? $item->qty,
-        'price' => $item->price, // Don't change price
+        'price' => $newPrice, // ✅ USE NEW PRICE or keep old
         'options' => $options    // Keep all options
     ]);
 
@@ -138,7 +141,6 @@ public function CartUpdate(Request $request, $rowId)
         'alert-type' => 'success'
     ]);
 }
-
     /* ===============================
         REMOVE CART ITEM
     ================================ */
