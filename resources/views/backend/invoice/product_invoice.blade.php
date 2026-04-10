@@ -76,7 +76,7 @@
         </p>
 
         <p>
-            <strong>نا��ی فرۆشگا:</strong> {{ $customer->shopname ?? '—' }}
+            <strong>ناوی فرۆشگا:</strong> {{ $customer->shopname ?? '—' }}
         </p>
 
         <p>
@@ -205,6 +205,7 @@
 <input type="hidden" name="sub_total" value="{{ $subTotal }}">
 <input type="hidden" name="total" value="{{ $grandTotal }}">
 <input type="hidden" name="payment_status" value="pending">
+<input type="hidden" name="previous_due" value="{{ $previousDue }}">
 
 <!-- SEND ITEMS WITH METERS AND COLORS -->
 @foreach($contents as $index => $item)

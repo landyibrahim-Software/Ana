@@ -28,21 +28,8 @@ public function FinalInvoice(Request $request)
     // Current order due = total - pay
     $currentOrderDue = $currentOrderTotal - $pay;
 
-    // ✅ CORRECT: Calculate previous due same way as product_invoice
-    // Previous due = total spent (previous_due + all orders) - total paid
-    $total_spent = $customer->previous_due;
-    foreach ($customer->orders as $order) {
-        $total_spent += $order->sub_total;
-    }
-    
-    // Total paid = all payments from Payment table + order payments
-    $total_paid_all = \App\Models\Payment::where('customer_id', $customer->id)->sum('payment_amount');
-    foreach ($customer->orders as $order) {
-        $total_paid_all += ($order->pay ?? 0);
-    }
-    
-    // Previous due remaining = total spent - total paid
-    $previousDue = max($total_spent - $total_paid_all, 0);
+    // ✅ CORRECT: Use the previousDue passed from product_invoice
+    $previousDue = floatval($request->previous_due ?? 0);
 
     // Save the order
     $order = Order::create([
@@ -98,7 +85,6 @@ public function FinalInvoice(Request $request)
         }
         
         // 🔥 REDUCE تۆپ (ROLLS) FROM PRODUCT STORE BY COUNT OF COLORS
-        // Example: If you selected 4 colors, reduce product_store by 4
         if ($colorCount > 0) {
             $product = Product::find($item['product_id']);
             if ($product) {
@@ -109,7 +95,6 @@ public function FinalInvoice(Request $request)
     }
 
     // **Update customer's total due**
-    // Add this order's due to customer's total due
     $customer->update([
         'due' => $customer->due + $currentOrderDue
     ]);
