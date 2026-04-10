@@ -28,9 +28,21 @@ public function FinalInvoice(Request $request)
     // Current order due = total - pay
     $currentOrderDue = $currentOrderTotal - $pay;
 
-    // ✅ CORRECT: Use only customer's previous_due (don't add current due)
-    // previous_due = customer's balance from before all orders
-    $previousDue = $customer->previous_due;
+    // ✅ CORRECT: Calculate previous due same way as product_invoice
+    // Previous due = total spent (previous_due + all orders) - total paid
+    $total_spent = $customer->previous_due;
+    foreach ($customer->orders as $order) {
+        $total_spent += $order->sub_total;
+    }
+    
+    // Total paid = all payments from Payment table + order payments
+    $total_paid_all = \App\Models\Payment::where('customer_id', $customer->id)->sum('payment_amount');
+    foreach ($customer->orders as $order) {
+        $total_paid_all += ($order->pay ?? 0);
+    }
+    
+    // Previous due remaining = total spent - total paid
+    $previousDue = max($total_spent - $total_paid_all, 0);
 
     // Save the order
     $order = Order::create([
@@ -44,7 +56,7 @@ public function FinalInvoice(Request $request)
         'payment_status' => $request->payment_status,
         'pay'            => $pay,
         'due'            => $currentOrderDue,
-        'previous_due'   => $previousDue, // ✅ Store previous due in order
+        'previous_due'   => $previousDue, // ✅ Store previous due
         'metter_price'   => 0,
     ]);
 
@@ -108,7 +120,6 @@ public function FinalInvoice(Request $request)
     // Redirect to print invoice
     return redirect()->route('print.invoice', $order->id);
 }
-
 
 
 
