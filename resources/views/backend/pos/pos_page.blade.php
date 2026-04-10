@@ -297,6 +297,10 @@ body {
 @php 
     $product = \App\Models\Product::find($cart->id);
     $colors = ($product && $product->colors) ? $product->colors : collect();
+    
+    // Get saved color data
+    $savedColors = $cart->options['selected_colors'] ?? [];
+    $savedTotalMeters = $cart->options['total_meters'] ?? 0;
 @endphp
 
 <tr class="cart-row" data-rowid="{{ $cart->rowId }}" data-product-id="{{ $cart->id }}">
@@ -323,6 +327,20 @@ body {
 
             {{-- INDIVIDUAL COLORS --}}
             @foreach($colors as $color)
+            @php
+                // Check if this color was previously saved
+                $isSelected = false;
+                $savedMeter = 0;
+                
+                foreach($savedColors as $saved) {
+                    if($saved['id'] == $color->id) {
+                        $isSelected = true;
+                        $savedMeter = $saved['meter'];
+                        break;
+                    }
+                }
+            @endphp
+            
             <div class="color-item">
                 <input type="checkbox" 
                        class="color-check"
@@ -330,6 +348,7 @@ body {
                        data-color-name="{{ $color->color_name }}"
                        data-available-meters="{{ $color->meters }}"
                        data-rowid="{{ $cart->rowId }}"
+                       {{ $isSelected ? 'checked' : '' }}
                        onchange="updateColorMeters(this)">
                 
                 <div class="color-info">
@@ -348,10 +367,11 @@ body {
                            min="0"
                            max="{{ $color->meters }}"
                            step="0.01"
-                           value="0"
-                           disabled
-                           onchange="updateColorMeters(this)">
-                    <span class="color-remaining" data-color-id="{{ $color->id }}">{{ $color->meters }}م</span>
+                           value="{{ $savedMeter }}"
+                           {{ $isSelected ? '' : 'disabled' }}
+                           onchange="updateColorMeters(this)"
+                           oninput="updateColorMeters(this)">
+                    <span class="color-remaining" data-color-id="{{ $color->id }}">{{ ($color->meters - $savedMeter) }}م</span>
                 </div>
             </div>
             @endforeach
@@ -366,7 +386,7 @@ body {
     <td>
         <input type="number" 
                class="form-control meter-input total-meter"
-               value="0"
+               value="{{ $savedTotalMeters }}"
                data-rowid="{{ $cart->rowId }}"
                readonly
                min="0"
@@ -382,13 +402,14 @@ body {
                data-buying="{{ $cart->options->buying_price ?? 0 }}"
                min="0"
                step="0.01"
-               onchange="updateTotalPrice(this)">
+               onchange="updateTotalPrice(this)"
+               oninput="updateTotalPrice(this)">
         <div class="price-alert text-danger fw-bold" style="font-size: 11px;"></div>
     </td>
 
     {{-- TOTAL PRICE --}}
     <td class="price-total">
-        0.00
+        {{ number_format($savedTotalMeters * $cart->price, 2) }}
     </td>
 
     {{-- ACTIONS --}}
@@ -431,14 +452,15 @@ body {
 @php
 $subTotal = 0;
 foreach($allcart as $c){
-    $subTotal += 0;
+    $totalMeters = $c->options['total_meters'] ?? 0;
+    $subTotal += $totalMeters * $c->price;
 }
 @endphp
 
 <div class="col-md-6">
 <div class="total-box text-white text-center p-4 h-100">
 <h5>کۆی گشتی ئایتم {{ $allcart->count() }}</h5>
-<h1 id="grand-total">0.00</h1>
+<h1 id="grand-total">{{ number_format($subTotal, 2) }}</h1>
 </div>
 </div>
 
@@ -676,7 +698,7 @@ function saveColorDataBeforeSubmit(event) {
         const checkbox = item.querySelector('.color-check');
         const input = item.querySelector('.customer-meter');
         
-        if (checkbox.checked) {
+        if (checkbox && checkbox.checked && input) {
             const meter = parseFloat(input.value) || 0;
             selectedColors.push({
                 id: checkbox.dataset.colorId,
@@ -690,8 +712,8 @@ function saveColorDataBeforeSubmit(event) {
     const colorDataInput = form.querySelector('[name="color_data"]');
     if (colorDataInput) {
         colorDataInput.value = JSON.stringify({
-            selectedColors: selectedColors,
-            totalMeters: totalMeters
+            selected_colors: selectedColors,
+            total_meters: totalMeters
         });
     }
     
@@ -716,7 +738,7 @@ function prepareInvoiceData() {
             const checkbox = item.querySelector('.color-check');
             const input = item.querySelector('.customer-meter');
             
-            if (checkbox.checked) {
+            if (checkbox && checkbox.checked && input) {
                 selectedColors.push({
                     id: checkbox.dataset.colorId,
                     name: checkbox.dataset.colorName,
@@ -810,7 +832,16 @@ function handleBarcode(code){
     }
 }
 
+/* Initialize on page load */
 document.addEventListener('DOMContentLoaded', function() {
+    // Restore all color data
+    document.querySelectorAll('.cart-row').forEach(row => {
+        const firstCheckbox = row.querySelector('.color-check');
+        if (firstCheckbox) {
+            updateColorMeters(firstCheckbox);
+        }
+    });
+    
     updateGrandTotal();
 });
 </script>

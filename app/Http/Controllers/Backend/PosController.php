@@ -105,25 +105,41 @@ public function CartUpdate(Request $request, $rowId)
         ]);
     }
 
-    // Get existing options
-    $options = $item->options->toArray();
+    // IMPORTANT: Preserve ALL existing options
+    $options = [];
+    
+    // Keep buying_price (original option)
+    if (isset($item->options['buying_price'])) {
+        $options['buying_price'] = $item->options['buying_price'];
+    }
 
-    // If color data was sent, update it
+    // ALWAYS add/update color data if sent
     if ($request->has('color_data') && !empty($request->color_data)) {
         $colorData = json_decode($request->color_data, true);
         
-        $options['selected_colors'] = $colorData['selectedColors'] ?? [];
-        $options['total_meters'] = $colorData['totalMeters'] ?? 0;
+        if (is_array($colorData)) {
+            $options['selected_colors'] = $colorData['selected_colors'] ?? [];
+            $options['total_meters'] = $colorData['total_meters'] ?? 0;
+        }
+    } else {
+        // If no color data sent, preserve existing color data
+        if (isset($item->options['selected_colors'])) {
+            $options['selected_colors'] = $item->options['selected_colors'];
+        }
+        if (isset($item->options['total_meters'])) {
+            $options['total_meters'] = $item->options['total_meters'];
+        }
     }
 
-    // Update cart with preserved options
+    // Update cart - THIS IS THE KEY PART
     Cart::update($rowId, [
-        'qty' => $request->qty,
-        'options' => $options
+        'qty' => $request->qty ?? $item->qty,
+        'price' => $item->price, // Don't change price
+        'options' => $options    // Keep all options
     ]);
 
     return redirect()->back()->with([
-        'message' => 'Cart Updated Successfully',
+        'message' => '✅ Cart Updated Successfully',
         'alert-type' => 'success'
     ]);
 }
