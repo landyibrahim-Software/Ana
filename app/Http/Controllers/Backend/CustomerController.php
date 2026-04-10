@@ -19,30 +19,32 @@ class CustomerController extends Controller
     
 public function ShowCustomer($id)
 {
-    // Load customer with relationships
     $customer = Customer::findOrFail($id);
-    $customer->load(['orders', 'payments']);
+    $customer->load('orders', 'payments');
 
-    // CARD 1: Count distinct orders
+    // CARD 1: Count orders
     $order_count = $customer->orders->count();
     
-    // CARD 2: previous_due + all order sub_totals
-    $total_spent = $customer->previous_due;
+    // CARD 2: Total owed = previous_due + all order sub_totals
+    $total_spent = floatval($customer->previous_due ?? 0);
     foreach ($customer->orders as $order) {
-        $total_spent += $order->sub_total;
+        $total_spent += floatval($order->sub_total ?? 0);
     }
     
-    // CARD 3: Total Paid = all Payment records only (NOT order->pay)
-    $total_paid_all = Payment::where('customer_id', $customer->id)->sum('payment_amount');
+    // CARD 3: Total paid = all payments + all order pays
+    $total_paid_all = floatval(Payment::where('customer_id', $customer->id)->sum('payment_amount') ?? 0);
+    foreach ($customer->orders as $order) {
+        $total_paid_all += floatval($order->pay ?? 0);
+    }
     
-    // CARD 4: Total Due
+    // CARD 4: Remaining due
     $total_due = max($total_spent - $total_paid_all, 0);
 
     return view('backend.customer.show_customer', compact(
-        'customer', 
-        'order_count', 
-        'total_spent', 
-        'total_paid_all', 
+        'customer',
+        'order_count',
+        'total_spent',
+        'total_paid_all',
         'total_due'
     ));
 }
@@ -180,7 +182,7 @@ public function PaymentCustomer(Request $request){
     
     $customer = Customer::findOrFail($customer_id);
     
-    // Create payment record ONLY - DO NOT CHANGE previous_due
+    // Create payment record ONLY
     Payment::create([
         'customer_id' => $customer_id,
         'payment_amount' => $payment_amount,
