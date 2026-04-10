@@ -28,13 +28,6 @@ public function FinalInvoice(Request $request)
     // Current order due = total - pay
     $currentOrderDue = $currentOrderTotal - $pay;
 
-    
-
-    foreach ($request->items as $item) {
-        $unitTotal = $item['quantity'] * $item['unitcost'];
-       
-    }
-
     // Save the order
     $order = Order::create([
         'customer_id'    => $customer->id,
@@ -47,20 +40,24 @@ public function FinalInvoice(Request $request)
         'payment_status' => $request->payment_status,
         'pay'            => $pay,
         'due'            => $currentOrderDue,
+        'metter_price'   => 0,
     ]);
 
-    // Save order items
+    // Save order items WITH meters and colors
     foreach ($request->items as $item) {
-        $unitTotal = $item['quantity'] * $item['unitcost'];
-       
+        $meters = $item['meters'] ?? 0;
+        $unitTotal = $meters * $item['unitcost']; // meters × price, not qty × price
+        $selectedColors = $item['selected_colors'] ?? '[]';
 
         Orderdetails::create([
-            'order_id'    => $order->id,
-            'product_id'  => $item['product_id'],
-            'quantity'    => $item['quantity'],
-            'unitcost'    => $item['unitcost'],
-           
-            'total'       => $unitTotal,
+            'order_id'        => $order->id,
+            'product_id'      => $item['product_id'],
+            'quantity'        => $item['quantity'],
+            'unitcost'        => $item['unitcost'],
+            'meters'          => $meters,
+            'selected_colors' => $selectedColors,
+            'metter_price'    => 0,
+            'total'           => $unitTotal,
         ]);
     }
 
