@@ -28,8 +28,9 @@ public function FinalInvoice(Request $request)
     // Current order due = total - pay
     $currentOrderDue = $currentOrderTotal - $pay;
 
-    // Calculate previous due BEFORE creating order
-    $previousDue = $customer->due + $customer->previous_due;
+    // ✅ CORRECT: Use only customer's previous_due (don't add current due)
+    // previous_due = customer's balance from before all orders
+    $previousDue = $customer->previous_due;
 
     // Save the order
     $order = Order::create([
@@ -96,6 +97,7 @@ public function FinalInvoice(Request $request)
     }
 
     // **Update customer's total due**
+    // Add this order's due to customer's total due
     $customer->update([
         'due' => $customer->due + $currentOrderDue
     ]);
