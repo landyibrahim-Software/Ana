@@ -19,7 +19,7 @@ class Order extends Model
         'payment_status',
         'pay',
         'due',
-        
+        'metter_price',
     ];
 
     // 🔗 Order → Customer

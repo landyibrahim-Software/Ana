@@ -393,9 +393,10 @@ body {
 
     {{-- ACTIONS --}}
     <td>
-        <form method="POST" action="{{ url('/cart-update/'.$cart->rowId) }}" style="display:inline;">
+        <form method="POST" action="{{ url('/cart-update/'.$cart->rowId) }}" style="display:inline;" onsubmit="saveColorDataBeforeSubmit(event)">
             @csrf
             <input type="hidden" name="qty" value="{{ $cart->qty }}">
+            <input type="hidden" name="color_data" id="color-data-{{ $cart->rowId }}" value="">
             <button type="submit" class="btn btn-success btn-sm px-3" title="Save">
                 <i class="fas fa-check"></i>
             </button>
@@ -430,9 +431,7 @@ body {
 @php
 $subTotal = 0;
 foreach($allcart as $c){
-    $totalMeters = floatval(0);
-    $meterElements = 'tr[data-rowid="' . $c->rowId . '"] .total-meter';
-    $subTotal += $totalMeters * $c->price;
+    $subTotal += 0;
 }
 @endphp
 
@@ -460,7 +459,6 @@ foreach($allcart as $c){
 @endforelse
 </select>
 
-<!-- Hidden inputs for cart data -->
 <input type="hidden" id="cart-data" name="cart_data" value="">
 
 <button type="button" class="btn btn-primary btn-lg w-100" {{ $allcart->count()==0?'disabled':'' }} onclick="prepareInvoiceData()">
@@ -658,6 +656,48 @@ function updateGrandTotal() {
     document.getElementById('grand-total').innerText = grandTotal.toFixed(2);
 }
 
+/* SAVE COLOR DATA BEFORE FORM SUBMIT */
+function saveColorDataBeforeSubmit(event) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const rowId = form.action.split('/').pop();
+    const row = document.querySelector(`tr[data-rowid="${rowId}"]`);
+    
+    if (!row) {
+        form.submit();
+        return;
+    }
+    
+    const selectedColors = [];
+    let totalMeters = 0;
+    
+    row.querySelectorAll('.color-item').forEach(item => {
+        const checkbox = item.querySelector('.color-check');
+        const input = item.querySelector('.customer-meter');
+        
+        if (checkbox.checked) {
+            const meter = parseFloat(input.value) || 0;
+            selectedColors.push({
+                id: checkbox.dataset.colorId,
+                name: checkbox.dataset.colorName,
+                meter: meter
+            });
+            totalMeters += meter;
+        }
+    });
+    
+    const colorDataInput = form.querySelector('[name="color_data"]');
+    if (colorDataInput) {
+        colorDataInput.value = JSON.stringify({
+            selectedColors: selectedColors,
+            totalMeters: totalMeters
+        });
+    }
+    
+    form.submit();
+}
+
 /* PREPARE INVOICE DATA */
 function prepareInvoiceData() {
     const cartData = [];
@@ -770,7 +810,6 @@ function handleBarcode(code){
     }
 }
 
-// Initialize grand total on page load
 document.addEventListener('DOMContentLoaded', function() {
     updateGrandTotal();
 });

@@ -88,30 +88,45 @@ class PosController extends Controller
     /* ===============================
         UPDATE CART QTY
     ================================ */
-    public function CartUpdate(Request $request, $rowId)
-    {
-        $item = Cart::get($rowId);
+  /* ===============================
+    UPDATE CART QTY
+================================ */
+/* ===============================
+    UPDATE CART QTY
+================================ */
+public function CartUpdate(Request $request, $rowId)
+{
+    $item = Cart::get($rowId);
 
-        if (!$item) {
-            return redirect()->back()->with([
-                'message' => 'Item not found in cart.',
-                'alert-type' => 'error'
-            ]);
-        }
-
-        // 🔥 MERGE old options
-        $options = $item->options->toArray();
-
-        Cart::update($rowId, [
-            'qty' => $request->qty,
-            'options' => $options
-        ]);
-
+    if (!$item) {
         return redirect()->back()->with([
-            'message' => 'Cart Updated Successfully',
-            'alert-type' => 'success'
+            'message' => 'Item not found in cart.',
+            'alert-type' => 'error'
         ]);
     }
+
+    // Get existing options
+    $options = $item->options->toArray();
+
+    // If color data was sent, update it
+    if ($request->has('color_data') && !empty($request->color_data)) {
+        $colorData = json_decode($request->color_data, true);
+        
+        $options['selected_colors'] = $colorData['selectedColors'] ?? [];
+        $options['total_meters'] = $colorData['totalMeters'] ?? 0;
+    }
+
+    // Update cart with preserved options
+    Cart::update($rowId, [
+        'qty' => $request->qty,
+        'options' => $options
+    ]);
+
+    return redirect()->back()->with([
+        'message' => 'Cart Updated Successfully',
+        'alert-type' => 'success'
+    ]);
+}
 
     /* ===============================
         REMOVE CART ITEM
@@ -131,7 +146,7 @@ class PosController extends Controller
     /* ===============================
         CREATE INVOICE & UPDATE STOCK
     ================================ */
-   public function CreateInvoice(Request $request)
+ public function CreateInvoice(Request $request)
 {
     $contents = Cart::content();
     $customer = Customer::findOrFail($request->customer_id);
@@ -144,28 +159,32 @@ class PosController extends Controller
     }
 
     // Calculate total from cart with meters
-    $grandTotal = 0;
+    $subTotal = 0;
+    $totalMetersAll = 0;
+    
     foreach ($contents as $item) {
         $totalMeters = $item->options['total_meters'] ?? 0;
-        $grandTotal += $totalMeters * $item->price;
+        $subTotal += $totalMeters * $item->price;
+        $totalMetersAll += $totalMeters;
     }
 
     // Add previous due
     $previousDue = $customer->due + $customer->previous_due;
-    $grandTotal += $previousDue;
+    $grandTotal = $subTotal + $previousDue;
 
-    // Create Order
+    // Create Order with metter_price
     $order = Order::create([
         'customer_id'    => $customer->id,
         'order_date'     => now()->format('Y-m-d'),
         'total_products' => $contents->count(),
-        'sub_total'      => $grandTotal - $previousDue,
+        'sub_total'      => $subTotal,
         'invoice_no'     => 'INV-' . time(),
         'total'          => $grandTotal,
         'payment_status' => 'pending',
         'pay'            => 0,
         'due'            => $grandTotal,
         'order_status'   => 'pending',
+        'metter_price'   => 0,  // Default value for metter_price
     ]);
 
     // Create Order Details with color info

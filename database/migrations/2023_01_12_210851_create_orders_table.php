@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('sub_total')->nullable();
             $table->decimal('grain')->nullable();
             $table->decimal('grain_price')->nullable();
+            $table->decimal('metter_price', 10, 2)->nullable()->default(0);
             
             $table->string('invoice_no')->nullable();
             $table->string('total')->nullable();
@@ -29,15 +30,7 @@ return new class extends Migration
             $table->string('pay')->nullable();
             $table->string('due')->nullable();
             $table->timestamps();
-            Schema::table('orders', function (Blueprint $table) {
-        $table->dropColumn([
-            'vat',
-            'vat_rate',
-            'tax_amount'
-        ]);
-    });
         });
-        
     }
 
     /**
@@ -48,9 +41,5 @@ return new class extends Migration
     public function down()
     {
         Schema::dropIfExists('orders');
-          Schema::table('orders', function (Blueprint $table) {
-       $table->decimal('grain', 10, 2)->nullable(false)->change();
-            $table->decimal('grain_price', 10, 2)->nullable(false)->change();
-    });
     }
 };
