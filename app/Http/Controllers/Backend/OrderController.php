@@ -48,6 +48,13 @@ public function FinalInvoice(Request $request)
         $meters = $item['meters'] ?? 0;
         $unitTotal = $meters * $item['unitcost']; // meters × price
         $selectedColors = $item['selected_colors'] ?? '[]';
+        
+        // Count how many colors are selected
+        $colorCount = 0;
+        if (!empty($item['selected_colors'])) {
+            $colors = json_decode($item['selected_colors'], true);
+            $colorCount = count($colors); // Number of colors selected
+        }
 
         // Save order detail
         Orderdetails::create([
@@ -61,7 +68,7 @@ public function FinalInvoice(Request $request)
             'total'           => $unitTotal,
         ]);
 
-        // 🔥 REDUCE COLOR METERS FROM STOCK
+        // 🔥 REDUCE COLOR METERS FROM PRODUCTCOLOR TABLE
         if (!empty($item['selected_colors'])) {
             $colors = json_decode($item['selected_colors'], true);
             
@@ -70,6 +77,16 @@ public function FinalInvoice(Request $request)
                 \App\Models\ProductColor::where('product_id', $item['product_id'])
                     ->where('id', $color['id'])
                     ->decrement('meters', $color['meter']);
+            }
+        }
+        
+        // 🔥 REDUCE تۆپ (ROLLS) FROM PRODUCT STORE BY COUNT OF COLORS
+        // Example: If you selected 4 colors, reduce product_store by 4
+        if ($colorCount > 0) {
+            $product = Product::find($item['product_id']);
+            if ($product) {
+                $product->product_store -= $colorCount;
+                $product->save();
             }
         }
     }
