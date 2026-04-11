@@ -319,23 +319,7 @@
                         </li>
 
 @endif
-<li>
-    <a href="#returned" data-bs-toggle="collapse">
-        <i class="mdi mdi-undo"></i>
-        <span>بەرگەڕاندنی بەرهەمەکان</span>
-        <span class="menu-arrow"></span>
-    </a>
-    <div class="collapse" id="returned">
-        <ul class="nav-second-level">
-            <li>
-                <a href="{{ route('returned.index') }}">لیستی بەرگەڕاندنەکان</a>
-            </li>
-            <li>
-                <a href="{{ route('returned.create') }}">بەرگەڕاندنی نوێ</a>
-            </li>
-        </ul>
-    </div>
-</li>
+
 
     <li>
                             <a href="#backup" data-bs-toggle="collapse">
