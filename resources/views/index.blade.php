@@ -285,10 +285,10 @@
                                 <select name="filter" id="filterType" class="form-control filter-select" onchange="handleFilterChange()">
                                     <option value="today" {{ $filterType == 'today' ? 'selected' : '' }}>📅 ئەمڕۆ</option>
                                     <option value="yesterday" {{ $filterType == 'yesterday' ? 'selected' : '' }}>📆 دوێنێ</option>
-                                    <option value="last_week" {{ $filterType == 'last_week' ? 'selected' : '' }}>📊 هێمای دواتر</option>
-                                    <option value="last_month" {{ $filterType == 'last_month' ? 'selected' : '' }}>📈 مانگی دواتر</option>
-                                    <option value="last_year" {{ $filterType == 'last_year' ? 'selected' : '' }}>📉 ساڵی دواتر</option>
-                                    <option value="custom" {{ $filterType == 'custom' ? 'selected' : '' }}>📋 دیاریکراو</option>
+                                    <option value="last_week" {{ $filterType == 'last_week' ? 'selected' : '' }}>📊  هەفتەی پێشوو</option>
+                                    <option value="last_month" {{ $filterType == 'last_month' ? 'selected' : '' }}>📈 مانگی پێشوو</option>
+                                    <option value="last_year" {{ $filterType == 'last_year' ? 'selected' : '' }}>📉 ساڵی پێشوو</option>
+                                    <option value="custom" {{ $filterType == 'custom' ? 'selected' : '' }}>📋 دیاریکردن</option>
                                 </select>
                             </div>
 
@@ -307,7 +307,7 @@
                                         </label>
                                         <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}" required>
                                     </div>
-                                    <button type="submit" class="filter-btn">✓ جووتیا</button>
+                                    <button type="submit" class="filter-btn">✓ گەڕان</button>
                                 </div>
                             </div>
                         </div>
@@ -399,7 +399,7 @@
                     <i class="mdi mdi-bank-transfer kpi-icon"></i>
                     <div class="card-body">
                         <h4>{{ number_format($totalSupplierPayment, 2) }}</h4>
-                        <p>پارەی تۆمار (فیلتر شدار)</p>
+                        <p>  پارەدانی دابینکەر</p>
                     </div>
                 </div>
             </div>
@@ -567,7 +567,7 @@
             <div class="col-lg-6">
                 <div class="card" style="border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.08); border: none; border-top: 4px solid #4facfe; height: 100%;">
                     <div class="card-body">
-                        <h4 class="dashboard-section-title">پارەی تۆماران (فیلتر شدار)</h4>
+                        <h4 class="dashboard-section-title">  پارەدانی دابینکەر</h4>
                         <div class="table-responsive">
                             <table class="table table-sm table-hover mb-0">
                                 <thead>
@@ -617,7 +617,7 @@
                                 <thead>
                                     <tr>
                                         <th>بەرهەم</th>
-                                        <th>عدد</th>
+                                        <th>تۆپ</th>
                                         <th>دۆخ</th>
                                     </tr>
                                 </thead>
@@ -683,8 +683,8 @@
                                         <th>بەرهەم</th>
                                         <th>کۆد</th>
                                         <th>جۆر</th>
-                                        <th class="text-center">دەرزەن فرۆشراو</th>
-                                        <th class="text-center">چەند ماوە</th>
+                                        <th class="text-center"> متر فرۆشراوە</th>
+                                        <th class="text-center">متر ماوە  </th>
                                         
                                     </tr>
                                 </thead>
@@ -757,15 +757,19 @@
                                 </thead>
                                 <tbody>
                                     @foreach($orders->sortByDesc('created_at')->take(10) as $order)
-                                    @php
-                                        $itemCount = $order->orderItems->sum('quantity');
-                                        $orderProfit = 0;
-                                        foreach($order->orderItems as $item) {
-                                            $buyingPrice = $item->product->buying_price ?? 0;
-                                            $sellingPrice = $item->unitcost;
-                                            $orderProfit += ($sellingPrice - $buyingPrice) * $item->quantity;
-                                        }
-                                    @endphp
+                   @php
+    $itemCount = $order->orderItems->sum('quantity');
+    $orderProfit = 0;
+    
+    foreach($order->orderItems as $item) {
+        $buyingPrice = floatval($item->product->buying_price ?? 0);
+        $sellingPrice = floatval($item->unitcost ?? 0); // unitcost is selling price per meter
+        $meters = floatval($item->meters ?? 0);
+        
+        // Profit/Loss = (sellingPrice - buyingPrice) × meters
+        $orderProfit += ($sellingPrice - $buyingPrice) * $meters;
+    }
+@endphp
                                     <tr>
                                         <td>{{ $order->invoice_no }}</td>
                                         <td>{{ $order->customer->name ?? 'N/A' }}</td>

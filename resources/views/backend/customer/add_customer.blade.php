@@ -114,14 +114,14 @@
         </div>
     </div>
      <div class="col-md-6">
-         <div class="mb-3">
-             <label for="firstname" class="form-label">قەرزی پێشتر (دۆلار)  </label>
-             <input type="number" name="previous_due" class="form-control @error('previous_due') is-invalid @enderror" step="0.01" value="0">
-              @error('previous_due')
-       <span class="text-danger"> {{ $message }} </span>
-             @enderror
-         </div>
-     </div>
+    <div class="mb-3">
+        <label for="previous_due" class="form-label">قەرزی پێشتر (دۆلار)</label>
+        <input type="text" id="previous_due" name="previous_due" class="form-control @error('previous_due') is-invalid @enderror" value="0" pattern="[0-9]*\.?[0-9]*" placeholder="0.00">
+        @error('previous_due')
+        <span class="text-danger">{{ $message }}</span>
+        @enderror
+    </div>
+</div>
 
 
 
