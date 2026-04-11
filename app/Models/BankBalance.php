@@ -18,14 +18,30 @@ class BankBalance extends Model
      */
     public static function getCurrentBalance()
     {
-        return self::first()->total_balance ?? 0;
+        $balance = self::first();
+        
+        // If no record exists, create one
+        if (!$balance) {
+            $balance = self::create(['total_balance' => 0.00]);
+        }
+        
+        return $balance->total_balance ?? 0;
     }
 
     /**
-     * Update balance
+     * Update balance safely
      */
     public static function updateBalance($newBalance)
     {
-        return self::first()->update(['total_balance' => $newBalance]);
+        $record = self::first();
+        
+        // If no record exists, create one
+        if (!$record) {
+            return self::create(['total_balance' => $newBalance]);
+        }
+        
+        // Update existing record
+        $record->update(['total_balance' => $newBalance]);
+        return $record;
     }
 }
