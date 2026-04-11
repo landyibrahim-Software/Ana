@@ -14,34 +14,60 @@ class BankBalance extends Model
     public $timestamps = true;
 
     /**
-     * Get current bank balance
+     * Get current USD balance
      */
     public static function getCurrentBalance()
     {
         $balance = self::first();
         
-        // If no record exists, create one
         if (!$balance) {
-            $balance = self::create(['total_balance' => 0.00]);
+            $balance = self::create(['total_balance' => 0.00, 'total_balance_iqd' => 0.00]);
         }
         
         return $balance->total_balance ?? 0;
     }
 
     /**
-     * Update balance safely
+     * Get current IQD balance
+     */
+    public static function getCurrentBalanceIQD()
+    {
+        $balance = self::first();
+        
+        if (!$balance) {
+            $balance = self::create(['total_balance' => 0.00, 'total_balance_iqd' => 0.00]);
+        }
+        
+        return $balance->total_balance_iqd ?? 0;
+    }
+
+    /**
+     * Update USD balance
      */
     public static function updateBalance($newBalance)
     {
         $record = self::first();
         
-        // If no record exists, create one
         if (!$record) {
-            return self::create(['total_balance' => $newBalance]);
+            return self::create(['total_balance' => $newBalance, 'total_balance_iqd' => 0.00]);
         }
         
-        // Update existing record
         $record->update(['total_balance' => $newBalance]);
+        return $record;
+    }
+
+    /**
+     * Update IQD balance
+     */
+    public static function updateBalanceIQD($newBalance)
+    {
+        $record = self::first();
+        
+        if (!$record) {
+            return self::create(['total_balance' => 0.00, 'total_balance_iqd' => $newBalance]);
+        }
+        
+        $record->update(['total_balance_iqd' => $newBalance]);
         return $record;
     }
 }

@@ -291,11 +291,15 @@ Route::get('/backup/delete/{filename}', [AdminController::class, 'DeleteDatabase
 
 // ===== BANK ROUTES =====
 Route::middleware(['auth'])->group(function () {
+    // USD Routes
     Route::get('/bank', [App\Http\Controllers\Backend\BankController::class, 'index'])->name('bank.index');
     Route::post('/bank/spend', [App\Http\Controllers\Backend\BankController::class, 'addSpend'])->name('bank.spend');
     Route::post('/bank/receive', [App\Http\Controllers\Backend\BankController::class, 'addReceive'])->name('bank.receive');
+    
+    // IQD Routes
+    Route::post('/bank/spend-iqd', [App\Http\Controllers\Backend\BankController::class, 'addSpendIQD'])->name('bank.spend.iqd');
+    Route::post('/bank/receive-iqd', [App\Http\Controllers\Backend\BankController::class, 'addReceiveIQD'])->name('bank.receive.iqd');
 });
- 
 
 
 

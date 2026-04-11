@@ -37,8 +37,5 @@ class Order extends Model
     /**
  * Relationship: Get returned products from this order
  */
-public function returnedProducts()
-{
-    return $this->hasMany(ReturnedProduct::class);
-}
+
 }
