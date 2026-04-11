@@ -34,4 +34,11 @@ class Order extends Model
     {
         return $this->hasMany(Orderdetails::class, 'order_id', 'id');
     }
+    /**
+ * Relationship: Get returned products from this order
+ */
+public function returnedProducts()
+{
+    return $this->hasMany(ReturnedProduct::class);
+}
 }

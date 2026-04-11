@@ -296,7 +296,16 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/bank/receive', [App\Http\Controllers\Backend\BankController::class, 'addReceive'])->name('bank.receive');
 });
  
-
+// ===== RETURNED PRODUCTS ROUTES =====
+Route::middleware(['auth'])->group(function () {
+    Route::get('/returned', [App\Http\Controllers\Backend\ReturnedProductController::class, 'index'])->name('returned.index');
+    Route::get('/returned/create', [App\Http\Controllers\Backend\ReturnedProductController::class, 'create'])->name('returned.create');
+    Route::post('/returned', [App\Http\Controllers\Backend\ReturnedProductController::class, 'store'])->name('returned.store');
+    Route::get('/returned/{id}', [App\Http\Controllers\Backend\ReturnedProductController::class, 'show'])->name('returned.show');
+    Route::post('/returned/{id}/approve', [App\Http\Controllers\Backend\ReturnedProductController::class, 'approve'])->name('returned.approve');
+    Route::post('/returned/{id}/reject', [App\Http\Controllers\Backend\ReturnedProductController::class, 'reject'])->name('returned.reject');
+    Route::get('/returned/{orderId}/items', [App\Http\Controllers\Backend\ReturnedProductController::class, 'getOrderItems'])->name('returned.getItems');
+});
 
 
 
