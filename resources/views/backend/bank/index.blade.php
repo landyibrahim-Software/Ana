@@ -191,16 +191,36 @@
             </div>
         </div>
 
-        <!-- CURRENT BALANCE DISPLAY -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="balance-display">
-                    <p>کۆی سەرمایەی بانک (ئەمڕۆ)</p>
-                    <h2>${{ number_format($currentBalance, 2) }}</h2>
-                </div>
+        <!-- INITIAL SETUP / CURRENT BALANCE DISPLAY -->
+<div class="row mb-4">
+    <div class="col-12">
+        @if($currentBalance == 0 && \App\Models\BankTransaction::count() == 0)
+        <!-- FIRST TIME SETUP -->
+        <div class="card bank-card">
+            <div class="card-body">
+                <h5 class="mb-3"><i class="mdi mdi-alert-circle me-2"></i>سەتوپکردنی بانک</h5>
+                <p class="text-muted">تکایە ابتدائی سەرمایە داخڵ بکە:</p>
+                
+                <form action="{{ route('bank.receive') }}" method="POST" class="d-flex gap-2">
+                    @csrf
+                    <input type="number" name="amount" class="form-control" step="0.01" min="0.01" 
+                           placeholder="سەرمایە سەرەتایی (دۆلار)..." style="max-width: 300px;" required>
+                    <input type="hidden" name="description" value="سەرمایە سەرەتایی">
+                    <button type="submit" class="btn btn-receive">
+                        <i class="mdi mdi-check me-1"></i>کۆنفرم کردن
+                    </button>
+                </form>
             </div>
         </div>
-
+        @else
+        <!-- BALANCE DISPLAY AFTER SETUP -->
+        <div class="balance-display">
+            <p>کۆی سەرمایەی بانک (ئەمڕۆ)</p>
+            <h2>${{ number_format($currentBalance, 2) }}</h2>
+        </div>
+        @endif
+    </div>
+</div>
         <!-- TODAY'S SUMMARY -->
         <div class="row mb-4">
             <div class="col-12">
