@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
-use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Orderdetails;
 use App\Models\Product;
@@ -29,44 +28,38 @@ class ReturnedProductController extends Controller
 
     public function create()
     {
-        $customers = Customer::whereHas('orders', function($q) {
-            $q->where('order_status', 'complete');
-        })->orderBy('name')->get();
+        // Get all completed orders
+        $orders = Order::where('order_status', 'complete')
+            ->with('customer')
+            ->orderBy('order_date', 'DESC')
+            ->get();
 
-        return view('backend.returned.create', compact('customers'));
+        return view('backend.returned.create', compact('orders'));
     }
 
-    public function getCustomerOrders($customerId)
+    // Get items from order for AJAX
+    public function getOrderItems($orderId)
     {
-        $orderItems = Orderdetails::whereHas('order', function($q) use ($customerId) {
-            $q->where('customer_id', $customerId)->where('order_status', 'complete');
-        })
-        ->with(['product', 'order'])
-        ->get();
-
-        $items = [];
-        foreach ($orderItems as $item) {
-            $colors = [];
-            if ($item->selected_colors) {
-                $colors = json_decode($item->selected_colors, true) ?? [];
-            }
-
-            $items[] = [
-                'id' => $item->id,
-                'order_id' => $item->order_id,
-                'product_id' => $item->product_id,
-                'product_name' => $item->product->product_name ?? 'Unknown',
-                'product_code' => $item->product->product_code ?? '',
-                'product_image' => $item->product->product_image ?? '',
-                'quantity' => $item->quantity,
-                'meters' => floatval($item->meters),
-                'unitcost' => floatval($item->unitcost),
-                'selected_colors' => $colors,
-                'total' => floatval($item->total),
-                'invoice_no' => $item->order->invoice_no,
-                'order_date' => $item->order->order_date,
-            ];
+        $order = Order::find($orderId);
+        if (!$order) {
+            return response()->json([], 404);
         }
+
+        $items = Orderdetails::where('order_id', $orderId)
+            ->with('product')
+            ->get()
+            ->map(function($item) {
+                return [
+                    'id' => $item->id,
+                    'order_id' => $item->order_id,
+                    'product_id' => $item->product_id,
+                    'product_name' => $item->product->product_name ?? 'Unknown',
+                    'quantity' => $item->quantity,
+                    'meters' => floatval($item->meters),
+                    'unitcost' => floatval($item->unitcost),
+                    'selected_colors' => json_decode($item->selected_colors, true) ?? [],
+                ];
+            });
 
         return response()->json($items);
     }
@@ -75,7 +68,9 @@ class ReturnedProductController extends Controller
     {
         $validated = $request->validate([
             'customer_id' => 'required|exists:customers,id',
-            'return_reason' => 'nullable|string',
+            'order_id' => 'required|exists:orders,id',
+            'return_date' => 'required|date',
+            'return_reason' => 'required|string',
             'refund_amount' => 'required|numeric|min:0',
             'returned_items' => 'required|array',
         ]);
@@ -83,36 +78,26 @@ class ReturnedProductController extends Controller
         DB::beginTransaction();
 
         try {
-            $customer = Customer::find($validated['customer_id']);
-
+            // Create return record
             $return = ReturnedProduct::create([
-                'customer_id' => $customer->id,
-                'order_id' => 0,
-                'return_date' => now()->toDateString(),
-                'return_reason' => $validated['return_reason'] ?? 'بەرگەڕاندن',
+                'customer_id' => $validated['customer_id'],
+                'order_id' => $validated['order_id'],
+                'return_date' => $validated['return_date'],
+                'return_reason' => $validated['return_reason'],
                 'refund_amount' => $validated['refund_amount'],
                 'status' => 'pending',
             ]);
 
+            // Add returned items
             foreach ($validated['returned_items'] as $itemData) {
-                if (isset($itemData['returned_colors']) && is_array($itemData['returned_colors'])) {
-                    $totalReturnedMeters = 0;
-
-                    foreach ($itemData['returned_colors'] as $colorName => $metersReturned) {
-                        if ($metersReturned > 0) {
-                            $totalReturnedMeters += floatval($metersReturned);
-                        }
-                    }
-
-                    if ($totalReturnedMeters > 0) {
-                        ReturnedItem::create([
-                            'returned_product_id' => $return->id,
-                            'product_id' => $itemData['product_id'],
-                            'quantity_returned' => 1,
-                            'meters_returned' => $totalReturnedMeters,
-                            'refund_price' => $validated['refund_amount'],
-                        ]);
-                    }
+                if (isset($itemData['product_id']) && $itemData['product_id']) {
+                    ReturnedItem::create([
+                        'returned_product_id' => $return->id,
+                        'product_id' => $itemData['product_id'],
+                        'quantity_returned' => $itemData['quantity_returned'] ?? 1,
+                        'meters_returned' => $itemData['meters_returned'] ?? 0,
+                        'refund_price' => $itemData['refund_price'] ?? 0,
+                    ]);
                 }
             }
 
@@ -148,6 +133,7 @@ class ReturnedProductController extends Controller
         DB::beginTransaction();
 
         try {
+            // Restore inventory
             foreach ($return->returnedItems as $item) {
                 $product = Product::find($item->product_id);
                 if ($product) {
@@ -155,7 +141,10 @@ class ReturnedProductController extends Controller
                 }
             }
 
+            // Reduce customer due
             $return->customer->decrement('due', $return->refund_amount);
+
+            // Mark as approved
             $return->update(['status' => 'approved']);
 
             DB::commit();

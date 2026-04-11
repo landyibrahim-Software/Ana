@@ -304,7 +304,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/returned/{id}', [App\Http\Controllers\Backend\ReturnedProductController::class, 'show'])->name('returned.show');
     Route::post('/returned/{id}/approve', [App\Http\Controllers\Backend\ReturnedProductController::class, 'approve'])->name('returned.approve');
     Route::post('/returned/{id}/reject', [App\Http\Controllers\Backend\ReturnedProductController::class, 'reject'])->name('returned.reject');
-    Route::get('/returned/customer/{customerId}/orders', [App\Http\Controllers\Backend\ReturnedProductController::class, 'getCustomerOrders']);
+    Route::get('/returned/{orderId}/items', [App\Http\Controllers\Backend\ReturnedProductController::class, 'getOrderItems']);
 });
 
 
