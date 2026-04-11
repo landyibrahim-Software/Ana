@@ -59,68 +59,55 @@ class ReturnedProductController extends Controller
     }
 
     // Store return
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'customer_id' => 'required|exists:customers,id',
-            'return_reason' => 'required|string|min:5',
-            'refund_amount' => 'required|numeric|min:0',
-            'returned_items' => 'required|array|min:1',
-            'returned_items.*.product_id' => 'required|exists:products,id',
-            'returned_items.*.returned_colors' => 'nullable|array',
-            'returned_items.*.returned_colors.*' => 'string',
+   // Store return
+public function store(Request $request)
+{
+    $validated = $request->validate([
+        'customer_id' => 'required|exists:customers,id',
+        'return_reason' => 'nullable|string',
+        'refund_amount' => 'required|numeric|min:0',
+        'returned_items' => 'required|array|min:1',
+        'returned_items.*.product_id' => 'required|exists:products,id',
+        'returned_items.*.returned_meters' => 'required|numeric|min:0',
+    ]);
+
+    DB::beginTransaction();
+
+    try {
+        $customer = Customer::find($validated['customer_id']);
+
+        // Create return
+        $return = ReturnedProduct::create([
+            'customer_id' => $customer->id,
+            'order_id' => 0,
+            'return_date' => now()->toDateString(),
+            'return_reason' => $validated['return_reason'] ?? 'بەرگەڕاندنی بێ هۆ',
+            'refund_amount' => $validated['refund_amount'],
+            'status' => 'pending',
         ]);
 
-        DB::beginTransaction();
-
-        try {
-            $customer = Customer::find($validated['customer_id']);
-
-            // Create return
-            $return = ReturnedProduct::create([
-                'customer_id' => $customer->id,
-                'order_id' => 0, // Not linked to single order
-                'return_date' => now()->toDateString(),
-                'return_reason' => $validated['return_reason'],
-                'refund_amount' => $validated['refund_amount'],
-                'status' => 'pending',
-            ]);
-
-            // Process each returned item
-            foreach ($validated['returned_items'] as $item) {
-                $product = Product::find($item['product_id']);
-                $returnedColors = $item['returned_colors'] ?? [];
-                $totalReturnedMeters = 0;
-
-                // Calculate total meters from colors
-                foreach ($returnedColors as $colorName => $meters) {
-                    if ($meters > 0) {
-                        $totalReturnedMeters += (float)$meters;
-                    }
-                }
-
-                if ($totalReturnedMeters > 0) {
-                    // Create return item
-                    ReturnedItem::create([
-                        'returned_product_id' => $return->id,
-                        'product_id' => $product->id,
-                        'quantity_returned' => 1,
-                        'meters_returned' => $totalReturnedMeters,
-                        'refund_price' => $totalReturnedMeters * $product->selling_price,
-                    ]);
-                }
+        // Process each returned item
+        foreach ($validated['returned_items'] as $item) {
+            if ((float)$item['returned_meters'] > 0) {
+                ReturnedItem::create([
+                    'returned_product_id' => $return->id,
+                    'product_id' => $item['product_id'],
+                    'quantity_returned' => 1,
+                    'meters_returned' => $item['returned_meters'],
+                    'refund_price' => $validated['refund_amount'],
+                ]);
             }
-
-            DB::commit();
-
-            return redirect()->route('returned.index')
-                ->with('message', 'بەرگەڕاندن تۆمار کرا بە سەرکەوتی');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->with('error', 'خۆیەتی: ' . $e->getMessage());
         }
-    }
 
+        DB::commit();
+
+        return redirect()->route('returned.index')
+            ->with('message', 'بەرگەڕاندن تۆمار کرا بە سەرکەوتی');
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return back()->with('error', 'خۆیەتی: ' . $e->getMessage());
+    }
+}
     // Show return details
     public function show($id)
     {
