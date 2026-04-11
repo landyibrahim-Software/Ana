@@ -2,32 +2,35 @@
 @section('admin')
 
 <style>
-    .order-section {
-        background: #f8f9fa;
-        padding: 15px;
-        border-radius: 8px;
-        margin-bottom: 15px;
-    }
-
-    .order-section h6 {
-        color: #333;
-        font-weight: 600;
-        margin-bottom: 15px;
-    }
-
     .product-table {
+        width: 100%;
+        border-collapse: collapse;
         background: white;
-        border-radius: 10px;
+        border-radius: 8px;
         overflow: hidden;
         margin-bottom: 20px;
-        border: 1px solid #dee2e6;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
 
-    .product-header {
+    .product-table thead {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
-        padding: 15px;
         font-weight: 600;
+    }
+
+    .product-table th {
+        padding: 15px;
+        text-align: center;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    .product-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .product-table tbody tr:hover {
+        background: #f8f9fa;
     }
 
     .color-badge {
@@ -39,120 +42,44 @@
         margin: 2px;
     }
 
-    .color-input-group {
+    .color-return-box {
         background: #f8f9fa;
-        padding: 12px;
+        padding: 10px;
         border-radius: 6px;
-        margin-bottom: 10px;
+        margin-bottom: 8px;
         border-left: 3px solid #667eea;
     }
 
-    .color-input-group label {
+    .color-return-box label {
         display: flex;
         align-items: center;
-        margin-bottom: 10px;
+        margin-bottom: 8px;
         cursor: pointer;
         font-weight: 500;
     }
 
-    .color-input-group input[type="checkbox"] {
+    .color-return-box input[type="checkbox"] {
         width: 18px;
         height: 18px;
         margin-right: 10px;
         cursor: pointer;
     }
 
-    .color-input-group input[type="number"] {
-        width: 120px;
-        padding: 8px;
+    .meter-input {
+        width: 110px;
+        padding: 6px 8px;
         border: 1px solid #dee2e6;
         border-radius: 4px;
-        font-weight: 600;
+        margin-top: 5px;
     }
 
-    .meter-input-wrapper {
-        margin-left: 30px;
-        margin-top: 8px;
-    }
-
-    .return-info-section {
+    .return-info-box {
         background: #e8f4f8;
         border-left: 4px solid #2196f3;
         padding: 20px;
         border-radius: 8px;
+        margin-top: 30px;
         margin-bottom: 20px;
-    }
-
-    .product-row-expanded {
-        background: #f8f9fa;
-        padding: 20px;
-        border-top: 1px solid #dee2e6;
-    }
-
-    .product-info {
-        display: flex;
-        gap: 15px;
-        align-items: flex-start;
-    }
-
-    .product-img {
-        width: 80px;
-        height: 70px;
-        border-radius: 8px;
-        object-fit: cover;
-        border: 1px solid #dee2e6;
-    }
-
-    .product-details {
-        flex: 1;
-    }
-
-    .product-details strong {
-        font-size: 16px;
-        display: block;
-        margin-bottom: 5px;
-    }
-
-    .product-details small {
-        display: block;
-        color: #666;
-        margin: 3px 0;
-    }
-
-    .product-stats {
-        display: flex;
-        gap: 20px;
-        margin-top: 15px;
-        padding-top: 15px;
-        border-top: 1px solid #dee2e6;
-    }
-
-    .stat-box {
-        text-align: center;
-        flex: 1;
-    }
-
-    .stat-label {
-        font-size: 12px;
-        color: #666;
-        margin-bottom: 5px;
-    }
-
-    .stat-value {
-        font-size: 18px;
-        font-weight: 700;
-        color: #333;
-    }
-
-    .colors-section h6 {
-        margin-bottom: 15px;
-        font-weight: 600;
-        color: #333;
-    }
-
-    .loading-spinner {
-        text-align: center;
-        padding: 20px;
     }
 </style>
 
@@ -189,25 +116,38 @@
                                 </select>
                             </div>
 
-                            <!-- Products Section -->
-                            <div id="productsContainer" style="display:none;">
+                            <!-- Orders Table -->
+                            <div id="ordersContainer" style="display:none;">
                                 <h5 class="mb-3">
                                     <i class="mdi mdi-history me-2"></i> مێژووی کڕین
                                 </h5>
-                                <div id="productsListContainer"></div>
+                                <div class="table-responsive">
+                                    <table class="product-table">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>ئایتم</th>
+                                                <th>رەنگەکان</th>
+                                                <th>نرخی متر</th>
+                                                <th>کۆی متر</th>
+                                                <th>کۆی گشتی</th>
+                                                <th>بەرگەڕاندن</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="ordersTableBody">
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
 
                             <!-- Return Info -->
                             <div id="returnInfoSection" style="display:none;">
-                                <hr>
-                                <div class="return-info-section">
-                                    <h6>
-                                        <i class="mdi mdi-information-outline me-2"></i> زانیاری بەرگەڕاندن
-                                    </h6>
+                                <div class="return-info-box">
+                                    <h6 class="mb-3">زانیاری بەرگەڕاندن</h6>
                                     <div class="row">
                                         <div class="col-md-6 mb-3">
                                             <label class="form-label"><strong>هۆی بەرگەڕاندن</strong></label>
-                                            <textarea name="return_reason" class="form-control" rows="3" 
+                                            <textarea name="return_reason" class="form-control" rows="3"
                                                       placeholder="بۆچی کڕیار بەرگەڕاند..."></textarea>
                                         </div>
 
@@ -215,17 +155,16 @@
                                             <label class="form-label"><strong>بڕی پاشگەزی (دۆلار)</strong></label>
                                             <div class="input-group">
                                                 <span class="input-group-text">$</span>
-                                                <input type="number" name="refund_amount" id="refundAmount" class="form-control" 
+                                                <input type="number" name="refund_amount" id="refundAmount" class="form-control"
                                                        step="0.01" min="0" value="0" required readonly>
                                             </div>
-                                            <small class="text-muted">دەبێت بە شێوەی ئۆتۆماتیک تێبگە</small>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Buttons -->
-                            <div class="text-end mt-4">
+                            <div class="text-end">
                                 <a href="{{ route('returned.index') }}" class="btn btn-secondary">
                                     <i class="mdi mdi-close me-1"></i> لابردن
                                 </a>
@@ -243,18 +182,15 @@
 </div>
 
 <script>
-// When customer is selected, load their orders
-document.getElementById('customerSelect').addEventListener('change', function() {
-    loadCustomerOrders();
-});
+document.getElementById('customerSelect').addEventListener('change', loadCustomerOrders);
 
 function loadCustomerOrders() {
     const customerId = document.getElementById('customerSelect').value;
-    const container = document.getElementById('productsContainer');
-    const listContainer = document.getElementById('productsListContainer');
+    const container = document.getElementById('ordersContainer');
+    const tableBody = document.getElementById('ordersTableBody');
     const returnInfoSection = document.getElementById('returnInfoSection');
     const submitBtn = document.getElementById('submitBtn');
-    
+
     if (!customerId) {
         container.style.display = 'none';
         returnInfoSection.style.display = 'none';
@@ -262,169 +198,131 @@ function loadCustomerOrders() {
         return;
     }
 
-    listContainer.innerHTML = '<div class="loading-spinner"><p class="text-muted">لە لادا کردنی مێژووی کڕین...</p></div>';
+    tableBody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">لە لادا کردنی دراوا...</td></tr>';
 
     fetch(`/returned/customer/${customerId}/orders`)
         .then(response => response.json())
         .then(items => {
-            listContainer.innerHTML = '';
-            
+            tableBody.innerHTML = '';
+
             if (items.length === 0) {
-                listContainer.innerHTML = '<div class="alert alert-warning">ئایتمێک نیە</div>';
+                tableBody.innerHTML = '<tr><td colspan="7" class="text-center text-warning">ئایتمێک نیە</td></tr>';
                 container.style.display = 'block';
                 return;
             }
 
             items.forEach((item, index) => {
-                addProductCard(item, index);
+                addTableRow(item, index);
             });
 
             container.style.display = 'block';
             returnInfoSection.style.display = 'block';
             submitBtn.style.display = 'inline-block';
-            
-            // Attach all event listeners after products are loaded
-            attachAllEventListeners();
+            attachCheckboxListeners();
         })
         .catch(error => {
             console.error('Error:', error);
-            listContainer.innerHTML = '<div class="alert alert-danger">خۆیەتی لە لادا کردنی دراوا</div>';
-            container.style.display = 'block';
+            tableBody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">خۆیەتی</td></tr>';
         });
 }
 
-function addProductCard(item, index) {
-    const container = document.getElementById('productsListContainer');
+function addTableRow(item, index) {
+    const tableBody = document.getElementById('ordersTableBody');
     
-    // Build colors HTML
-    let colorsHtml = '';
-    if (item.colors && item.colors.length > 0) {
-        item.colors.forEach(color => {
-            colorsHtml += `
-                <div class="color-input-group" data-index="${index}" data-color="${color.name}">
+    // Colors display
+    let colorsDisplay = '';
+    if (item.selected_colors && item.selected_colors.length > 0) {
+        item.selected_colors.forEach(color => {
+            colorsDisplay += `<span class="color-badge">${color.name}: ${color.meter}م</span>`;
+        });
+    } else {
+        colorsDisplay = '<span class="text-muted">بێ رەنگ</span>';
+    }
+
+    // Colors return inputs
+    let colorsReturn = '';
+    if (item.selected_colors && item.selected_colors.length > 0) {
+        item.selected_colors.forEach(color => {
+            colorsReturn += `
+                <div class="color-return-box">
                     <label>
-                        <input type="checkbox" 
-                               class="color-checkbox"
-                               data-color-name="${color.name}"
+                        <input type="checkbox" class="color-checkbox"
+                               data-color="${color.name}"
                                data-unit-cost="${item.unitcost}">
                         <strong>${color.name}</strong> - ${color.meter}م
                     </label>
-                    <div class="meter-input-wrapper">
-                        <input type="number" 
-                               name="returned_items[${index}][returned_colors_meters][${color.name}]" 
-                               class="form-control color-meter-input"
-                               step="0.01"
-                               min="0"
-                               max="${color.meter}"
-                               placeholder="متری بەرگەڕاندۆ"
-                               disabled
-                               data-max-meter="${color.meter}"
-                               data-unit-cost="${item.unitcost}">
-                        <small class="text-muted">/ ${color.meter}م @ $${parseFloat(item.unitcost).toFixed(2)}/م</small>
-                    </div>
+                    <input type="number"
+                           name="returned_items[${index}][returned_colors][${color.name}]"
+                           class="form-control meter-input color-meter"
+                           step="0.01"
+                           min="0"
+                           max="${color.meter}"
+                           disabled
+                           data-unit-cost="${item.unitcost}">
+                    <small class="text-muted">/ ${color.meter}م @ $${parseFloat(item.unitcost).toFixed(2)}/م</small>
                 </div>
             `;
         });
-    } else {
-        colorsHtml = '<p class="text-muted">بێ رەنگ</p>';
     }
 
-    const totalMeters = item.meters || 0;
-    const totalPrice = (totalMeters * item.unitcost).toFixed(2);
+    const totalPrice = (item.meters * item.unitcost).toFixed(2);
 
-    const html = `
-        <div class="product-table">
-            <div class="product-info" style="padding: 15px; background: white;">
-                <img src="{{ asset('${item.product_image}') }}" 
-                     class="product-img" 
-                     alt="${item.product_name}">
-                <div class="product-details" style="flex: 1;">
-                    <strong>${item.product_name}</strong>
-                    <small>کۆد: ${item.product_code}</small>
-                    <small>پسوڵە: #${item.invoice_no}</small>
-                    <small>بەرواری: ${item.order_date}</small>
+    const row = `
+        <tr>
+            <td>${index + 1}</td>
+            <td><strong>${item.product_name}</strong><br><small class="text-muted">${item.product_code}</small></td>
+            <td>${colorsDisplay}</td>
+            <td>$${parseFloat(item.unitcost).toFixed(2)}</td>
+            <td>${parseFloat(item.meters).toFixed(2)}م</td>
+            <td>$${totalPrice}</td>
+            <td style="max-width: 300px;">
+                <div style="max-height: 200px; overflow-y: auto;">
+                    ${colorsReturn}
                 </div>
-            </div>
-
-            <div class="product-stats" style="padding: 15px; background: #f8f9fa; border-top: 1px solid #dee2e6;">
-                <div class="stat-box">
-                    <div class="stat-label">نرخی متر</div>
-                    <div class="stat-value">$${parseFloat(item.unitcost).toFixed(2)}</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-label">کۆی متر</div>
-                    <div class="stat-value">${totalMeters}م</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-label">کۆی نرخ</div>
-                    <div class="stat-value">$${totalPrice}</div>
-                </div>
-            </div>
-            
-            <div class="product-row-expanded">
-                <h6>
-                    <i class="mdi mdi-palette me-2"></i> رەنگەکان - بەرگەڕاندەکان هەڵبژێرە
-                </h6>
-                ${colorsHtml}
-            </div>
-        </div>
-
-        <input type="hidden" name="returned_items[${index}][product_id]" value="${item.product_id}">
-        <input type="hidden" name="returned_items[${index}][unit_cost]" value="${item.unitcost}">
+                <input type="hidden" name="returned_items[${index}][product_id]" value="${item.product_id}">
+                <input type="hidden" name="returned_items[${index}][unit_cost]" value="${item.unitcost}">
+            </td>
+        </tr>
     `;
 
-    container.insertAdjacentHTML('beforeend', html);
+    tableBody.insertAdjacentHTML('beforeend', row);
 }
 
-function attachAllEventListeners() {
-    // Attach checkbox change listeners
+function attachCheckboxListeners() {
     const checkboxes = document.querySelectorAll('.color-checkbox');
+    
     checkboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', handleCheckboxChange);
+        checkbox.addEventListener('change', function() {
+            const colorReturnBox = this.closest('.color-return-box');
+            const meterInput = colorReturnBox.querySelector('.color-meter');
+            
+            if (this.checked) {
+                meterInput.disabled = false;
+                meterInput.focus();
+            } else {
+                meterInput.disabled = true;
+                meterInput.value = '0';
+            }
+            calculateRefund();
+        });
     });
 
-    // Attach meter input listeners
-    const meterInputs = document.querySelectorAll('.color-meter-input');
+    const meterInputs = document.querySelectorAll('.color-meter');
     meterInputs.forEach(input => {
         input.addEventListener('input', calculateRefund);
-        input.addEventListener('change', calculateRefund);
     });
-}
-
-function handleCheckboxChange(e) {
-    const checkbox = e.target;
-    const colorInputGroup = checkbox.closest('.color-input-group');
-    const meterInput = colorInputGroup.querySelector('.color-meter-input');
-    
-    if (checkbox.checked) {
-        meterInput.disabled = false;
-        meterInput.focus();
-    } else {
-        meterInput.disabled = true;
-        meterInput.value = '0';
-    }
-    
-    calculateRefund();
 }
 
 function calculateRefund() {
     let totalRefund = 0;
     const checkboxes = document.querySelectorAll('.color-checkbox:checked');
-    
+
     checkboxes.forEach(checkbox => {
-        const colorInputGroup = checkbox.closest('.color-input-group');
-        const meterInput = colorInputGroup.querySelector('.color-meter-input');
-        const unitCost = parseFloat(meterInput.getAttribute('data-unit-cost')) || 0;
+        const colorReturnBox = checkbox.closest('.color-return-box');
+        const meterInput = colorReturnBox.querySelector('.color-meter');
         const meters = parseFloat(meterInput.value) || 0;
-        
-        // Validate meters don't exceed max
-        const maxMeter = parseFloat(meterInput.getAttribute('data-max-meter')) || 0;
-        if (meters > maxMeter) {
-            meterInput.value = maxMeter;
-            totalRefund += maxMeter * unitCost;
-        } else {
-            totalRefund += meters * unitCost;
-        }
+        const unitCost = parseFloat(meterInput.getAttribute('data-unit-cost')) || 0;
+        totalRefund += meters * unitCost;
     });
 
     document.getElementById('refundAmount').value = totalRefund.toFixed(2);

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
+use App\Models\Order;
 use App\Models\Orderdetails;
 use App\Models\Product;
 use App\Models\ReturnedProduct;
@@ -13,7 +14,6 @@ use DB;
 
 class ReturnedProductController extends Controller
 {
-    // Show all returns
     public function index(Request $request)
     {
         $status = $request->get('status');
@@ -27,65 +27,57 @@ class ReturnedProductController extends Controller
         return view('backend.returned.index', compact('returns', 'status'));
     }
 
-    // Show create form
     public function create()
     {
-        $customers = Customer::orderBy('name')->get();
+        $customers = Customer::whereHas('orders', function($q) {
+            $q->where('order_status', 'complete');
+        })->orderBy('name')->get();
+
         return view('backend.returned.create', compact('customers'));
     }
 
-    // Get customer orders (AJAX) - Shows purchase history
     public function getCustomerOrders($customerId)
     {
         $orderItems = Orderdetails::whereHas('order', function($q) use ($customerId) {
-            $q->where('customer_id', $customerId)
-              ->where('order_status', 'complete');
+            $q->where('customer_id', $customerId)->where('order_status', 'complete');
         })
         ->with(['product', 'order'])
-        ->get()
-        ->map(function($item) {
+        ->get();
+
+        $items = [];
+        foreach ($orderItems as $item) {
             $colors = [];
             if ($item->selected_colors) {
-                $colorsData = json_decode($item->selected_colors, true);
-                if (is_array($colorsData)) {
-                    foreach ($colorsData as $color) {
-                        $colors[] = [
-                            'name' => $color['name'] ?? 'Unknown',
-                            'meter' => (float)($color['meter'] ?? 0),
-                        ];
-                    }
-                }
+                $colors = json_decode($item->selected_colors, true) ?? [];
             }
 
-            return [
+            $items[] = [
                 'id' => $item->id,
                 'order_id' => $item->order_id,
                 'product_id' => $item->product_id,
                 'product_name' => $item->product->product_name ?? 'Unknown',
                 'product_code' => $item->product->product_code ?? '',
-                'product_image' => $item->product->product_image ?? 'images/default.jpg',
-                'quantity' => $item->quantity ?? 1,
-                'meters' => (float)($item->meters ?? 0),
-                'unitcost' => (float)($item->unitcost ?? 0),
-                'colors' => $colors,
-                'invoice_no' => $item->order->invoice_no ?? 'N/A',
-                'order_date' => $item->order->order_date ?? '',
+                'product_image' => $item->product->product_image ?? '',
+                'quantity' => $item->quantity,
+                'meters' => floatval($item->meters),
+                'unitcost' => floatval($item->unitcost),
+                'selected_colors' => $colors,
+                'total' => floatval($item->total),
+                'invoice_no' => $item->order->invoice_no,
+                'order_date' => $item->order->order_date,
             ];
-        });
+        }
 
-        return response()->json($orderItems);
+        return response()->json($items);
     }
 
-    // Store return
     public function store(Request $request)
     {
         $validated = $request->validate([
             'customer_id' => 'required|exists:customers,id',
             'return_reason' => 'nullable|string',
             'refund_amount' => 'required|numeric|min:0',
-            'returned_items' => 'required|array|min:1',
-            'returned_items.*.product_id' => 'required|exists:products,id',
-            'returned_items.*.returned_colors' => 'nullable|array',
+            'returned_items' => 'required|array',
         ]);
 
         DB::beginTransaction();
@@ -93,7 +85,6 @@ class ReturnedProductController extends Controller
         try {
             $customer = Customer::find($validated['customer_id']);
 
-            // Create return
             $return = ReturnedProduct::create([
                 'customer_id' => $customer->id,
                 'order_id' => 0,
@@ -103,26 +94,25 @@ class ReturnedProductController extends Controller
                 'status' => 'pending',
             ]);
 
-            // Process each returned item
-            foreach ($validated['returned_items'] as $index => $item) {
-                $returnedColors = $item['returned_colors'] ?? [];
-                $totalReturnedMeters = 0;
+            foreach ($validated['returned_items'] as $itemData) {
+                if (isset($itemData['returned_colors']) && is_array($itemData['returned_colors'])) {
+                    $totalReturnedMeters = 0;
 
-                // Calculate total meters from colors
-                foreach ($returnedColors as $colorName => $meters) {
-                    if ($meters > 0) {
-                        $totalReturnedMeters += (float)$meters;
+                    foreach ($itemData['returned_colors'] as $colorName => $metersReturned) {
+                        if ($metersReturned > 0) {
+                            $totalReturnedMeters += floatval($metersReturned);
+                        }
                     }
-                }
 
-                if ($totalReturnedMeters > 0) {
-                    ReturnedItem::create([
-                        'returned_product_id' => $return->id,
-                        'product_id' => $item['product_id'],
-                        'quantity_returned' => 1,
-                        'meters_returned' => $totalReturnedMeters,
-                        'refund_price' => $validated['refund_amount'],
-                    ]);
+                    if ($totalReturnedMeters > 0) {
+                        ReturnedItem::create([
+                            'returned_product_id' => $return->id,
+                            'product_id' => $itemData['product_id'],
+                            'quantity_returned' => 1,
+                            'meters_returned' => $totalReturnedMeters,
+                            'refund_price' => $validated['refund_amount'],
+                        ]);
+                    }
                 }
             }
 
@@ -132,15 +122,14 @@ class ReturnedProductController extends Controller
                 ->with('message', 'بەرگەڕاندن تۆمار کرا بە سەرکەوتی');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'خۆیەتی: ' . $e->getMessage());
+            return back()->with('error', 'خۆیەتی: ' . $e->getMessage())->withInput();
         }
     }
 
-    // Show return details
     public function show($id)
     {
         $return = ReturnedProduct::with(['customer', 'returnedItems.product'])->find($id);
-        
+
         if (!$return) {
             return redirect()->route('returned.index')->with('error', 'نەدۆزرایەوە');
         }
@@ -148,7 +137,6 @@ class ReturnedProductController extends Controller
         return view('backend.returned.show', compact('return'));
     }
 
-    // Approve return
     public function approve($id)
     {
         $return = ReturnedProduct::with(['returnedItems', 'customer'])->find($id);
@@ -160,18 +148,14 @@ class ReturnedProductController extends Controller
         DB::beginTransaction();
 
         try {
-            // 1. Restore inventory
             foreach ($return->returnedItems as $item) {
                 $product = Product::find($item->product_id);
                 if ($product) {
-                    $product->increment('product_store', $item->meters_returned);
+                    $product->increment('product_store', 1);
                 }
             }
 
-            // 2. Refund customer
             $return->customer->decrement('due', $return->refund_amount);
-
-            // 3. Mark as approved
             $return->update(['status' => 'approved']);
 
             DB::commit();
@@ -183,7 +167,6 @@ class ReturnedProductController extends Controller
         }
     }
 
-    // Reject return
     public function reject($id)
     {
         $return = ReturnedProduct::find($id);
