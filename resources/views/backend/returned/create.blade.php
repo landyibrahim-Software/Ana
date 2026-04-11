@@ -28,13 +28,22 @@
         background: #dc3545;
         color: white;
         border: none;
-        padding: 5px 10px;
+        padding: 8px 15px;
         border-radius: 5px;
         cursor: pointer;
+        font-weight: 600;
     }
 
     .btn-remove-item:hover {
         background: #c82333;
+    }
+
+    .info-box {
+        background: #e3f2fd;
+        border-left: 4px solid #2196f3;
+        padding: 12px;
+        border-radius: 4px;
+        margin-bottom: 15px;
     }
 </style>
 
@@ -77,11 +86,16 @@
                                     @enderror
                                 </div>
 
-                                <div class="mb-3">
-                                    <label class="form-label">کڕیار</label>
-                                    <input type="hidden" name="customer_id" id="customerId">
-                                    <input type="text" id="customerName" class="form-control" readonly>
+                                <!-- Order Info Box -->
+                                <div id="orderInfoBox" style="display:none;">
+                                    <div class="info-box">
+                                        <strong>ناوی کڕیار:</strong> <span id="displayCustomerName"></span><br>
+                                        <strong>کۆی پسوڵە:</strong> $<span id="displayOrderTotal">0.00</span><br>
+                                        <strong>پارەی دراو:</strong> $<span id="displayOrderPay">0.00</span>
+                                    </div>
                                 </div>
+
+                                <input type="hidden" name="customer_id" id="customerId">
                             </div>
 
                             <!-- RETURN DETAILS -->
@@ -127,7 +141,7 @@
                             <div class="form-section">
                                 <h5>بەرهەمە بەرگەڕاندووەکان</h5>
                                 <div id="itemsContainer"></div>
-                                <button type="button" class="btn btn-sm btn-success" onclick="addItemRow()">
+                                <button type="button" class="btn btn-sm btn-success" onclick="addItemRow()" id="addItemBtn" style="display:none;">
                                     <i class="mdi mdi-plus me-1"></i> بەرهەم زیاد بکە
                                 </button>
                             </div>
@@ -149,62 +163,94 @@
 </div>
 
 <script>
+let itemIndex = 0;
+
 // Load order items when order is selected
 function loadOrderItems() {
     const orderId = document.getElementById('orderSelect').value;
-    const select = document.getElementById('orderSelect');
-    const customerId = select.options[select.selectedIndex].getAttribute('data-customer');
     
-    document.getElementById('customerId').value = customerId;
-
-    // Clear previous items
-    document.getElementById('itemsContainer').innerHTML = '';
-
     if (!orderId) {
-        document.getElementById('customerName').value = '';
+        document.getElementById('orderInfoBox').style.display = 'none';
+        document.getElementById('itemsContainer').innerHTML = '';
+        document.getElementById('addItemBtn').style.display = 'none';
         return;
     }
+
+    // Show loading
+    document.getElementById('itemsContainer').innerHTML = '<p class="text-muted">لە لادا کردنی ئایتمەکان...</p>';
 
     // Get order items via AJAX
     fetch(`/returned/${orderId}/items`)
         .then(response => response.json())
-        .then(items => {
-            items.forEach((item, index) => {
-                addItemRow(item, index);
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+                document.getElementById('itemsContainer').innerHTML = '';
+                return;
+            }
+
+            // Set customer ID
+            document.getElementById('customerId').value = data.order.customer_id;
+
+            // Display order info
+            document.getElementById('displayCustomerName').textContent = data.order.customer_name;
+            document.getElementById('displayOrderTotal').textContent = parseFloat(data.order.total_amount).toFixed(2);
+            document.getElementById('displayOrderPay').textContent = parseFloat(data.order.total_paid).toFixed(2);
+            document.getElementById('orderInfoBox').style.display = 'block';
+
+            // Clear and load items
+            document.getElementById('itemsContainer').innerHTML = '';
+            itemIndex = 0;
+
+            if (data.items.length === 0) {
+                document.getElementById('itemsContainer').innerHTML = '<p class="text-warning">ئایتمێک نیە</p>';
+                document.getElementById('addItemBtn').style.display = 'none';
+                return;
+            }
+
+            data.items.forEach(item => {
+                addItemRow(item);
             });
+
+            document.getElementById('addItemBtn').style.display = 'inline-block';
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('itemsContainer').innerHTML = '<p class="text-danger">خۆیەتی: ئایتمەکان لە لادا کرایەوە بەسەبارەی هەڵە</p>';
+        });
 }
 
 // Add item row
-function addItemRow(item = null, index = 0) {
+function addItemRow(item = null) {
     const container = document.getElementById('itemsContainer');
-    const rowId = 'item-row-' + Date.now() + Math.random();
+    const rowId = 'item-row-' + itemIndex;
+    const currentIndex = itemIndex;
+    itemIndex++;
     
     const html = `
         <div class="item-row" id="${rowId}">
             <div class="row">
                 <div class="col-md-3 mb-3">
                     <label class="form-label">بەرهەم</label>
-                    <input type="hidden" name="returned_items[${index}][product_id]" value="${item ? item.product_id : ''}">
+                    <input type="hidden" name="returned_items[${currentIndex}][product_id]" value="${item ? item.product_id : ''}">
                     <input type="text" class="form-control" value="${item ? item.product_name : ''}" readonly>
                 </div>
 
                 <div class="col-md-2 mb-3">
                     <label class="form-label">دەرزەن بەرگەڕاندۆ</label>
-                    <input type="number" name="returned_items[${index}][quantity_returned]" class="form-control" 
+                    <input type="number" name="returned_items[${currentIndex}][quantity_returned]" class="form-control" 
                            value="${item ? item.quantity : ''}" min="1" max="${item ? item.quantity : ''}" required>
                 </div>
 
                 <div class="col-md-2 mb-3">
                     <label class="form-label">متر بەرگەڕاندۆ</label>
-                    <input type="number" name="returned_items[${index}][meters_returned]" class="form-control" 
-                           step="0.01" value="${item ? item.meters : '0'}" min="0">
+                    <input type="number" name="returned_items[${currentIndex}][meters_returned]" class="form-control" 
+                           step="0.01" value="${item ? (item.meters || 0) : '0'}" min="0">
                 </div>
 
                 <div class="col-md-2 mb-3">
                     <label class="form-label">پاشگەزی (دۆلار)</label>
-                    <input type="number" name="returned_items[${index}][refund_price]" class="form-control" 
+                    <input type="number" name="returned_items[${currentIndex}][refund_price]" class="form-control" 
                            step="0.01" value="${item ? item.unitcost : ''}" min="0" required>
                 </div>
 
@@ -219,13 +265,6 @@ function addItemRow(item = null, index = 0) {
 
     container.insertAdjacentHTML('beforeend', html);
 }
-
-// Load customer name when order changes
-document.getElementById('orderSelect').addEventListener('change', function() {
-    const select = this;
-    const customerName = select.options[select.selectedIndex].text.split(' - ')[1];
-    document.getElementById('customerName').value = customerName || '';
-});
 </script>
 
 @endsection

@@ -319,39 +319,19 @@
                         </li>
 
 @endif
-<li class="side-nav-item">
-    <a data-bs-toggle="collapse" href="#sidebarBank" aria-expanded="false" aria-controls="sidebarBank" class="side-nav-link">
-        <i class="mdi mdi-bank"></i>
-        <span>بانکی فرۆشگا</span>
-        <span class="menu-arrow"></span>
-    </a>
-    <div class="collapse" id="sidebarBank">
-        <ul class="side-nav-second-level">
-            <li>
-                <a href="{{ route('bank.index') }}">
-                    <i class="mdi mdi-cash-multiple me-2"></i>سەرمایە و لیکدان
-                </a>
-            </li>
-        </ul>
-    </div>
-</li>
-<li class="side-nav-item">
-    <a data-bs-toggle="collapse" href="#sidebarReturned" aria-expanded="false" aria-controls="sidebarReturned" class="side-nav-link">
+<li>
+    <a href="#returned" data-bs-toggle="collapse">
         <i class="mdi mdi-undo"></i>
         <span>بەرگەڕاندنی بەرهەمەکان</span>
         <span class="menu-arrow"></span>
     </a>
-    <div class="collapse" id="sidebarReturned">
-        <ul class="side-nav-second-level">
+    <div class="collapse" id="returned">
+        <ul class="nav-second-level">
             <li>
-                <a href="{{ route('returned.index') }}">
-                    <i class="mdi mdi-list me-2"></i>لیستی بەرگەڕاندنەکان
-                </a>
+                <a href="{{ route('returned.index') }}">لیستی بەرگەڕاندنەکان</a>
             </li>
             <li>
-                <a href="{{ route('returned.create') }}">
-                    <i class="mdi mdi-plus me-2"></i>بەرگەڕاندنی نوێ
-                </a>
+                <a href="{{ route('returned.create') }}">بەرگەڕاندنی نوێ</a>
             </li>
         </ul>
     </div>
