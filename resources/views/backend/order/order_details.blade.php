@@ -106,7 +106,7 @@
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label for="firstname" class="form-label">پسوڵەی داواکاری </label>
-                                            <p class="text-danger"> {{ $order->invoice_no }} </p>
+                                            <p class="text-danger"> {{ $order->id }} </p>
                                         </div>
                                     </div>
 

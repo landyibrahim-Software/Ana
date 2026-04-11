@@ -92,7 +92,7 @@
     <!-- RIGHT: Invoice Info -->
     <div class="text-right">
         <p><strong>بەرواری پسوڵە:</strong> {{ \Carbon\Carbon::parse($order->order_date)->format('d-m-Y') }}</p>
-        <p><strong>ژمارەی پسوڵە:</strong> {{ $order->invoice_no }}</p>
+        <p><strong>ژمارەی پسوڵە:</strong> {{ $order->id }}</p>
     </div>
 
 </div>
