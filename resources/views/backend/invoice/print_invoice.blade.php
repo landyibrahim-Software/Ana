@@ -174,10 +174,70 @@
     </div>
 </div>
 
-<!-- PRINT -->
+<!-- PRINT & WHATSAPP -->
 <div class="mt-4 text-end d-print-none">
-    <button onclick="window.print()" class="btn btn-primary">چاپکردن</button>
+    <button onclick="window.print()" class="btn btn-primary">
+        <i class="mdi mdi-printer me-1"></i> چاپکردن
+    </button>
+    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#whatsappModal">
+        <i class="mdi mdi-whatsapp me-1"></i> ویتسئاپ
+    </button>
 </div>
+
+<!-- WHATSAPP MODAL -->
+<div class="modal fade" id="whatsappModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">بۆ ویتسئاپ بنێرە</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label"><strong>نمبەری مۆبایل (بە +964 دەست بکە)</strong></label>
+                    <input type="text" id="whatsappPhone" class="form-control" placeholder="مثال: +964781234567" value="{{ $order->customer->phone ?? '' }}">
+                </div>
+                <small class="text-muted">بە ویتسئاپ کۆپی بنێرە</small>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">داخستن</button>
+                <button type="button" class="btn btn-success" onclick="sendToWhatsapp()">بنێرە</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function sendToWhatsapp() {
+    const phone = document.getElementById('whatsappPhone').value.trim();
+    
+    if (!phone) {
+        alert('تکایە نمبەری مۆبایل تێبنێ');
+        return;
+    }
+    
+    // Invoice details
+    const orderId = "{{ $order->id }}";
+    const customerName = "{{ $order->customer->name }}";
+    const grandTotal = "{{ number_format($grandTotal, 2) }}";
+    const message = encodeURIComponent(
+        `سڵاو ${customerName}!\n\n` +
+        `ئەم پسوڵەی تێدا:\n` +
+        `ژمارەی پسوڵە: #${orderId}\n` +
+        `کۆی گشتی: ${grandTotal}\n\n` +
+        `لەتێپەڕی ویتسئاپ دا:\n` +
+        `{{ route('print.invoice', $order->id) }}\n\n` +
+        `سوپاس!`
+    );
+    
+    // Open WhatsApp with message
+    window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
+    
+    // Close modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('whatsappModal'));
+    modal.hide();
+}
+</script>
 
 </div>
 </div>
