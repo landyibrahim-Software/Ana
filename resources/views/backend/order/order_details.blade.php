@@ -2,6 +2,34 @@
 @section('admin')
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
 
+<style>
+.color-badge {
+    display: inline-block;
+    background: #e9ecef;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    margin: 2px;
+}
+
+@media print {
+    .page-title-box, 
+    .breadcrumb, 
+    .btn, 
+    form, 
+    .text-end {
+        display: none !important;
+    }
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+    body {
+        padding: 20px !important;
+    }
+}
+</style>
+
 <div class="content">
     <!-- Start Content-->
     <div class="container-fluid">
@@ -20,7 +48,7 @@
         </div>     
         <!-- end page title -->
 
-        <!-- PRINT BUTTON ADDED HERE -->
+        <!-- PRINT BUTTON -->
         <div class="row mb-3">
             <div class="col-12 text-end">
                 <button onclick="window.print()" class="btn btn-primary">
@@ -111,33 +139,57 @@
                         </div>
                         <!-- end settings content-->
 
+                        <!-- NEW TABLE WITH COLORS AND METERS -->
                         <div class="col-12">
                             <div class="card">
                                 <div class="card-body">
-                                    <table class="table dt-responsive nowrap w-100">
+                                    <table class="table table-bordered text-center">
                                         <thead>
-                                            <tr> 
-                                                <th>وێنە</th>
-                                                <th>ناوی ئایتم</th>
-                                                <th>جۆدە ئایتم</th>
-                                                <th>دەرزەن</th>
-                                                <th>نرخ</th>
-                                                <th>کۆی گشتی</th> 
+                                            <tr>
+                                                <th>#</th>
+                                                <th>ئایتم</th>
+                                                <th>رەنگەکان</th>
+                                                <th>نرخی متر</th>
+                                                <th>کۆی متر</th>
+                                                <th>کۆی گشتی</th>
                                             </tr>
                                         </thead>
                                         <tbody>
+                                            @php
+                                                $sl = 1;
+                                                $subTotal = 0;
+                                            @endphp
+
                                             @foreach($orderItem as $item)
+                                            @php
+                                                $rowTotal = ($item->meters ?? $item->quantity) * $item->unitcost;
+                                                $subTotal += $rowTotal;
+                                            @endphp
                                             <tr>
-                                                <td> <img src="{{ asset($item->product->product_image) }}" style="width:50px; height: 40px;"> </td>
-                                                <td>{{ $item->product->product_name }}</td>
-                                                <td>{{ $item->product->product_code }}</td>
-                                                <td>{{ $item->quantity }}</td>
-                                                <td>{{ number_format($item->unitcost,2) }}</td>
-                                                <td>{{ number_format($item->unitcost*$item->quantity,2) }}</td> 
+                                                <td>{{ $sl++ }}</td>
+                                                <td><strong>{{ optional($item->product)->product_name ?? 'Deleted Product' }}</strong></td>
+                                                <td>
+                                                    @if($item->selected_colors)
+                                                        @php $colors = json_decode($item->selected_colors, true); @endphp
+                                                        @foreach($colors as $color)
+                                                            <span class="color-badge">
+                                                                {{ $color['name'] }}: {{ $color['meter'] }}م
+                                                            </span>
+                                                        @endforeach
+                                                    @else
+                                                        <span class="text-muted">بێ رەنگ</span>
+                                                    @endif
+                                                </td>
+                                                <td>{{ number_format($item->unitcost, 2) }}</td>
+                                                <td>{{ number_format($item->meters ?? $item->quantity, 2) }}</td>
+                                                <td>{{ number_format($rowTotal, 2) }}</td>
                                             </tr>
                                             @endforeach
                                         </tbody>
                                     </table>
+
+                                    
+                                    </div>
                                 </div> <!-- end card body-->
                             </div> <!-- end card -->
                         </div><!-- end col-->
@@ -148,25 +200,5 @@
         <!-- end row-->
     </div> <!-- container -->
 </div> <!-- content -->
-
-<!-- Print Media Styles (Optional: Improves print layout) -->
-<style>
-@media print {
-    .page-title-box, 
-    .breadcrumb, 
-    .btn, 
-    form, 
-    .text-end {
-        display: none !important;
-    }
-    .card {
-        border: none !important;
-        box-shadow: none !important;
-    }
-    body {
-        padding: 20px !important;
-    }
-}
-</style>
 
 @endsection

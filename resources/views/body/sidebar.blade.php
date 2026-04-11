@@ -319,6 +319,20 @@
                         </li>
 
 @endif
+<li class="side-nav-item">
+    <a data-bs-toggle="collapse" href="#sidebarBank" aria-expanded="false" aria-controls="sidebarBank" class="side-nav-link">
+        <i class="uil-bank-alt"></i>
+        <span> بانکی فرۆشگا </span>
+        <span class="menu-arrow"></span>
+    </a>
+    <div class="collapse" id="sidebarBank">
+        <ul class="side-nav-second-level">
+            <li>
+                <a href="{{ route('bank.index') }}">سەرمایە و لیکدان</a>
+            </li>
+        </ul>
+    </div>
+</li>
 
     <li>
                             <a href="#backup" data-bs-toggle="collapse">
