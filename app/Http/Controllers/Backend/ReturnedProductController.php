@@ -34,80 +34,108 @@ class ReturnedProductController extends Controller
         return view('backend.returned.create', compact('customers'));
     }
 
-    // Get customer orders (AJAX)
+    // Get customer orders (AJAX) - Shows purchase history
     public function getCustomerOrders($customerId)
     {
-        $orders = Orderdetails::whereHas('order', function($q) use ($customerId) {
+        $orderItems = Orderdetails::whereHas('order', function($q) use ($customerId) {
             $q->where('customer_id', $customerId)
               ->where('order_status', 'complete');
         })
         ->with(['product', 'order'])
         ->get()
         ->map(function($item) {
+            $colors = [];
+            if ($item->selected_colors) {
+                $colorsData = json_decode($item->selected_colors, true);
+                if (is_array($colorsData)) {
+                    foreach ($colorsData as $color) {
+                        $colors[] = [
+                            'name' => $color['name'] ?? 'Unknown',
+                            'meter' => (float)($color['meter'] ?? 0),
+                        ];
+                    }
+                }
+            }
+
             return [
                 'id' => $item->id,
+                'order_id' => $item->order_id,
                 'product_id' => $item->product_id,
-                'product_name' => $item->product->product_name,
-                'quantity' => $item->quantity,
-                'meters' => $item->meters ?? 0,
-                'unitcost' => $item->unitcost,
-                'selected_colors' => $item->selected_colors ? json_decode($item->selected_colors, true) : [],
+                'product_name' => $item->product->product_name ?? 'Unknown',
+                'product_code' => $item->product->product_code ?? '',
+                'product_image' => $item->product->product_image ?? 'images/default.jpg',
+                'quantity' => $item->quantity ?? 1,
+                'meters' => (float)($item->meters ?? 0),
+                'unitcost' => (float)($item->unitcost ?? 0),
+                'colors' => $colors,
+                'invoice_no' => $item->order->invoice_no ?? 'N/A',
+                'order_date' => $item->order->order_date ?? '',
             ];
         });
 
-        return response()->json($orders);
+        return response()->json($orderItems);
     }
 
     // Store return
-   // Store return
-public function store(Request $request)
-{
-    $validated = $request->validate([
-        'customer_id' => 'required|exists:customers,id',
-        'return_reason' => 'nullable|string',
-        'refund_amount' => 'required|numeric|min:0',
-        'returned_items' => 'required|array|min:1',
-        'returned_items.*.product_id' => 'required|exists:products,id',
-        'returned_items.*.returned_meters' => 'required|numeric|min:0',
-    ]);
-
-    DB::beginTransaction();
-
-    try {
-        $customer = Customer::find($validated['customer_id']);
-
-        // Create return
-        $return = ReturnedProduct::create([
-            'customer_id' => $customer->id,
-            'order_id' => 0,
-            'return_date' => now()->toDateString(),
-            'return_reason' => $validated['return_reason'] ?? 'بەرگەڕاندنی بێ هۆ',
-            'refund_amount' => $validated['refund_amount'],
-            'status' => 'pending',
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'customer_id' => 'required|exists:customers,id',
+            'return_reason' => 'nullable|string',
+            'refund_amount' => 'required|numeric|min:0',
+            'returned_items' => 'required|array|min:1',
+            'returned_items.*.product_id' => 'required|exists:products,id',
+            'returned_items.*.returned_colors' => 'nullable|array',
         ]);
 
-        // Process each returned item
-        foreach ($validated['returned_items'] as $item) {
-            if ((float)$item['returned_meters'] > 0) {
-                ReturnedItem::create([
-                    'returned_product_id' => $return->id,
-                    'product_id' => $item['product_id'],
-                    'quantity_returned' => 1,
-                    'meters_returned' => $item['returned_meters'],
-                    'refund_price' => $validated['refund_amount'],
-                ]);
+        DB::beginTransaction();
+
+        try {
+            $customer = Customer::find($validated['customer_id']);
+
+            // Create return
+            $return = ReturnedProduct::create([
+                'customer_id' => $customer->id,
+                'order_id' => 0,
+                'return_date' => now()->toDateString(),
+                'return_reason' => $validated['return_reason'] ?? 'بەرگەڕاندن',
+                'refund_amount' => $validated['refund_amount'],
+                'status' => 'pending',
+            ]);
+
+            // Process each returned item
+            foreach ($validated['returned_items'] as $index => $item) {
+                $returnedColors = $item['returned_colors'] ?? [];
+                $totalReturnedMeters = 0;
+
+                // Calculate total meters from colors
+                foreach ($returnedColors as $colorName => $meters) {
+                    if ($meters > 0) {
+                        $totalReturnedMeters += (float)$meters;
+                    }
+                }
+
+                if ($totalReturnedMeters > 0) {
+                    ReturnedItem::create([
+                        'returned_product_id' => $return->id,
+                        'product_id' => $item['product_id'],
+                        'quantity_returned' => 1,
+                        'meters_returned' => $totalReturnedMeters,
+                        'refund_price' => $validated['refund_amount'],
+                    ]);
+                }
             }
+
+            DB::commit();
+
+            return redirect()->route('returned.index')
+                ->with('message', 'بەرگەڕاندن تۆمار کرا بە سەرکەوتی');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'خۆیەتی: ' . $e->getMessage());
         }
-
-        DB::commit();
-
-        return redirect()->route('returned.index')
-            ->with('message', 'بەرگەڕاندن تۆمار کرا بە سەرکەوتی');
-    } catch (\Exception $e) {
-        DB::rollBack();
-        return back()->with('error', 'خۆیەتی: ' . $e->getMessage());
     }
-}
+
     // Show return details
     public function show($id)
     {
