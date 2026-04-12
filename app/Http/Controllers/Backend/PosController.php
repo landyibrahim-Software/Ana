@@ -17,19 +17,27 @@ class PosController extends Controller
     ================================ */
     public function Pos()
     {
-        // Load products as collection with relationships
-        $products = Product::with('category', 'code', 'colors')
-                           ->where('product_store', '>', 0)
-                           ->latest()
-                           ->get();
+        // Load ALL products with relationships
+        $allProducts = Product::with('category', 'code', 'colors')
+                              ->where('product_store', '>', 0)
+                              ->latest()
+                              ->get();
         
-        $customers = Customer::latest()->get();
+        // Get cart items
+        $cartItems = Cart::content();
+        
+        // Get IDs of products in cart
+        $cartProductIds = $cartItems->pluck('id')->toArray();
+        
+        // Filter products to exclude those in cart
+        $product = $allProducts->filter(function($item) use ($cartProductIds) {
+            return !in_array($item->id, $cartProductIds);
+        })->values(); // Reset keys
+        
+        // Get all customers
+        $customer = Customer::latest()->get();
 
-        // Rename variables to be more clear
-        return view('backend.pos.pos_page', [
-            'product' => $products,
-            'customer' => $customers
-        ]);
+        return view('backend.pos.pos_page', compact('product', 'customer'));
     }
 
     /* ===============================

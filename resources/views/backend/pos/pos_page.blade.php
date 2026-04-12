@@ -498,9 +498,6 @@ if($allcart && $allcart->count() > 0) {
 </div>
 </div>
 </div>
-
-</div>
-
 {{-- BARCODE + PRODUCTS --}}
 <div class="row">
 <div class="col-12">
@@ -514,20 +511,7 @@ Last Scan: <span id="last-barcode">None</span>
 </span>
 </div>
 
-@php
-    // Get IDs of products already in cart
-    $cartProductIds = [];
-    foreach($allcart as $cartItem) {
-        $cartProductIds[] = $cartItem->id;
-    }
-    
-    // Filter products to show only those NOT in cart
-    $availableProducts = $product->filter(function($item) use ($cartProductIds) {
-        return !in_array($item->id, $cartProductIds);
-    });
-@endphp
-
-@if($availableProducts && $availableProducts->count() > 0)
+@if($product && count($product) > 0)
 <div class="table-responsive">
 <table class="table table-hover">
 <thead>
@@ -538,7 +522,7 @@ Last Scan: <span id="last-barcode">None</span>
     </tr>
 </thead>
 <tbody>
-@foreach($availableProducts as $item)
+@foreach($product as $item)
     @if($item && is_object($item) && isset($item->id))
     <tr data-code="{{ $item->product_code ?? '' }}">
     <td>
@@ -561,6 +545,26 @@ Last Scan: <span id="last-barcode">None</span>
         </button>
         </form>
     </td>
+    </tr>
+    @endif
+@endforeach
+</tbody>
+</table>
+</div>
+@else
+<div class="empty-state">
+    <i class="fas fa-box"></i>
+    <h5>بەرهەم نیە</h5>
+</div>
+@endif
+
+</div>
+</div>
+</div>
+</div>
+
+</div>
+</div>
     </tr>
     @endif
 @endforeach
