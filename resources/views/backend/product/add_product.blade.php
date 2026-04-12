@@ -191,22 +191,171 @@
 
 
 
-   <div class="col-md-12">
-<div class="form-group mb-3">
-        <label for="example-fileinput" class="form-label">وێنە </label>
-        <input type="file" name="product_image" id="image" class="form-control">
-         
+  <!-- IMAGE INPUT WITH CAMERA OPTION -->
+<div class="col-md-12">
+    <div class="form-group mb-3">
+        <label for="image" class="form-label">وێنە <span class="text-danger">*</span></label>
+        <div class="input-group">
+            <input type="file" name="product_image" id="image" class="form-control" accept="image/*">
+            <button class="btn btn-primary" type="button" id="cameraBtn" title="Open Camera">
+                <i class="mdi mdi-camera"></i> کیمێرا
+            </button>
+        </div>
+        <small class="text-muted d-block mt-2">یان فایڵ هەڵبژێرە یان کیمێرا بکەبێتە بکار</small>
     </div>
- </div> <!-- end col -->
+</div>
 
+<!-- HIDDEN CAMERA INPUT -->
+<input type="file" id="cameraInput" style="display: none;" accept="image/*" capture="camera">
 
-   <div class="col-md-12">
-<div class="mb-3">
-        <label for="example-fileinput" class="form-label"> </label>
+<!-- CAMERA MODAL -->
+<div class="modal fade" id="cameraModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">وێنە لە کیمێرا</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <video id="cameraVideo" style="width: 100%; max-width: 500px; border: 2px solid #ddd; border-radius: 8px;"></video>
+                <canvas id="cameraCanvas" style="display: none;"></canvas>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">داخستن</button>
+                <button type="button" class="btn btn-danger" id="stopCameraBtn">
+                    <i class="mdi mdi-stop"></i> کیمێرا بستن
+                </button>
+                <button type="button" class="btn btn-success" id="captureBtn">
+                    <i class="mdi mdi-camera-iris"></i> وێنە بگیرە
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- IMAGE PREVIEW -->
+<div class="col-md-12">
+    <div class="mb-3">
+        <label class="form-label"> </label>
         <img id="showImage" src="{{  url('upload/no_image.jpg') }}" class="rounded-circle avatar-lg img-thumbnail"
                 alt="profile-image">
     </div>
- </div> <!-- end col -->
+</div>
+
+<!-- CAMERA JAVASCRIPT -->
+<script type="text/javascript">
+    let cameraStream = null;
+    let cameraModal = null;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        cameraModal = new bootstrap.Modal(document.getElementById('cameraModal'));
+        
+        // Camera Button Click
+        document.getElementById('cameraBtn').addEventListener('click', function() {
+            openCamera();
+        });
+
+        // Capture Button
+        document.getElementById('captureBtn').addEventListener('click', function() {
+            takePhoto();
+        });
+
+        // Stop Camera Button
+        document.getElementById('stopCameraBtn').addEventListener('click', function() {
+            stopCamera();
+        });
+
+        // File Input Change (for regular file selection)
+        document.getElementById('image').addEventListener('change', function(e) {
+            handleImagePreview(e);
+        });
+    });
+
+    // Open Camera
+    function openCamera() {
+        cameraModal.show();
+        const video = document.getElementById('cameraVideo');
+        
+        // Check browser support
+        navigator.mediaDevices.getUserMedia({
+            video: { 
+                facingMode: 'environment',
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            },
+            audio: false
+        })
+        .then(function(stream) {
+            cameraStream = stream;
+            video.srcObject = stream;
+            video.play();
+        })
+        .catch(function(error) {
+            alert('کیمێرا بەکار ناتوانرێت: ' + error.message);
+            cameraModal.hide();
+        });
+    }
+
+    // Stop Camera
+    function stopCamera() {
+        if(cameraStream) {
+            cameraStream.getTracks().forEach(track => track.stop());
+            cameraStream = null;
+        }
+        cameraModal.hide();
+    }
+
+    // Take Photo
+    function takePhoto() {
+        const video = document.getElementById('cameraVideo');
+        const canvas = document.getElementById('cameraCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Set canvas size to match video
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        // Draw video frame to canvas
+        ctx.drawImage(video, 0, 0);
+
+        // Convert canvas to blob and create file
+        canvas.toBlob(function(blob) {
+            // Create a File object from blob
+            const timestamp = new Date().getTime();
+            const file = new File([blob], `camera_photo_${timestamp}.jpg`, { type: 'image/jpeg' });
+
+            // Create DataTransfer to set file input
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            
+            // Set the file to input
+            document.getElementById('image').files = dataTransfer.files;
+
+            // Update preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('showImage').src = e.target.result;
+            };
+            reader.readAsDataURL(blob);
+
+            // Stop camera and close modal
+            stopCamera();
+
+            // Show success message
+            alert('وێنە بە سەرکەوتی گیرایەوە');
+        }, 'image/jpeg', 0.95);
+    }
+
+    // Handle Image Preview (for file input)
+    function handleImagePreview(e) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('showImage').src = e.target.result;
+        }
+        reader.readAsDataURL(e.target.files['0']);
+    }
+</script>
+<!-- END CAMERA JAVASCRIPT -->
 
 
 
