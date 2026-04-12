@@ -275,10 +275,10 @@ body {
 <div class="card-body">
 
 @php 
-    $allcart = Cart::content();
+    $allcart = \Gloudemans\Shoppingcart\Facades\Cart::content();
 @endphp
 
-@if($allcart->count() > 0)
+@if($allcart && $allcart->count() > 0)
 <div class="table-responsive">
 <table class="table table-bordered align-middle">
 <thead>
@@ -295,12 +295,12 @@ body {
 
 @foreach($allcart as $cart)
 @php 
-    $product = \App\Models\Product::find($cart->id);
-    $colors = ($product && $product->colors) ? $product->colors : collect();
+    $product = \App\Models\Product::with('colors')->find($cart->id);
+    $colors = ($product && $product->colors && $product->colors->count() > 0) ? $product->colors : collect();
     
     // Get saved color data
-    $savedColors = $cart->options['selected_colors'] ?? [];
-    $savedTotalMeters = $cart->options['total_meters'] ?? 0;
+    $savedColors = isset($cart->options['selected_colors']) ? $cart->options['selected_colors'] : [];
+    $savedTotalMeters = isset($cart->options['total_meters']) ? $cart->options['total_meters'] : 0;
 @endphp
 
 <tr class="cart-row" data-rowid="{{ $cart->rowId }}" data-product-id="{{ $cart->id }}">
@@ -332,11 +332,13 @@ body {
                 $isSelected = false;
                 $savedMeter = 0;
                 
-                foreach($savedColors as $saved) {
-                    if($saved['id'] == $color->id) {
-                        $isSelected = true;
-                        $savedMeter = $saved['meter'];
-                        break;
+                if(is_array($savedColors) && count($savedColors) > 0) {
+                    foreach($savedColors as $saved) {
+                        if(isset($saved['id']) && $saved['id'] == $color->id) {
+                            $isSelected = true;
+                            $savedMeter = isset($saved['meter']) ? $saved['meter'] : 0;
+                            break;
+                        }
                     }
                 }
             @endphp
@@ -399,7 +401,7 @@ body {
                class="form-control price-field"
                value="{{ $cart->price }}"
                data-rowid="{{ $cart->rowId }}"
-               data-buying="{{ $cart->options->buying_price ?? 0 }}"
+               data-buying="{{ isset($cart->options['buying_price']) ? $cart->options['buying_price'] : 0 }}"
                data-original-price="{{ $cart->price }}"
                min="0"
                step="0.01"
@@ -453,15 +455,17 @@ body {
 
 @php
 $subTotal = 0;
-foreach($allcart as $c){
-    $totalMeters = $c->options['total_meters'] ?? 0;
-    $subTotal += $totalMeters * $c->price;
+if($allcart && $allcart->count() > 0) {
+    foreach($allcart as $c){
+        $totalMeters = isset($c->options['total_meters']) ? $c->options['total_meters'] : 0;
+        $subTotal += $totalMeters * $c->price;
+    }
 }
 @endphp
 
 <div class="col-md-6">
 <div class="total-box text-white text-center p-4 h-100">
-<h5>کۆی گشتی ئایتم {{ $allcart->count() }}</h5>
+<h5>کۆی گشتی ئایتم {{ $allcart ? $allcart->count() : 0 }}</h5>
 <h1 id="grand-total">{{ number_format($subTotal, 2) }}</h1>
 </div>
 </div>
@@ -485,7 +489,7 @@ foreach($allcart as $c){
 
 <input type="hidden" id="cart-data" name="cart_data" value="">
 
-<button type="button" class="btn btn-primary btn-lg w-100" {{ $allcart->count()==0?'disabled':'' }} onclick="prepareInvoiceData()">
+<button type="button" class="btn btn-primary btn-lg w-100" {{ ($allcart && $allcart->count() > 0) ? '' : 'disabled' }} onclick="prepareInvoiceData()">
 پسوڵە دروستبکە
 </button>
 
@@ -510,7 +514,20 @@ Last Scan: <span id="last-barcode">None</span>
 </span>
 </div>
 
-@if($product && $product->count() > 0)
+@php
+    // Get IDs of products already in cart
+    $cartProductIds = [];
+    foreach($allcart as $cartItem) {
+        $cartProductIds[] = $cartItem->id;
+    }
+    
+    // Filter products to show only those NOT in cart
+    $availableProducts = $product->filter(function($item) use ($cartProductIds) {
+        return !in_array($item->id, $cartProductIds);
+    });
+@endphp
+
+@if($availableProducts && $availableProducts->count() > 0)
 <div class="table-responsive">
 <table class="table table-hover">
 <thead>
@@ -521,7 +538,7 @@ Last Scan: <span id="last-barcode">None</span>
     </tr>
 </thead>
 <tbody>
-@foreach($product as $item)
+@foreach($availableProducts as $item)
     @if($item && is_object($item) && isset($item->id))
     <tr data-code="{{ $item->product_code ?? '' }}">
     <td>
@@ -592,7 +609,9 @@ function selectAllColors(checkAllElement) {
 
 /* UPDATE COLOR METERS */
 function updateColorMeters(element) {
-    const rowId = element.dataset.rowid || element.closest('.color-item')?.querySelector('.color-check')?.dataset.rowid;
+    const rowId = element.dataset.rowid || (element.closest('.color-item') && element.closest('.color-item').querySelector('.color-check') ? element.closest('.color-item').querySelector('.color-check').dataset.rowid : null);
+    if (!rowId) return;
+    
     const row = document.querySelector(`tr[data-rowid="${rowId}"]`);
     
     if (!row) return;
@@ -603,6 +622,9 @@ function updateColorMeters(element) {
     colorItems.forEach(item => {
         const checkbox = item.querySelector('.color-check');
         const input = item.querySelector('.customer-meter');
+        
+        if (!checkbox || !input) return;
+        
         const colorId = checkbox.dataset.colorId;
         const availableMeters = parseFloat(checkbox.dataset.availableMeters) || 0;
         const customerMeter = parseFloat(input.value) || 0;
@@ -614,20 +636,24 @@ function updateColorMeters(element) {
             
             const remaining = availableMeters - customerMeter;
             const remainingSpan = item.querySelector(`[data-color-id="${colorId}"].color-remaining`);
-            remainingSpan.innerText = remaining.toFixed(2) + 'م';
-            
-            if (remaining < 0) {
-                remainingSpan.classList.add('warning');
-            } else {
-                remainingSpan.classList.remove('warning');
+            if (remainingSpan) {
+                remainingSpan.innerText = remaining.toFixed(2) + 'م';
+                
+                if (remaining < 0) {
+                    remainingSpan.classList.add('warning');
+                } else {
+                    remainingSpan.classList.remove('warning');
+                }
             }
         } else {
             input.disabled = true;
             input.value = '0';
             
             const remainingSpan = item.querySelector(`[data-color-id="${colorId}"].color-remaining`);
-            remainingSpan.innerText = availableMeters.toFixed(2) + 'م';
-            remainingSpan.classList.remove('warning');
+            if (remainingSpan) {
+                remainingSpan.innerText = availableMeters.toFixed(2) + 'م';
+                remainingSpan.classList.remove('warning');
+            }
         }
     });
     
@@ -647,6 +673,8 @@ function updateColorMeters(element) {
 /* UPDATE TOTAL PRICE */
 function updateTotalPrice(priceInput) {
     const row = priceInput.closest('tr');
+    if (!row) return;
+    
     const meterInput = row.querySelector('.total-meter');
     const totalMeters = parseFloat(meterInput.value) || 0;
     const unitPrice = parseFloat(priceInput.value) || 0;
@@ -662,10 +690,10 @@ function updateTotalPrice(priceInput) {
     
     if (unitPrice < buyingPrice) {
         priceInput.classList.add('price-below-cost');
-        alertBox.innerText = 'ژێر مایە';
+        if (alertBox) alertBox.innerText = 'ژێر مایە';
     } else {
         priceInput.classList.remove('price-below-cost');
-        alertBox.innerText = '';
+        if (alertBox) alertBox.innerText = '';
     }
     
     updateGrandTotal();
@@ -675,9 +703,13 @@ function updateTotalPrice(priceInput) {
 function updateGrandTotal() {
     let grandTotal = 0;
     document.querySelectorAll('.price-total').forEach(el => {
-        grandTotal += parseFloat(el.innerText) || 0;
+        const value = parseFloat(el.innerText) || 0;
+        grandTotal += value;
     });
-    document.getElementById('grand-total').innerText = grandTotal.toFixed(2);
+    const grandTotalEl = document.getElementById('grand-total');
+    if (grandTotalEl) {
+        grandTotalEl.innerText = grandTotal.toFixed(2);
+    }
 }
 
 /* SAVE COLOR DATA AND PRICE BEFORE FORM SUBMIT */
@@ -738,9 +770,15 @@ function prepareInvoiceData() {
     document.querySelectorAll('.cart-row').forEach(row => {
         const rowId = row.dataset.rowid;
         const productId = row.dataset.productId;
-        const totalMeters = parseFloat(row.querySelector('.total-meter').value) || 0;
-        const unitPrice = parseFloat(row.querySelector('.price-field').value) || 0;
-        const productName = row.querySelector('td.fw-bold').innerText;
+        const meterInput = row.querySelector('.total-meter');
+        const priceInput = row.querySelector('.price-field');
+        
+        if (!meterInput || !priceInput) return;
+        
+        const totalMeters = parseFloat(meterInput.value) || 0;
+        const unitPrice = parseFloat(priceInput.value) || 0;
+        const productNameElement = row.querySelector('td.fw-bold');
+        const productName = productNameElement ? productNameElement.innerText : 'Unknown';
         
         const selectedColors = [];
         const colorItems = row.querySelectorAll('.color-item');
@@ -794,6 +832,8 @@ document.querySelectorAll('.price-field').forEach(input => {
 document.querySelectorAll('.customer-meter').forEach(input => {
     input.addEventListener('input', function() {
         const row = this.closest('tr');
+        if (!row) return;
+        
         const checkbox = row.querySelector(`[data-color-id="${this.dataset.colorId}"]`);
         if (checkbox) {
             updateColorMeters(checkbox);
@@ -825,7 +865,11 @@ document.addEventListener('keydown', e => {
 });
 
 function handleBarcode(code){
-    document.getElementById('last-barcode').innerText = code;
+    const lastBarcodeEl = document.getElementById('last-barcode');
+    if (lastBarcodeEl) {
+        lastBarcodeEl.innerText = code;
+    }
+    
     let found = false;
     
     document.querySelectorAll('tr[data-code]').forEach(row => {
