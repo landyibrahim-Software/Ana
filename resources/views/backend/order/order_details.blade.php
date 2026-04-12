@@ -79,28 +79,32 @@
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label for="firstname" class="form-label"> وێنەی کڕیار</label>
-                                            <img id="showImage" src="{{ asset($order->customer->image) }}" class="rounded-circle avatar-lg img-thumbnail" alt="profile-image">
+                                            @if($order->customer && $order->customer->image)
+                                                <img id="showImage" src="{{ asset($order->customer->image) }}" class="rounded-circle avatar-lg img-thumbnail" alt="profile-image">
+                                            @else
+                                                <img src="https://via.placeholder.com/100?text=No+Image" class="rounded-circle avatar-lg img-thumbnail" alt="profile-image">
+                                            @endif
                                         </div>
                                     </div>
 
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label for="firstname" class="form-label">ناوی کڕیار</label>
-                                            <p class="text-danger"> {{ $order->customer->name }} </p>
+                                            <p class="text-danger"> {{ $order->customer->name ?? 'Unknown' }} </p>
                                         </div>
                                     </div>
 
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label for="firstname" class="form-label">ئیمەیڵی کڕیار</label>
-                                            <p class="text-danger"> {{ $order->customer->email }} </p>
+                                            <p class="text-danger"> {{ $order->customer->email ?? 'N/A' }} </p>
                                         </div>
                                     </div>
 
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label for="firstname" class="form-label">ژمارەی کڕیار</label>
-                                            <p class="text-danger"> {{ $order->customer->phone }} </p>
+                                            <p class="text-danger"> {{ $order->customer->phone ?? 'N/A' }} </p>
                                         </div>
                                     </div>
 
@@ -141,10 +145,14 @@
                                 </div> <!-- end row -->
                                 
                                 <div class="text-end">
-                                    <button type="submit" class="btn btn-success waves-effect waves-light mt-2"><i class="mdi mdi-content-save"></i> داواکاری تەواوبوو </button>
-                                    <button type="button" class="btn btn-danger waves-effect waves-light mt-2" data-bs-toggle="modal" data-bs-target="#cancelOrderModal">
-                                        <i class="mdi mdi-delete me-1"></i> لابردنی داواکاری
-                                    </button>
+                                    @if($order->order_status !== 'cancelled')
+                                        <button type="submit" class="btn btn-success waves-effect waves-light mt-2"><i class="mdi mdi-content-save"></i> داواکاری تەواوبوو </button>
+                                        <button type="button" class="btn btn-danger waves-effect waves-light mt-2" data-bs-toggle="modal" data-bs-target="#cancelOrderModal">
+                                            <i class="mdi mdi-delete me-1"></i> لابردنی داواکاری
+                                        </button>
+                                    @else
+                                        <span class="badge bg-danger" style="font-size: 1.1rem;">ئەم داواکاریە لابردراوە</span>
+                                    @endif
                                 </div>
                             </form>
                         </div>
@@ -350,12 +358,6 @@
                                 <div style="font-size: 0.95rem; opacity: 0.9;">دوایی قەرز</div>
                             </div>
                         </div>
-                        <div class="col-md-6 col-lg-3">
-                            <div class="card kpi-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; padding: 20px; text-align: center; border: none;">
-                                <div style="font-size: 2.5rem; font-weight: 700; margin-bottom: 5px;">$<span id="cancelNewPaid">{{ number_format($order->pay, 2) }}</span></div>
-                                <div style="font-size: 0.95rem; opacity: 0.9;">دوایی پارەی دراو</div>
-                            </div>
-                        </div>
                     </div>
 
                 </div>
@@ -374,7 +376,7 @@
     </div>
 </div>
 
-<!-- CANCEL ORDER JAVASCRIPT -->
+<!-- CANCEL ORDER JAVASCRIPT - FIXED -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const itemCheckboxes = document.querySelectorAll('.item-checkbox');
@@ -384,6 +386,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const currentDue = parseFloat('{{ $order->due }}');
     const currentPaid = parseFloat('{{ $order->pay }}');
+    const orderSubtotal = parseFloat('{{ $order->sub_total }}');
 
     function updateRefundCalculations() {
         let totalRefund = 0;
@@ -406,23 +409,22 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('cancelItemCount').textContent = checkedCount;
         document.getElementById('cancelRefundAmount').textContent = refundAmount.toFixed(2);
 
-        // Calculate new due and paid based on selected option
+        // Calculate new due based on selected option
         const refundFrom = document.querySelector('input[name="refund_from"]:checked').value;
         let newDue = currentDue;
-        let newPaid = currentPaid;
 
         if (refundFrom === 'due') {
+            // Refund from DUE: Just reduce the due by refund amount
             newDue = currentDue - refundAmount;
         } else if (refundFrom === 'paid') {
-            newDue = currentDue + refundAmount;
-            newPaid = currentPaid - refundAmount;
+            // Refund from PAID: Only reduce due by order subtotal (not the full refund)
+            // The extra paid is refunded outside the system
+            newDue = currentDue - orderSubtotal;
         }
 
         newDue = Math.max(0, newDue);
-        newPaid = Math.max(0, newPaid);
         
         document.getElementById('cancelNewDue').textContent = newDue.toFixed(2);
-        document.getElementById('cancelNewPaid').textContent = newPaid.toFixed(2);
     }
 
     // Update when checkboxes change
