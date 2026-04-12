@@ -171,40 +171,31 @@ class PosController extends Controller
     /* ===============================
         CREATE INVOICE & UPDATE STOCK
     ================================ */
-    public function CreateInvoice(Request $request)
-    {
-        $contents = Cart::content();
-        $customer = Customer::findOrFail($request->customer_id);
+   public function CreateInvoice(Request $request)
+{
+    $contents = Cart::content();
+    $customer = Customer::findOrFail($request->customer_id);
 
-        if ($contents->count() == 0) {
-            return redirect()->back()->with([
-                'message' => 'Cart is empty',
-                'alert-type' => 'error'
-            ]);
-        }
-
-        // Calculate total from cart with meters
-        $subTotal = 0;
-        
-        foreach ($contents as $item) {
-            $totalMeters = $item->options['total_meters'] ?? 0;
-            $subTotal += $totalMeters * $item->price;
-        }
-
-        // Calculate previous due
-        $total_spent = $customer->previous_due;
-        foreach ($customer->orders as $order) {
-            $total_spent += $order->sub_total;
-        }
-        
-        $total_paid_all = \App\Models\Payment::where('customer_id', $customer->id)->sum('payment_amount');
-        foreach ($customer->orders as $order) {
-            $total_paid_all += ($order->pay ?? 0);
-        }
-        
-        $previousDue = max($total_spent - $total_paid_all, 0);
-
-        // Return product_invoice WITHOUT creating order
-        return view('backend.invoice.product_invoice', compact('contents', 'customer', 'previousDue', 'subTotal'));
+    if ($contents->count() == 0) {
+        return redirect()->back()->with([
+            'message' => 'Cart is empty',
+            'alert-type' => 'error'
+        ]);
     }
+
+    // Calculate total from cart with meters
+    $subTotal = 0;
+    
+    foreach ($contents as $item) {
+        $totalMeters = $item->options['total_meters'] ?? 0;
+        $subTotal += $totalMeters * $item->price;
+    }
+
+    // ✅ FIX: Use customer's current due directly from database
+    // This already accounts for all previous orders, payments, and cancellations
+    $previousDue = floatval($customer->due ?? 0);
+
+    // Return product_invoice WITHOUT creating order
+    return view('backend.invoice.product_invoice', compact('contents', 'customer', 'previousDue', 'subTotal'));
+}
 }
