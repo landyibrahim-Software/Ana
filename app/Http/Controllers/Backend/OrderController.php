@@ -192,27 +192,7 @@ public function PrintInvoice($id)
     }// End Method 
 
 
-    public function OrderInvoice($order_id){
-
-         $order = Order::where('id',$order_id)->first();
-
-        $orderItem = Orderdetails::with('product')->where('order_id',$order_id)->orderBy('id','DESC')->get();
-$pdf = Pdf::loadView(
-        'backend.order.order_invoice',
-        compact('order', 'orderItem')
-    )
-    ->setPaper('a4', 'portrait')
-    ->setOptions([
-        'defaultFont' => 'DejaVu Sans',
-        'isHtml5ParserEnabled' => true,
-        'isRemoteEnabled' => true,
-        'tempDir' => storage_path('app/temp'),
-        'chroot' => public_path(),
-    ]);
-
-         return $pdf->download('invoice.pdf');
-
-    }// End Method 
+    
 
 
     public function PendingDue(){

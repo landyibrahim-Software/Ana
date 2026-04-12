@@ -214,7 +214,72 @@
 </div>
 </div>
 
-<!-- ✅ WHATSAPP MODAL -->
+<!-- ✅ WHATSAPP MODAL - IMPROVED -->
+<div class="modal fade" id="whatsappModal" tabindex="-1" aria-labelledby="whatsappModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="whatsappModalLabel">
+                    <i class="fab fa-whatsapp"></i> پسوڵە بۆ واتساپ بنێرە
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Phone number input -->
+                <div class="mb-3">
+                    <label class="form-label"><strong>ژمارەی مۆبایل:</strong></label>
+                    <input 
+                        type="tel" 
+                        id="whatsappPhone" 
+                        class="form-control" 
+                        placeholder="مثال: +964781234567 یان 07812345678"
+                        value="{{ $order->customer->phone ?? '' }}"
+                    >
+                    <small class="text-muted">نمبەری مۆبایل بێت کاردەکاتە دروست بنووسە</small>
+                </div>
+
+                <!-- Send option -->
+                <div class="mb-3">
+                    <label class="form-label"><strong>چی بنێرێ؟</strong></label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="sendOption" id="sendPDF" value="pdf" checked>
+                        <label class="form-check-label" for="sendPDF">
+                            <i class="fa fa-file-pdf text-danger"></i> <strong>PDF فایل</strong> (بهتر)
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="sendOption" id="sendURL" value="url">
+                        <label class="form-check-label" for="sendURL">
+                            <i class="fa fa-link"></i> <strong>لینک</strong> (بریتاندەر)
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Message preview -->
+                <div class="mb-3">
+                    <label class="form-label"><strong>پەیام:</strong></label>
+                    <textarea id="whatsappMessage" class="form-control" rows="5" readonly style="background-color: #f8f9fa;">سڵاو {{ $order->customer->name }}!
+
+ئەم پسوڵەی دێ:
+📋 ژمارەی پسوڵە: #{{ $order->id }}
+💰 کۆی گشتی: ${{ number_format($grandTotal, 2) }}
+📅 بەرواری: {{ \Carbon\Carbon::parse($order->order_date)->format('Y/m/d') }}
+
+سوپاس! 🙏
+                    </textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">داخستن</button>
+                <button type="button" class="btn btn-success" onclick="sendToWhatsapp()">
+                    <i class="fab fa-whatsapp"></i> بنێرە
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ✅ WHATSAPP MODAL - SIMPLE VERSION -->
 <div class="modal fade" id="whatsappModal" tabindex="-1" aria-labelledby="whatsappModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -240,22 +305,18 @@
 
                 <!-- Message preview -->
                 <div class="mb-3">
-                    <label class="form-label"><strong>پیام:</strong></label>
-                    <textarea id="whatsappMessage" class="form-control" rows="6" readonly style="background-color: #f8f9fa;">سڵاو {{ $order->customer->name }}!
+                    <label class="form-label"><strong>پەیام:</strong></label>
+                    <textarea id="whatsappMessage" class="form-control" rows="5" readonly style="background-color: #f8f9fa;">سڵاو {{ $order->customer->name }}!
 
 ئەم پسوڵەی دێ:
-
 📋 ژمارەی پسوڵە: #{{ $order->id }}
 💰 کۆی گشتی: ${{ number_format($grandTotal, 2) }}
-💵 پارەی دراو: ${{ number_format($order->pay ?? 0, 2) }}
-📊 قەرزی ماوە: ${{ number_format(($grandTotal - ($order->pay ?? 0)), 2) }}
-
 📅 بەرواری: {{ \Carbon\Carbon::parse($order->order_date)->format('Y/m/d') }}
 
-لەتێپەڕی ئێمەدا پسوڵەی تێدا:
+پسوڵەی تێدا:
 {{ route('print.invoice', $order->id) }}
 
-سوپاس بۆ کڕینت! 🙏
+سوپاس! 🙏
                     </textarea>
                 </div>
             </div>
@@ -269,7 +330,7 @@
     </div>
 </div>
 
-<!-- ✅ WHATSAPP SCRIPT -->
+<!-- ✅ WHATSAPP SCRIPT - SIMPLE -->
 <script>
 function sendToWhatsapp() {
     let phone = document.getElementById('whatsappPhone').value.trim();
@@ -302,11 +363,11 @@ function sendToWhatsapp() {
     // Encode message
     const encodedMessage = encodeURIComponent(message);
     
-    // WhatsApp Web URL
+    // WhatsApp URL
     const whatsappURL = `https://wa.me/${phone.substring(1)}?text=${encodedMessage}`;
     
     // Open WhatsApp
-    window.open(whatsappURL, '_blank', 'width=900,height=600');
+    window.open(whatsappURL, '_blank');
     
     // Close modal
     const modal = bootstrap.Modal.getInstance(document.getElementById('whatsappModal'));
