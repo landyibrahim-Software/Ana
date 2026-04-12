@@ -210,6 +210,7 @@ Route::post('/final-invoice', [OrderController::class, 'FinalInvoice'])->name('f
  Route::get('/pending/order','PendingOrder')->name('pending.order');
  Route::get('/order/details/{order_id}','OrderDetails')->name('order.details');
  Route::post('/order/status/update','OrderStatusUpdate')->name('order.status.update');
+ Route::post('/order/cancel', [App\Http\Controllers\Backend\OrderController::class, 'cancelOrder'])->name('order.cancel');
 
  Route::get('/complete/order','CompleteOrder')->name('complete.order');
 

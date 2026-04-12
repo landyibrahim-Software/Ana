@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Orderdetails;
+use App\Models\ProductColor;
 use Carbon\Carbon; 
 use Gloudemans\Shoppingcart\Facades\Cart;
 use DB;
@@ -250,6 +251,95 @@ $pdf = Pdf::loadView(
 
 
     }// End Method 
+/**
+ * Cancel Order and Restore Stock
+ */
+public function cancelOrder(Request $request)
+{
+    $request->validate([
+        'order_id' => 'required|exists:orders,id',
+        'rejected_items' => 'required|array',
+        'refund_from' => 'required|in:due,paid',
+    ]);
 
+    $order = Order::findOrFail($request->order_id);
+    $customer = $order->customer;
+    
+    $rejectedItemIds = $request->rejected_items;
+    $refundAmount = floatval($request->refund_amount ?? 0);
+    $refundFrom = $request->refund_from;
+
+    DB::beginTransaction();
+    try {
+        // If no manual refund, calculate from rejected items
+        if ($refundAmount == 0) {
+            foreach ($rejectedItemIds as $itemId) {
+                $orderDetail = Orderdetails::find($itemId);
+                if ($orderDetail) {
+                    $itemTotal = ($orderDetail->meters ?? $orderDetail->quantity) * $orderDetail->unitcost;
+                    $refundAmount += $itemTotal;
+                }
+            }
+        }
+
+        // Process each rejected item
+        foreach ($rejectedItemIds as $itemId) {
+            $orderDetail = Orderdetails::find($itemId);
+            
+            if ($orderDetail) {
+                $product = Product::find($orderDetail->product_id);
+                
+                if ($product && $orderDetail->selected_colors) {
+                    // Restore colors and meters
+                    $colors = json_decode($orderDetail->selected_colors, true);
+                    
+                    foreach ($colors as $color) {
+                        // Restore meter to specific color
+                        ProductColor::where('product_id', $orderDetail->product_id)
+                            ->where('id', $color['id'])
+                            ->increment('meters', $color['meter']);
+                    }
+                    
+                    // Restore total meters to product
+                    $totalMeters = $orderDetail->meters ?? 0;
+                    $product->increment('product_store', count($colors)); // Restore rolls
+                    $product->save();
+                }
+
+                // Mark item as cancelled
+                $orderDetail->update(['quantity' => 0]); // Or add a 'status' column if you prefer
+            }
+        }
+
+        // Update customer balance
+        if ($refundFrom === 'due') {
+            // Reduce customer's due
+            $customer->update(['due' => max(0, $customer->due - $refundAmount)]);
+        } elseif ($refundFrom === 'paid') {
+            // Increase customer's due (refund from paid)
+            $customer->update(['due' => $customer->due + $refundAmount]);
+        }
+
+        // Update order status
+        $order->update([
+            'order_status' => 'cancelled',
+            'due' => max(0, $order->due - $refundAmount)
+        ]);
+
+        DB::commit();
+
+        return redirect()->back()->with([
+            'message' => 'داواکاری بە سەرکەوتی لابرێت و کاڵاکان کەم کران',
+            'alert-type' => 'success'
+        ]);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return redirect()->back()->with([
+            'message' => 'هەڵەیەک روویدا: ' . $e->getMessage(),
+            'alert-type' => 'danger'
+        ]);
+    }
+}
 
 }

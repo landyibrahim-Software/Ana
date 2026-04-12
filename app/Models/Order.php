@@ -21,6 +21,16 @@ class Order extends Model
         'due',
         'previous_due',
         'metter_price',
+        'grain',
+        'grain_price',
+    ];
+
+    protected $casts = [
+        'due' => 'decimal:2',
+        'pay' => 'decimal:2',
+        'sub_total' => 'decimal:2',
+        'total' => 'decimal:2',
+        'previous_due' => 'decimal:2',
     ];
 
     // 🔗 Order → Customer
@@ -34,8 +44,4 @@ class Order extends Model
     {
         return $this->hasMany(Orderdetails::class, 'order_id', 'id');
     }
-    /**
- * Relationship: Get returned products from this order
- */
-
 }
