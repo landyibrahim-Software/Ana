@@ -369,8 +369,8 @@ body {
                            step="0.01"
                            value="{{ $savedMeter }}"
                            {{ $isSelected ? '' : 'disabled' }}
-                           onchange="updateColorMeters(this)"
-                           oninput="updateColorMeters(this)">
+                           onchange="validateMeterInput(this)"
+                           oninput="validateMeterInput(this)">
                     <span class="color-remaining" data-color-id="{{ $color->id }}">{{ ($color->meters - $savedMeter) }}م</span>
                 </div>
             </div>
@@ -590,6 +590,28 @@ function selectAllColors(checkAllElement) {
         checkbox.checked = isChecked;
         updateColorMeters(checkbox);
     });
+}
+
+/* VALIDATE METER INPUT - PREVENT EXCEEDING AVAILABLE METERS */
+function validateMeterInput(input) {
+    const availableMeters = parseFloat(input.dataset.available) || 0;
+    let inputValue = parseFloat(input.value) || 0;
+    
+    // Prevent negative values
+    if (inputValue < 0) {
+        input.value = 0;
+        inputValue = 0;
+    }
+    
+    // Prevent exceeding available meters
+    if (inputValue > availableMeters) {
+        input.value = availableMeters;
+        inputValue = availableMeters;
+        alert(`⚠️ زۆر زیات! تۆ نتوانی لە ${availableMeters}م بەتری ئەم رەنگە دانێن`);
+    }
+    
+    // Update color meters
+    updateColorMeters(input);
 }
 
 /* UPDATE COLOR METERS */
@@ -814,13 +836,10 @@ document.querySelectorAll('.price-field').forEach(input => {
 /* CUSTOMER METER INPUT */
 document.querySelectorAll('.customer-meter').forEach(input => {
     input.addEventListener('input', function() {
-        const row = this.closest('tr');
-        if (!row) return;
-        
-        const checkbox = row.querySelector(`[data-color-id="${this.dataset.colorId}"]`);
-        if (checkbox) {
-            updateColorMeters(checkbox);
-        }
+        validateMeterInput(this);
+    });
+    input.addEventListener('change', function() {
+        validateMeterInput(this);
     });
 });
 

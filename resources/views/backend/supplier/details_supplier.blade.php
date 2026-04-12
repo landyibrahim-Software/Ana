@@ -139,7 +139,7 @@
             <div class="col-12">
                 <div class="card border-primary">
                     <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0"><i class="fa fa-money"></i> پارە گێڕاندن بە دابینکەر</h5>
+                        <h5 class="mb-0"><i class="fa fa-money"></i> پارەدان بە دابینکەر</h5>
                     </div>
                     <div class="card-body">
                         <form method="POST" action="{{ route('supplier.payment.store') }}">
@@ -158,7 +158,7 @@
                                     <div class="mb-3">
                                         <label class="form-label">&nbsp;</label>
                                         <button type="submit" class="btn btn-primary waves-effect waves-light w-100" style="height: 45px;">
-                                            <i class="fa fa-check-circle"></i> پارە گێڕاندن
+                                            <i class="fa fa-check-circle"></i> پارەدان 
                                         </button>
                                     </div>
                                 </div>

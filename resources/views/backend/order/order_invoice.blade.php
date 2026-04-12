@@ -48,14 +48,14 @@
     <tr>
         <td valign="top">
           <!-- {{-- <img src="" alt="" width="150"/> --}} -->
-          <h2 style="color: green; font-size: 26px;"><strong>MSK</strong></h2>
+          <h2 style="color: green; font-size: 26px;"><strong>NZA</strong></h2>
         </td>
         <td align="right">
             <pre class="font" >
-               Mother Style For Kids
+               کوتاڵی نزا
                 <br>
-               Mob: 07701500000 <br>
-               slimani fulkay nali <br>
+               Mob: 07708130060 <br>
+               Xanaqa   <br>
               
             </pre>
         </td>

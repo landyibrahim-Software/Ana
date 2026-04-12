@@ -232,7 +232,7 @@
                     <!-- SECTION 1: ITEMS SELECTION -->
                     <div class="mb-4">
                         <h6 class="mb-3" style="color: #2c3e50; font-weight: 600;">
-                            <i class="mdi mdi-checkbox-marked me-2" style="color: #f5576c;"></i> ئایتمەکان کە دەتەوێ لابیهێنیت
+                            <i class="mdi mdi-checkbox-marked me-2" style="color: #f5576c;"></i> ئایتمەکان کە دەتەوێ لایببەیت
                         </h6>
                         <div class="table-responsive">
                             <table class="table table-hover" style="margin-bottom: 0;">
@@ -242,7 +242,7 @@
                                         <th>ناوی ئایتم</th>
                                         <th>رەنگەکان</th>
                                         <th style="text-align: right;">نرخ</th>
-                                        <th style="text-align: right;">کۆی مترە</th>
+                                        <th style="text-align: right;">کۆی متر</th>
                                         <th style="text-align: right;">کۆی</th>
                                     </tr>
                                 </thead>
@@ -295,7 +295,7 @@
                                 <div class="mb-3">
                                     <label class="form-label" style="color: #555; font-weight: 500;">یان بە دەستی بنووسە</label>
                                     <input type="number" id="manualRefundAmount" name="refund_amount" class="form-control" style="border-radius: 8px; border: 2px solid #e9ecef;" step="0.01" placeholder="0.00">
-                                    <small class="text-muted" style="display: block; margin-top: 8px;">ئەگەر دەتەوێ جیاوازی برۆ بنووسە</small>
+                                    <small class="text-muted" style="display: block; margin-top: 8px;">ئەگەر دەتەوێ جیاوازی بڕ بنووسە</small>
                                 </div>
                             </div>
                         </div>
@@ -312,7 +312,7 @@
                                     <input class="form-check-input" type="radio" name="refund_from" value="due" id="refund_from_due" checked>
                                     <label class="form-check-label" for="refund_from_due" style="margin-left: 8px; cursor: pointer; margin-bottom: 0;">
                                         <strong>لە قەرزی کڕیار (Due)</strong><br>
-                                        <span style="color: #666; font-size: 0.9rem;">بەروبوومان: <strong style="color: #f5576c;">${{ number_format($order->due, 2) }}</strong></span>
+                                        <span style="color: #666; font-size: 0.9rem;">پارەی قەرز: <strong style="color: #f5576c;">${{ number_format($order->due, 2) }}</strong></span>
                                     </label>
                                 </div>
                             </div>
@@ -320,8 +320,8 @@
                                 <div class="form-check" style="padding: 12px 15px; background: #f8f9fa; border-radius: 8px; margin-bottom: 10px;">
                                     <input class="form-check-input" type="radio" name="refund_from" value="paid" id="refund_from_paid">
                                     <label class="form-check-label" for="refund_from_paid" style="margin-left: 8px; cursor: pointer; margin-bottom: 0;">
-                                        <strong>بیگری کردی (Paid)</strong><br>
-                                        <span style="color: #666; font-size: 0.9rem;">بوونی: <strong style="color: #27ae60;">${{ number_format($order->pay, 2) }}</strong></span>
+                                        <strong> پارەی دراو (Paid)</strong><br>
+                                        <span style="color: #666; font-size: 0.9rem;">پارەی دراو: <strong style="color: #27ae60;">${{ number_format($order->pay, 2) }}</strong></span>
                                     </label>
                                 </div>
                             </div>
@@ -335,7 +335,7 @@
                         <div class="col-md-6 col-lg-3">
                             <div class="card kpi-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center; border: none;">
                                 <div style="font-size: 2.5rem; font-weight: 700; margin-bottom: 5px;" id="cancelItemCount">0</div>
-                                <div style="font-size: 0.95rem; opacity: 0.9;">ئایتمە پووچاندکان</div>
+                                <div style="font-size: 0.95rem; opacity: 0.9;">ئایتمە سڕاوەکان</div>
                             </div>
                         </div>
                         <div class="col-md-6 col-lg-3">

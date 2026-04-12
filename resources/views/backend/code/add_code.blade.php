@@ -46,7 +46,7 @@
 
                             <div class="mb-3">
                                 <button type="submit" class="btn btn-primary">تۆمارکردن</button>
-                                <a href="{{ route('all.code') }}" class="btn btn-secondary">بگەڕێ</a>
+                                <a href="{{ route('all.code') }}" class="btn btn-secondary">بگەڕێرەوە</a>
                             </div>
                         </form>
                     </div>

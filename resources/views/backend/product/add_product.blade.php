@@ -183,7 +183,7 @@
     <!-- Total Meters Display -->
     <div class="col-md-6">
         <div class="form-group mb-3">
-            <label for="total_meters" class="form-label">کۆ متەر</label>
+            <label for="total_meters" class="form-label">کۆی متر </label>
             <input type="text" class="form-control" id="total_meters" readonly value="0">
         </div>
     </div>
@@ -198,10 +198,10 @@
         <div class="input-group">
             <input type="file" name="product_image" id="image" class="form-control" accept="image/*">
             <button class="btn btn-primary" type="button" id="cameraBtn" title="Open Camera">
-                <i class="mdi mdi-camera"></i> کیمێرا
+                <i class="mdi mdi-camera"></i> کامێرا
             </button>
         </div>
-        <small class="text-muted d-block mt-2">یان فایڵ هەڵبژێرە یان کیمێرا بکەبێتە بکار</small>
+        <small class="text-muted d-block mt-2">یان فایل هەڵبژێرە یان کامێرا بکەوێتە کار</small>
     </div>
 </div>
 
@@ -213,7 +213,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">وێنە لە کیمێرا</h5>
+                <h5 class="modal-title">وێنە لە کامێرا</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -223,7 +223,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">داخستن</button>
                 <button type="button" class="btn btn-danger" id="stopCameraBtn">
-                    <i class="mdi mdi-stop"></i> کیمێرا بستن
+                    <i class="mdi mdi-stop"></i>  کامێرا وەستان
                 </button>
                 <button type="button" class="btn btn-success" id="captureBtn">
                     <i class="mdi mdi-camera-iris"></i> وێنە بگیرە
@@ -291,7 +291,7 @@
             video.play();
         })
         .catch(function(error) {
-            alert('کیمێرا بەکار ناتوانرێت: ' + error.message);
+            alert('  کامێرا ئیش ناکات: ' + error.message);
             cameraModal.hide();
         });
     }

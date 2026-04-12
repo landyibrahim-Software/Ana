@@ -42,7 +42,7 @@
                             <div class="card-body">
                                 <h6 class="card-title text-info mb-3">کۆی داواکاریەکان</h6>
                                 <h3 class="text-info mb-0">{{ $order_count }}</h3>
-                                <small class="text-muted">جموو داواکاریەکان</small>
+                                <small class="text-muted">هەموو داواکاریەکان</small>
                             </div>
                         </div>
                     </div>
@@ -51,7 +51,7 @@
                     <div class="col-md-3">
                         <div class="card bg-warning bg-opacity-10 border-warning">
                             <div class="card-body">
-                                <h6 class="card-title text-warning mb-3">کۆی پێداویستی</h6>
+                                <h6 class="card-title text-warning mb-3">کۆی کڕین</h6>
                                 <h3 class="text-warning mb-0">${{ number_format($total_spent, 2) }}</h3>
                                 <small class="text-muted">قەرزی سەرەتایی + داواکاریەکان</small>
                             </div>
@@ -100,7 +100,7 @@
                                     <div class="mb-3">
                                         <label class="form-label">مبلغ پارە (دۆلار)</label>
                                         <input type="number" name="payment_amount" class="form-control" style="height: 45px;" step="0.01" min="0" placeholder="مبلغی پارە بنوسە" required>
-                                        <small class="text-muted">گەیاندی: ${{ number_format($total_due, 2) }}</small>
+                                        <small class="text-muted">ماوە: ${{ number_format($total_due, 2) }}</small>
                                     </div>
                                 </div>
 
