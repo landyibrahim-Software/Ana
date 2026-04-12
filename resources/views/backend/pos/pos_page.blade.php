@@ -127,6 +127,7 @@ body {
     border-radius: 8px;
     background: white;
     border: 2px solid #dee2e6;
+    flex-wrap: wrap;
 }
 
 .color-item:hover {
@@ -163,7 +164,6 @@ body {
     display: flex;
     gap: 8px;
     align-items: center;
-    flex: 1;
     margin-left: 10px;
 }
 
@@ -202,6 +202,38 @@ body {
     border-color: #0d6efd;
     outline: none;
     box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.customer-rolls {
+    width: 60px;
+    height: 36px;
+    font-size: 14px;
+    padding: 5px;
+    border: 2px solid #28a745;
+    border-radius: 6px;
+    text-align: center;
+    background-color: #f0f8f4;
+    cursor: text;
+    font-weight: 600;
+    color: #28a745;
+}
+
+.customer-rolls:disabled {
+    background-color: #e9ecef;
+    cursor: not-allowed;
+    color: #6c757d;
+    border-color: #dee2e6;
+}
+
+.customer-rolls:enabled {
+    background-color: #f0f8f4;
+    border-color: #28a745;
+}
+
+.customer-rolls:focus {
+    border-color: #28a745;
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
 }
 
 .color-remaining {
@@ -284,7 +316,7 @@ body {
 <thead>
 <tr>
     <th>ناوی ئایتم</th>
-    <th style="min-width: 500px;">مێترەی ھر رەنگ</th>
+    <th style="min-width: 600px;">مێترەی ھر رەنگ</th>
     <th width="120">کۆی گشتی مێتر</th>
     <th width="130">نرخی متر</th>
     <th width="140">کۆی گشتی نرخ</th>
@@ -329,12 +361,14 @@ body {
             @php
                 $isSelected = false;
                 $savedMeter = 0;
+                $savedRolls = 0;
                 
                 if(is_array($savedColors) && count($savedColors) > 0) {
                     foreach($savedColors as $saved) {
                         if(isset($saved['id']) && $saved['id'] == $color->id) {
                             $isSelected = true;
                             $savedMeter = isset($saved['meter']) ? $saved['meter'] : 0;
+                            $savedRolls = isset($saved['rolls']) ? $saved['rolls'] : 0;
                             break;
                         }
                     }
@@ -372,6 +406,22 @@ body {
                            onchange="validateMeterInput(this)"
                            oninput="validateMeterInput(this)">
                     <span class="color-remaining" data-color-id="{{ $color->id }}">{{ ($color->meters - $savedMeter) }}م</span>
+                </div>
+
+                {{-- NEW: ROLLS INPUT --}}
+                <div class="color-input-group">
+                    <label>تۆپ:</label>
+                    <input type="number" 
+                           class="customer-rolls"
+                           data-color-id="{{ $color->id }}"
+                           data-rowid="{{ $cart->rowId }}"
+                           placeholder="0"
+                           min="0"
+                           step="1"
+                           value="{{ $savedRolls }}"
+                           {{ $isSelected ? '' : 'disabled' }}
+                           onchange="validateRollsInput(this)"
+                           oninput="validateRollsInput(this)">
                 </div>
             </div>
             @endforeach
@@ -614,6 +664,23 @@ function validateMeterInput(input) {
     updateColorMeters(input);
 }
 
+/* VALIDATE ROLLS INPUT - ONLY REDUCES STOCK */
+function validateRollsInput(input) {
+    let inputValue = parseFloat(input.value) || 0;
+    
+    // Prevent negative values
+    if (inputValue < 0) {
+        input.value = 0;
+        inputValue = 0;
+    }
+    
+    // Force integer (no decimals for rolls)
+    input.value = Math.floor(inputValue);
+    
+    // Just update UI - rolls don't affect other calculations
+    updateColorMeters(input);
+}
+
 /* UPDATE COLOR METERS */
 function updateColorMeters(element) {
     const rowId = element.dataset.rowid || (element.closest('.color-item') && element.closest('.color-item').querySelector('.color-check') ? element.closest('.color-item').querySelector('.color-check').dataset.rowid : null);
@@ -651,6 +718,12 @@ function updateColorMeters(element) {
                     remainingSpan.classList.remove('warning');
                 }
             }
+            
+            // Enable rolls input
+            const rollsInput = item.querySelector('.customer-rolls');
+            if (rollsInput) {
+                rollsInput.disabled = false;
+            }
         } else {
             input.disabled = true;
             input.value = '0';
@@ -659,6 +732,13 @@ function updateColorMeters(element) {
             if (remainingSpan) {
                 remainingSpan.innerText = availableMeters.toFixed(2) + 'م';
                 remainingSpan.classList.remove('warning');
+            }
+            
+            // Disable and reset rolls input
+            const rollsInput = item.querySelector('.customer-rolls');
+            if (rollsInput) {
+                rollsInput.disabled = true;
+                rollsInput.value = '0';
             }
         }
     });
@@ -738,14 +818,18 @@ function saveColorDataAndPriceBeforeSubmit(event) {
     
     row.querySelectorAll('.color-item').forEach(item => {
         const checkbox = item.querySelector('.color-check');
-        const input = item.querySelector('.customer-meter');
+        const meterInput = item.querySelector('.customer-meter');
+        const rollsInput = item.querySelector('.customer-rolls');
         
-        if (checkbox && checkbox.checked && input) {
-            const meter = parseFloat(input.value) || 0;
+        if (checkbox && checkbox.checked && meterInput) {
+            const meter = parseFloat(meterInput.value) || 0;
+            const rolls = parseInt(rollsInput.value) || 0;
+            
             selectedColors.push({
                 id: checkbox.dataset.colorId,
                 name: checkbox.dataset.colorName,
-                meter: meter
+                meter: meter,
+                rolls: rolls
             });
             totalMeters += meter;
         }
@@ -790,13 +874,15 @@ function prepareInvoiceData() {
         
         colorItems.forEach(item => {
             const checkbox = item.querySelector('.color-check');
-            const input = item.querySelector('.customer-meter');
+            const meterInput = item.querySelector('.customer-meter');
+            const rollsInput = item.querySelector('.customer-rolls');
             
-            if (checkbox && checkbox.checked && input) {
+            if (checkbox && checkbox.checked && meterInput) {
                 selectedColors.push({
                     id: checkbox.dataset.colorId,
                     name: checkbox.dataset.colorName,
-                    meter: parseFloat(input.value) || 0
+                    meter: parseFloat(meterInput.value) || 0,
+                    rolls: parseInt(rollsInput.value) || 0
                 });
             }
         });
@@ -840,6 +926,16 @@ document.querySelectorAll('.customer-meter').forEach(input => {
     });
     input.addEventListener('change', function() {
         validateMeterInput(this);
+    });
+});
+
+/* CUSTOMER ROLLS INPUT */
+document.querySelectorAll('.customer-rolls').forEach(input => {
+    input.addEventListener('input', function() {
+        validateRollsInput(this);
+    });
+    input.addEventListener('change', function() {
+        validateRollsInput(this);
     });
 });
 

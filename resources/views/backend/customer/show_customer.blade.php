@@ -25,10 +25,14 @@
             <div class="col-md-3">
                 <div class="card">
                     <div class="card-body text-center">
-                        <img src="{{ asset($customer->image) }}" class="rounded-circle avatar-lg img-thumbnail" alt="customer-image">
+                        @if($customer->image)
+                            <img src="{{ asset($customer->image) }}" class="rounded-circle avatar-lg img-thumbnail" alt="customer-image">
+                        @else
+                            <img src="https://via.placeholder.com/100?text=No+Image" class="rounded-circle avatar-lg img-thumbnail" alt="customer-image">
+                        @endif
                         <h5 class="mt-3">{{ $customer->name }}</h5>
-                        <p class="text-muted">{{ $customer->shopname }}</p>
-                        <p><strong>ژمارە:</strong> {{ $customer->phone }}</p>
+                        <p class="text-muted">{{ $customer->shopname ?? 'N/A' }}</p>
+                        <p><strong>ژمارە:</strong> {{ $customer->phone ?? 'N/A' }}</p>
                     </div>
                 </div>
             </div>
@@ -149,6 +153,7 @@
                                                 'id' => $order->id,
                                                 'sub_total' => $order->sub_total,
                                                 'pay' => $order->pay,
+                                                'order_status' => $order->order_status,
                                                 'date' => $order->created_at,
                                             ];
                                         }
@@ -158,7 +163,8 @@
                                             $all_records[] = [
                                                 'type' => 'payment',
                                                 'amount' => $payment->payment_amount,
-                                                'date' => $payment->payment_date,
+                                                'payment_status' => $payment->payment_status ?? 'completed',
+                                                'date' => $payment->payment_date ?? $payment->created_at,
                                             ];
                                         }
                                         
@@ -172,19 +178,14 @@
                                     
                                     @forelse($all_records as $record)
                                         @if($record['type'] == 'order')
-                                            @php
-                                                $order_total = $record['sub_total'];
-                                                $order_paid = $record['pay'];
-                                                $is_paid = ($order_paid >= $order_total);
-                                            @endphp
                                             <tr>
                                                 <td><span class="badge bg-info text-white">داواکاری #{{ $record['id'] }}</span></td>
-                                                <td><strong>${{ number_format($order_total, 2) }}</strong></td>
+                                                <td><strong>${{ number_format($record['sub_total'], 2) }}</strong></td>
                                                 <td>
-                                                    @if($is_paid)
-                                                        <span class="badge bg-success text-white">✓ پارە دراو</span>
+                                                    @if($record['order_status'] == 'cancelled')
+                                                        <span class="badge bg-dark text-white">✗ لابردراو</span>
                                                     @else
-                                                        <span class="badge bg-danger text-white">✗ قەرز</span>
+                                                        <span class="badge bg-success text-white">✓ پارە دراو</span>
                                                     @endif
                                                 </td>
                                                 <td>{{ \Carbon\Carbon::parse($record['date'])->format('Y-m-d H:i') }}</td>
@@ -193,7 +194,13 @@
                                             <tr class="table-success">
                                                 <td><span class="badge bg-success text-white">پارەدان</span></td>
                                                 <td><strong class="text-success">${{ number_format($record['amount'], 2) }}</strong></td>
-                                                <td><span class="badge bg-success text-white">✓ قبوڵ کرا</span></td>
+                                                <td>
+                                                    @if($record['payment_status'] == 'cancelled')
+                                                        <span class="badge bg-dark text-white">✗ لابردراو</span>
+                                                    @else
+                                                        <span class="badge bg-success text-white">✓ قبوڵ کرا</span>
+                                                    @endif
+                                                </td>
                                                 <td>{{ \Carbon\Carbon::parse($record['date'])->format('Y-m-d H:i') }}</td>
                                             </tr>
                                         @endif

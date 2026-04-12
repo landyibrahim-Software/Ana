@@ -191,6 +191,9 @@
 <!-- TOTAL -->
 <div class="row mt-3" style="direction: rtl;">
     <div class="col-12 text-end">
+        <!-- DEBUG: Show what value was passed -->
+        <p style="color: red; font-size: 10px;">DEBUG: previousDue = {{ var_export($previousDue, true) }}, subTotal = {{ $subTotal }}</p>
+        
         <p>قەرزی پێشوو: <b>{{ number_format($previousDue, 2) }}</b></p>
         <h3>کۆی کاڵا: <b>{{ number_format($subTotal, 2) }}</b></h3>
         <h3>کۆی گشتی: <b>{{ number_format($grandTotal, 2) }}</b></h3>
