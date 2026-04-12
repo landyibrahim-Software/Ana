@@ -254,6 +254,9 @@ $pdf = Pdf::loadView(
 /**
  * Cancel Order and Restore Stock
  */
+/**
+ * Cancel Order and Restore Stock + Customer Balance
+ */
 public function cancelOrder(Request $request)
 {
     $request->validate([
@@ -282,7 +285,7 @@ public function cancelOrder(Request $request)
             }
         }
 
-        // Process each rejected item
+        // Process each rejected item - RESTORE STOCK
         foreach ($rejectedItemIds as $itemId) {
             $orderDetail = Orderdetails::find($itemId);
             
@@ -307,29 +310,25 @@ public function cancelOrder(Request $request)
                 }
 
                 // Mark item as cancelled
-                $orderDetail->update(['quantity' => 0]); // Or add a 'status' column if you prefer
+                $orderDetail->update(['quantity' => 0]);
             }
         }
 
-        // Update customer balance
-        if ($refundFrom === 'due') {
-            // Reduce customer's due
-            $customer->update(['due' => max(0, $customer->due - $refundAmount)]);
-        } elseif ($refundFrom === 'paid') {
-            // Increase customer's due (refund from paid)
-            $customer->update(['due' => $customer->due + $refundAmount]);
-        }
+        // 🔑 REVERT CUSTOMER BALANCE TO PREVIOUS STATE
+        // Set customer due back to previous_due (before this order)
+        $customer->update([
+            'due' => $customer->previous_due ?? 0
+        ]);
 
-        // Update order status
+        // Mark order as cancelled
         $order->update([
-            'order_status' => 'cancelled',
-            'due' => max(0, $order->due - $refundAmount)
+            'order_status' => 'cancelled'
         ]);
 
         DB::commit();
 
         return redirect()->back()->with([
-            'message' => 'داواکاری بە سەرکەوتی لابرێت و کاڵاکان کەم کران',
+            'message' => 'داواکاری بە سەرکەوتی لابرێت و کاڵاکان کەم کران و کاروباری کڕیار گێڕایەوە',
             'alert-type' => 'success'
         ]);
 
