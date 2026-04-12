@@ -56,8 +56,9 @@ class DashboardController extends Controller
                 $startDate = Carbon::now()->startOfDay();
         }
 
-        // ===== 1. TOTAL PAID (Filtered by Date) =====
-        $orderPayments = Order::whereBetween(DB::raw("STR_TO_DATE(order_date, '%Y-%m-%d')"), [$startDate, $endDate])
+        // ===== 1. TOTAL PAID (Filtered by Date) - EXCLUDE CANCELLED =====
+        $orderPayments = Order::where('order_status', '!=', 'cancelled')
+            ->whereBetween(DB::raw("STR_TO_DATE(order_date, '%Y-%m-%d')"), [$startDate, $endDate])
             ->sum('pay');
 
         $customerPayments = Payment::whereBetween('payment_date', [$startDate, $endDate])
@@ -65,18 +66,17 @@ class DashboardController extends Controller
 
         $totalPaid = $orderPayments + $customerPayments;
 
-        // ===== 2. TOTAL DUE (Current Remaining Balance from All Customers) =====
-        // Calculate for EACH customer: (previous_due + sum of all orders) - (sum of all payments + order pays)
+        // ===== 2. TOTAL DUE (Current Remaining Balance) - EXCLUDE CANCELLED =====
         $totalDue = 0;
         $customers = Customer::all();
         foreach ($customers as $customer) {
             $total_spent = $customer->previous_due;
-            foreach ($customer->orders as $order) {
+            foreach ($customer->orders()->where('order_status', '!=', 'cancelled')->get() as $order) {
                 $total_spent += $order->sub_total;
             }
             
             $total_paid = Payment::where('customer_id', $customer->id)->sum('payment_amount');
-            foreach ($customer->orders as $order) {
+            foreach ($customer->orders()->where('order_status', '!=', 'cancelled')->get() as $order) {
                 $total_paid += ($order->pay ?? 0);
             }
             
@@ -84,8 +84,9 @@ class DashboardController extends Controller
             $totalDue += $customer_due;
         }
 
-        // ===== 3. PROFIT & LOSS (From Filtered Orders) =====
-        $filteredOrders = Order::whereBetween(DB::raw("STR_TO_DATE(order_date, '%Y-%m-%d')"), [$startDate, $endDate])
+        // ===== 3. PROFIT & LOSS (From Filtered Orders) - EXCLUDE CANCELLED =====
+        $filteredOrders = Order::where('order_status', '!=', 'cancelled')
+            ->whereBetween(DB::raw("STR_TO_DATE(order_date, '%Y-%m-%d')"), [$startDate, $endDate])
             ->with('orderItems.product')
             ->get();
 
@@ -96,7 +97,7 @@ class DashboardController extends Controller
             foreach ($order->orderItems as $item) {
                 $buyingPrice = $item->product->buying_price ?? 0;
                 $sellingPrice = $item->unitcost;
-                $meters = $item->meters ?? $item->quantity; // Use meters if available
+                $meters = $item->meters ?? $item->quantity;
                 $orderProfit = ($sellingPrice - $buyingPrice) * $meters;
 
                 if ($orderProfit > 0) {
@@ -111,16 +112,23 @@ class DashboardController extends Controller
         $totalSupplierPayment = SupplierPayment::whereBetween('payment_date', [$startDate, $endDate])
             ->sum('payment_amount');
 
-// ===== 5. STOCK VALUE (productcolors meters × buying_price) =====
-$totalStockValue = DB::selectOne("
-    SELECT SUM(CAST(pc.meters AS DECIMAL(10,2)) * CAST(p.buying_price AS DECIMAL(10,2))) as total
-    FROM product_colors pc
-    JOIN products p ON pc.product_id = p.id
-")->total ?? 0;
-        // ===== 6. TODAY'S SALES & ORDERS =====
+        // ===== 5. STOCK VALUE =====
+        $totalStockValue = DB::selectOne("
+            SELECT SUM(CAST(pc.meters AS DECIMAL(10,2)) * CAST(p.buying_price AS DECIMAL(10,2))) as total
+            FROM product_colors pc
+            JOIN products p ON pc.product_id = p.id
+        ")->total ?? 0;
+
+        // ===== 6. TODAY'S SALES & ORDERS - EXCLUDE CANCELLED =====
         $today = date('Y-m-d');
-        $todaySales = Order::whereDate('order_date', $today)->sum('sub_total');
-        $todayOrders = Order::whereDate('order_date', $today)->count();
+        $todaySales = Order::where('order_status', '!=', 'cancelled')
+            ->whereDate('order_date', $today)
+            ->sum('sub_total');
+        
+        $todayOrders = Order::where('order_status', '!=', 'cancelled')
+            ->whereDate('order_date', $today)
+            ->count();
+        
         $todayExpenses = Expense::whereDate('date', $today)->sum('amount');
 
         // ===== 7. TOTAL EXPENSES =====
@@ -129,7 +137,8 @@ $totalStockValue = DB::selectOne("
         // ===== 8. OTHER DATA =====
         $monthlyPaid = [];
         for ($month = 1; $month <= 12; $month++) {
-            $monthlyPaid[] = Order::whereMonth('order_date', $month)
+            $monthlyPaid[] = Order::where('order_status', '!=', 'cancelled')
+                ->whereMonth('order_date', $month)
                 ->whereYear('order_date', date('Y'))
                 ->sum('pay');
         }
@@ -137,34 +146,37 @@ $totalStockValue = DB::selectOne("
         $recentExpenses = Expense::orderBy('created_at', 'desc')->take(5)->get();
         $lowStockProducts = Product::where('product_store', '<=', 10)->orderBy('product_store', 'asc')->take(5)->get();
 
-        $topCustomers = Order::select('customer_id', DB::raw('SUM(pay) as total_spent'))
+        $topCustomers = Order::where('order_status', '!=', 'cancelled')
+            ->select('customer_id', DB::raw('SUM(pay) as total_spent'))
             ->groupBy('customer_id')
             ->with('customer')
             ->orderBy('total_spent', 'desc')
             ->take(5)
             ->get();
 
-        // ===== BEST SELLING PRODUCTS (WITH METERS) =====
-$bestSellingProducts = DB::table('orderdetails as od')
-    ->join('products as p', 'od.product_id', '=', 'p.id')
-    ->leftJoin('categories as c', 'p.category_id', '=', 'c.id')
-    ->selectRaw('
-        p.id,
-        p.product_name,
-        p.product_code,
-        p.product_image,
-        c.category_name,
-        p.product_store,
-        SUM(CAST(od.meters AS DECIMAL(10,2))) as total_meters_sold,
-        p.buying_price,
-        p.category_id
-    ')
-    ->whereRaw('MONTH(od.created_at) = MONTH(NOW())')
-    ->whereRaw('YEAR(od.created_at) = YEAR(NOW())')
-    ->groupBy('od.product_id', 'p.id', 'p.product_name', 'p.product_code', 'p.product_image', 'c.category_name', 'p.product_store', 'p.buying_price', 'p.category_id')
-    ->orderByRaw('SUM(CAST(od.meters AS DECIMAL(10,2))) DESC')
-    ->limit(10)
-    ->get();
+        // ===== BEST SELLING PRODUCTS - EXCLUDE CANCELLED =====
+        $bestSellingProducts = DB::table('orderdetails as od')
+            ->join('products as p', 'od.product_id', '=', 'p.id')
+            ->join('orders as o', 'od.order_id', '=', 'o.id')
+            ->leftJoin('categories as c', 'p.category_id', '=', 'c.id')
+            ->selectRaw('
+                p.id,
+                p.product_name,
+                p.product_code,
+                p.product_image,
+                c.category_name,
+                p.product_store,
+                SUM(CAST(od.meters AS DECIMAL(10,2))) as total_meters_sold,
+                p.buying_price,
+                p.category_id
+            ')
+            ->where('o.order_status', '!=', 'cancelled')
+            ->whereRaw('MONTH(od.created_at) = MONTH(NOW())')
+            ->whereRaw('YEAR(od.created_at) = YEAR(NOW())')
+            ->groupBy('od.product_id', 'p.id', 'p.product_name', 'p.product_code', 'p.product_image', 'c.category_name', 'p.product_store', 'p.buying_price', 'p.category_id')
+            ->orderByRaw('SUM(CAST(od.meters AS DECIMAL(10,2))) DESC')
+            ->limit(10)
+            ->get();
 
         $recentSupplierPayments = SupplierPayment::whereBetween('payment_date', [$startDate, $endDate])
             ->with('supplier')
@@ -172,7 +184,10 @@ $bestSellingProducts = DB::table('orderdetails as od')
             ->take(5)
             ->get();
 
-        $orders = Order::with(['orderItems.product','customer'])->get();
+        // EXCLUDE CANCELLED ORDERS FROM RECENT ORDERS TABLE
+        $orders = Order::where('order_status', '!=', 'cancelled')
+            ->with(['orderItems.product','customer'])
+            ->get();
 
         // Pass all data to view
         return view('index', compact(
