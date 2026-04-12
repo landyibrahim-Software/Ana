@@ -67,6 +67,17 @@
     font-size: 12px;
     margin: 2px;
 }
+
+.rolls-badge {
+    display: inline-block;
+    background: #d4edda;
+    color: #155724;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    margin: 2px;
+    font-weight: 600;
+}
 </style>
 
 <div class="content">
@@ -119,6 +130,7 @@
     <th>#</th>
     <th>ئایتم</th>
     <th>رەنگەکان</th>
+    <th>تۆپ</th>
     <th>نرخی متر</th>
     <th>کۆی متر</th>
     <th>کۆی گشتی</th>
@@ -135,6 +147,15 @@
 @php
     $rowTotal = ($item->meters ?? $item->quantity) * $item->unitcost;
     $subTotal += $rowTotal;
+    
+    // Calculate total rolls from selected colors
+    $totalRolls = 0;
+    if($item->selected_colors) {
+        $colors = json_decode($item->selected_colors, true);
+        foreach($colors as $color) {
+            $totalRolls += intval($color['rolls'] ?? 0);
+        }
+    }
 @endphp
 <tr>
     <td>{{ $sl++ }}</td>
@@ -149,6 +170,13 @@
             @endforeach
         @else
             <span class="text-muted">بێ رەنگ</span>
+        @endif
+    </td>
+    <td>
+        @if($totalRolls > 0)
+            <span class="rolls-badge">{{ $totalRolls }} تۆپ</span>
+        @else
+            <span class="text-muted">—</span>
         @endif
     </td>
     <td>{{ number_format($item->unitcost, 2) }}</td>
