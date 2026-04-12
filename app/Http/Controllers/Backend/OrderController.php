@@ -95,10 +95,12 @@ public function FinalInvoice(Request $request)
         }
     }
 
-    // **Update customer's total due**
-    $customer->update([
-        'due' => $customer->due + $currentOrderDue
-    ]);
+// **Update customer's total due, paid, and orders**
+$customer->update([
+    'due' => $customer->due + $currentOrderDue,
+    'total_paid' => ($customer->total_paid ?? 0) + $pay,
+    'total_orders' => ($customer->total_orders ?? 0) + 1
+]);
 
     // Clear cart
     Cart::destroy();
@@ -251,9 +253,7 @@ $pdf = Pdf::loadView(
 
 
     }// End Method 
-/**
- * Cancel Order and Restore Stock
- */
+
 /**
  * Cancel Order and Restore Stock + Customer Balance
  */
@@ -270,7 +270,6 @@ public function cancelOrder(Request $request)
     
     $rejectedItemIds = $request->rejected_items;
     $refundAmount = floatval($request->refund_amount ?? 0);
-    $refundFrom = $request->refund_from;
 
     DB::beginTransaction();
     try {
@@ -304,8 +303,7 @@ public function cancelOrder(Request $request)
                     }
                     
                     // Restore total meters to product
-                    $totalMeters = $orderDetail->meters ?? 0;
-                    $product->increment('product_store', count($colors)); // Restore rolls
+                    $product->increment('product_store', count($colors));
                     $product->save();
                 }
 
@@ -315,9 +313,10 @@ public function cancelOrder(Request $request)
         }
 
         // 🔑 REVERT CUSTOMER BALANCE TO PREVIOUS STATE
-        // Set customer due back to previous_due (before this order)
         $customer->update([
-            'due' => $customer->previous_due ?? 0
+            'due' => $customer->previous_due ?? 0,
+            'total_paid' => max(0, ($customer->total_paid ?? 0) - $order->pay),
+            'total_orders' => max(0, ($customer->total_orders ?? 0) - 1)
         ]);
 
         // Mark order as cancelled
