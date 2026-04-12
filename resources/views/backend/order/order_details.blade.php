@@ -12,6 +12,14 @@
     margin: 2px;
 }
 
+.kpi-card {
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: none;
+}
+
 @media print {
     .page-title-box, 
     .breadcrumb, 
@@ -71,7 +79,7 @@
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label for="firstname" class="form-label"> وێنەی کڕیار</label>
-                                            <img id="showImage" src="{{ asset($order->customer->image ) }}" class="rounded-circle avatar-lg img-thumbnail" alt="profile-image">
+                                            <img id="showImage" src="{{ asset($order->customer->image) }}" class="rounded-circle avatar-lg img-thumbnail" alt="profile-image">
                                         </div>
                                     </div>
 
@@ -201,107 +209,163 @@
     </div> <!-- container -->
 </div> <!-- content -->
 
-<!-- CANCEL ORDER MODAL -->
-<div class="modal fade" id="cancelOrderModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">لابردنی داواکاری - هەڵبژێرە ئایتمەکان</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+<!-- BEAUTIFUL CANCEL ORDER MODAL -->
+<div class="modal fade" id="cancelOrderModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content" style="border-radius: 12px; box-shadow: 0 15px 50px rgba(0,0,0,0.15); border: none;">
+            
+            <!-- MODAL HEADER -->
+            <div class="modal-header" style="background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%); color: white; border: none; border-radius: 12px 12px 0 0;">
+                <h5 class="modal-title" style="font-weight: 600; font-size: 1.2rem;">
+                    <i class="mdi mdi-delete me-2"></i> لابردنی داواکاری
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
+
             <form method="POST" action="{{ route('order.cancel') }}" id="cancelForm">
                 @csrf
                 <input type="hidden" name="order_id" value="{{ $order->id }}">
                 
-                <div class="modal-body">
-                    <!-- ITEMS SELECTION -->
-                    <h6 class="mb-3"><i class="mdi mdi-checkbox-marked me-1"></i> ئایتمەکان کە دەتەوێ لابیهێنیت:</h6>
-                    <div class="table-responsive">
-                        <table class="table table-sm table-hover">
-                            <thead>
-                                <tr>
-                                    <th style="width: 50px;">هەڵبژێرە</th>
-                                    <th>ئایتم</th>
-                                    <th>رەنگەکان</th>
-                                    <th>نرخ</th>
-                                    <th>کۆی مترە</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($orderItem as $item)
-                                <tr>
-                                    <td>
-                                        <input type="checkbox" name="rejected_items[]" value="{{ $item->id }}" class="form-check-input item-checkbox" data-item-cost="{{ ($item->meters ?? $item->quantity) * $item->unitcost }}">
-                                    </td>
-                                    <td><strong>{{ optional($item->product)->product_name ?? 'Deleted' }}</strong></td>
-                                    <td>
-                                        @if($item->selected_colors)
-                                            @php $colors = json_decode($item->selected_colors, true); @endphp
-                                            @foreach($colors as $color)
-                                                <span class="color-badge">{{ $color['name'] }}: {{ $color['meter'] }}م</span>
-                                            @endforeach
-                                        @else
-                                            <span class="text-muted">بێ رەنگ</span>
-                                        @endif
-                                    </td>
-                                    <td>{{ number_format($item->unitcost, 2) }}</td>
-                                    <td>{{ number_format($item->meters ?? $item->quantity, 2) }}</td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                <!-- MODAL BODY -->
+                <div class="modal-body" style="padding: 25px;">
+
+                    <!-- SECTION 1: ITEMS SELECTION -->
+                    <div class="mb-4">
+                        <h6 class="mb-3" style="color: #2c3e50; font-weight: 600;">
+                            <i class="mdi mdi-checkbox-marked me-2" style="color: #f5576c;"></i> ئایتمەکان کە دەتەوێ لابیهێنیت
+                        </h6>
+                        <div class="table-responsive">
+                            <table class="table table-hover" style="margin-bottom: 0;">
+                                <thead style="background-color: #f8f9fa;">
+                                    <tr>
+                                        <th style="width: 50px; text-align: center;"><i class="mdi mdi-checkbox-blank-outline"></i></th>
+                                        <th>ناوی ئایتم</th>
+                                        <th>رەنگەکان</th>
+                                        <th style="text-align: right;">نرخ</th>
+                                        <th style="text-align: right;">کۆی مترە</th>
+                                        <th style="text-align: right;">کۆی</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($orderItem as $item)
+                                    @php
+                                        $itemTotal = ($item->meters ?? $item->quantity) * $item->unitcost;
+                                    @endphp
+                                    <tr>
+                                        <td style="text-align: center;">
+                                            <input type="checkbox" name="rejected_items[]" value="{{ $item->id }}" class="form-check-input item-checkbox" data-item-cost="{{ $itemTotal }}">
+                                        </td>
+                                        <td><strong>{{ optional($item->product)->product_name ?? 'Deleted' }}</strong></td>
+                                        <td>
+                                            @if($item->selected_colors)
+                                                @php $colors = json_decode($item->selected_colors, true); @endphp
+                                                @foreach($colors as $color)
+                                                    <span class="color-badge">{{ $color['name'] }}: {{ $color['meter'] }}م</span>
+                                                @endforeach
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
+                                        </td>
+                                        <td style="text-align: right;">${{ number_format($item->unitcost, 2) }}</td>
+                                        <td style="text-align: right;">{{ number_format($item->meters ?? $item->quantity, 2) }}م</td>
+                                        <td style="text-align: right;"><strong>${{ number_format($itemTotal, 2) }}</strong></td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
-                    <hr>
+                    <hr style="border-top: 2px dashed #e9ecef;">
 
-                    <!-- REFUND SECTION -->
-                    <h6 class="mb-3"><i class="mdi mdi-cash-refund me-1"></i> پارە کەمکردن:</h6>
+                    <!-- SECTION 2: REFUND CALCULATION -->
+                    <div class="mb-4">
+                        <h6 class="mb-3" style="color: #2c3e50; font-weight: 600;">
+                            <i class="mdi mdi-cash-refund me-2" style="color: #f5576c;"></i> پارە کەمکردن
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label" style="color: #555; font-weight: 500;">بڕی کەمکردن (خۆکارانە)</label>
+                                    <input type="number" id="autoRefundAmount" class="form-control" style="border-radius: 8px; border: 2px solid #e9ecef;" step="0.01" readonly>
+                                    <small class="text-muted" style="display: block; margin-top: 8px;">ئەم بڕە بە خۆکارانەوە حیساب دەکرێت</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label" style="color: #555; font-weight: 500;">یان بە دەستی بنووسە</label>
+                                    <input type="number" id="manualRefundAmount" name="refund_amount" class="form-control" style="border-radius: 8px; border: 2px solid #e9ecef;" step="0.01" placeholder="0.00">
+                                    <small class="text-muted" style="display: block; margin-top: 8px;">ئەگەر دەتەوێ جیاوازی برۆ بنووسە</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 3: REFUND FROM -->
+                    <div class="mb-4">
+                        <h6 class="mb-3" style="color: #2c3e50; font-weight: 600;">
+                            <i class="mdi mdi-source-branch me-2" style="color: #f5576c;"></i> کەمکردن لە کوێ
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check" style="padding: 12px 15px; background: #f8f9fa; border-radius: 8px; margin-bottom: 10px;">
+                                    <input class="form-check-input" type="radio" name="refund_from" value="due" id="refund_from_due" checked>
+                                    <label class="form-check-label" for="refund_from_due" style="margin-left: 8px; cursor: pointer; margin-bottom: 0;">
+                                        <strong>لە قەرزی کڕیار (Due)</strong><br>
+                                        <span style="color: #666; font-size: 0.9rem;">بەروبوومان: <strong style="color: #f5576c;">${{ number_format($order->due, 2) }}</strong></span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check" style="padding: 12px 15px; background: #f8f9fa; border-radius: 8px; margin-bottom: 10px;">
+                                    <input class="form-check-input" type="radio" name="refund_from" value="paid" id="refund_from_paid">
+                                    <label class="form-check-label" for="refund_from_paid" style="margin-left: 8px; cursor: pointer; margin-bottom: 0;">
+                                        <strong>بیگری کردی (Paid)</strong><br>
+                                        <span style="color: #666; font-size: 0.9rem;">بوونی: <strong style="color: #27ae60;">${{ number_format($order->pay, 2) }}</strong></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr style="border-top: 2px dashed #e9ecef;">
+
+                    <!-- SECTION 4: SUMMARY CARDS -->
                     <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">بڕی کەمکردن (خۆکارانە)</label>
-                                <input type="number" id="autoRefundAmount" class="form-control" step="0.01" readonly>
-                                <small class="text-muted">ئەم بڕە بە خۆکارانەوە حیساب دەکرێت لە پووچاندن</small>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="card kpi-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center; border: none;">
+                                <div style="font-size: 2.5rem; font-weight: 700; margin-bottom: 5px;" id="cancelItemCount">0</div>
+                                <div style="font-size: 0.95rem; opacity: 0.9;">ئایتمە پووچاندکان</div>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">یان بە دەستی بنووسە:</label>
-                                <input type="number" id="manualRefundAmount" name="refund_amount" class="form-control" step="0.01" placeholder="0.00">
-                                <small class="text-muted">ئەگەر دەتەوێ جیاوازی برۆ بنووسە</small>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="card kpi-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 20px; text-align: center; border: none;">
+                                <div style="font-size: 2.5rem; font-weight: 700; margin-bottom: 5px;">$<span id="cancelRefundAmount">0.00</span></div>
+                                <div style="font-size: 0.95rem; opacity: 0.9;">کۆی کەمکردن</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="card kpi-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 20px; text-align: center; border: none;">
+                                <div style="font-size: 2.5rem; font-weight: 700; margin-bottom: 5px;">$<span id="cancelNewDue">{{ number_format($order->due, 2) }}</span></div>
+                                <div style="font-size: 0.95rem; opacity: 0.9;">دوایی قەرز</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="card kpi-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; padding: 20px; text-align: center; border: none;">
+                                <div style="font-size: 2.5rem; font-weight: 700; margin-bottom: 5px;">$<span id="cancelNewPaid">{{ number_format($order->pay, 2) }}</span></div>
+                                <div style="font-size: 0.95rem; opacity: 0.9;">دوایی پارەی دراو</div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- REFUND FROM SECTION -->
-                    <div class="mb-3">
-                        <label class="form-label"><strong>کەمکردن لە:</strong></label>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="refund_from" value="due" id="refund_from_due" checked>
-                            <label class="form-check-label" for="refund_from_due">
-                                لە قەرزی کڕیار (Due): <strong>{{ number_format($order->due, 2) }}</strong>
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="refund_from" value="paid" id="refund_from_paid">
-                            <label class="form-check-label" for="refund_from_paid">
-                                بیگری کردی (Paid): <strong>{{ number_format($order->pay, 2) }}</strong>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- REFUND SUMMARY -->
-                    <div class="alert alert-info">
-                        <p class="mb-1"><strong>خوێندکاری:</strong></p>
-                        <p class="mb-0">ئایتمە پووچاندکان: <strong id="cancelItemCount">0</strong></p>
-                        <p class="mb-0">کۆی کەمکردن: <strong id="cancelRefundAmount">0.00</strong></p>
-                        <p class="mb-0">دوایی قەرز: <strong id="cancelNewDue">{{ number_format($order->due, 2) }}</strong></p>
-                    </div>
                 </div>
 
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">داخستن</button>
-                    <button type="submit" class="btn btn-danger">
+                <!-- MODAL FOOTER -->
+                <div class="modal-footer" style="border-top: 2px solid #f0f0f0; padding: 20px;">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius: 8px;">
+                        <i class="mdi mdi-close me-1"></i> داخستن
+                    </button>
+                    <button type="submit" class="btn btn-danger" style="border-radius: 8px; background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%); border: none;">
                         <i class="mdi mdi-check me-1"></i> لابردنی داواکاری پشتڕاستکردن
                     </button>
                 </div>
@@ -310,6 +374,7 @@
     </div>
 </div>
 
+<!-- CANCEL ORDER JAVASCRIPT -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const itemCheckboxes = document.querySelectorAll('.item-checkbox');
@@ -317,8 +382,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const manualRefundInput = document.getElementById('manualRefundAmount');
     const refundFromRadios = document.querySelectorAll('input[name="refund_from"]');
     
-    const currentDue = {{ $order->due }};
-    const currentPaid = {{ $order->pay }};
+    const currentDue = parseFloat('{{ $order->due }}');
+    const currentPaid = parseFloat('{{ $order->pay }}');
 
     function updateRefundCalculations() {
         let totalRefund = 0;
@@ -341,18 +406,23 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('cancelItemCount').textContent = checkedCount;
         document.getElementById('cancelRefundAmount').textContent = refundAmount.toFixed(2);
 
-        // Calculate new due based on selected option
+        // Calculate new due and paid based on selected option
         const refundFrom = document.querySelector('input[name="refund_from"]:checked').value;
         let newDue = currentDue;
+        let newPaid = currentPaid;
 
         if (refundFrom === 'due') {
             newDue = currentDue - refundAmount;
         } else if (refundFrom === 'paid') {
             newDue = currentDue + refundAmount;
+            newPaid = currentPaid - refundAmount;
         }
 
         newDue = Math.max(0, newDue);
+        newPaid = Math.max(0, newPaid);
+        
         document.getElementById('cancelNewDue').textContent = newDue.toFixed(2);
+        document.getElementById('cancelNewPaid').textContent = newPaid.toFixed(2);
     }
 
     // Update when checkboxes change
