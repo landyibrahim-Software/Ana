@@ -21,10 +21,10 @@ public function FinalInvoice(Request $request)
 {
     $customer = Customer::findOrFail($request->customer_id);
 
-    $totalProducts = $request->total_products;
+    $totalProducts = $request->total_products ?? count($request->items ?? []);
     $subTotal = $request->sub_total;
     $pay = $request->pay;
-    $currentOrderTotal = $subTotal; // total for this order only
+    $currentOrderTotal = $subTotal;
 
     // Current order due = total - pay
     $currentOrderDue = $currentOrderTotal - $pay;
@@ -44,21 +44,23 @@ public function FinalInvoice(Request $request)
         'payment_status' => $request->payment_status,
         'pay'            => $pay,
         'due'            => $currentOrderDue,
-        'previous_due'   => $previousDue, // ✅ Store previous due
+        'previous_due'   => $previousDue,
         'metter_price'   => 0,
     ]);
 
     // Save order items WITH meters and colors + UPDATE STOCK
     foreach ($request->items as $item) {
         $meters = $item['meters'] ?? 0;
-        $unitTotal = $meters * $item['unitcost']; // meters × price
+        $unitTotal = $meters * $item['unitcost'];
         $selectedColors = $item['selected_colors'] ?? '[]';
         
-        // Count how many colors are selected
-        $colorCount = 0;
+        // Count rolls from colors
+        $totalRolls = 0;
         if (!empty($item['selected_colors'])) {
             $colors = json_decode($item['selected_colors'], true);
-            $colorCount = count($colors); // Number of colors selected
+            foreach ($colors as $color) {
+                $totalRolls += intval($color['rolls'] ?? 0);
+            }
         }
 
         // Save order detail
@@ -81,26 +83,26 @@ public function FinalInvoice(Request $request)
                 // Find the color record and reduce meters
                 \App\Models\ProductColor::where('product_id', $item['product_id'])
                     ->where('id', $color['id'])
-                    ->decrement('meters', $color['meter']);
+                    ->decrement('meters', floatval($color['meter'] ?? 0));
             }
         }
         
-        // 🔥 REDUCE تۆپ (ROLLS) FROM PRODUCT STORE BY COUNT OF COLORS
-        if ($colorCount > 0) {
+        // 🔥 REDUCE تۆپ (ROLLS) FROM PRODUCT STORE BY ROLLS COUNT
+        if ($totalRolls > 0) {
             $product = Product::find($item['product_id']);
             if ($product) {
-                $product->product_store -= $colorCount;
+                $product->product_store -= $totalRolls;
                 $product->save();
             }
         }
     }
 
-// **Update customer's total due, paid, and orders**
-$customer->update([
-    'due' => $customer->due + $currentOrderDue,
-    'total_paid' => ($customer->total_paid ?? 0) + $pay,
-    'total_orders' => ($customer->total_orders ?? 0) + 1
-]);
+    // **Update customer's total due, paid, and orders**
+    $customer->update([
+        'due' => $customer->due + $currentOrderDue,
+        'total_paid' => ($customer->total_paid ?? 0) + $pay,
+        'total_orders' => ($customer->total_orders ?? 0) + 1
+    ]);
 
     // Clear cart
     Cart::destroy();
@@ -108,7 +110,6 @@ $customer->update([
     // Redirect to print invoice
     return redirect()->route('print.invoice', $order->id);
 }
-
 
 
 public function PrintInvoice($id)
@@ -268,6 +269,13 @@ public function cancelOrder(Request $request)
     $order = Order::findOrFail($request->order_id);
     $customer = $order->customer;
     
+    if (!$customer) {
+        return redirect()->back()->with([
+            'message' => 'هەڵەیەک روویدا: کڕیار نەدۆزرایەوە',
+            'alert-type' => 'danger'
+        ]);
+    }
+    
     $rejectedItemIds = $request->rejected_items;
     $refundAmount = floatval($request->refund_amount ?? 0);
 
@@ -284,7 +292,9 @@ public function cancelOrder(Request $request)
             }
         }
 
-        // Process each rejected item - RESTORE STOCK
+        $totalRollsRestored = 0;
+
+        // Process each rejected item - RESTORE STOCK & ROLLS
         foreach ($rejectedItemIds as $itemId) {
             $orderDetail = Orderdetails::find($itemId);
             
@@ -294,17 +304,36 @@ public function cancelOrder(Request $request)
                 if ($product && $orderDetail->selected_colors) {
                     // Restore colors and meters
                     $colors = json_decode($orderDetail->selected_colors, true);
-                    
-                    foreach ($colors as $color) {
-                        // Restore meter to specific color
-                        ProductColor::where('product_id', $orderDetail->product_id)
-                            ->where('id', $color['id'])
-                            ->increment('meters', $color['meter']);
+                    if (is_array($colors)) {
+                        $totalRolls = 0;
+                        
+                        foreach ($colors as $color) {
+                            // Restore meter to specific color
+                            if (isset($color['id'])) {
+                                ProductColor::where('product_id', $orderDetail->product_id)
+                                    ->where('id', $color['id'])
+                                    ->increment('meters', floatval($color['meter'] ?? 0));
+                            }
+                            
+                            // Count rolls to restore
+                            $totalRolls += intval($color['rolls'] ?? 0);
+                        }
+                        
+                        // ✅ RESTORE ROLLS TO PRODUCT STORE
+                        if ($totalRolls > 0) {
+                            $product->increment('product_store', $totalRolls);
+                            $product->save();
+                            $totalRollsRestored += $totalRolls;
+                        }
                     }
-                    
-                    // Restore total meters to product
-                    $product->increment('product_store', count($colors));
-                    $product->save();
+                } elseif ($product) {
+                    // If no selected colors, just restore basic quantity
+                    $quantityToRestore = intval($orderDetail->quantity ?? 0);
+                    if ($quantityToRestore > 0) {
+                        $product->increment('product_store', $quantityToRestore);
+                        $product->save();
+                        $totalRollsRestored += $quantityToRestore;
+                    }
                 }
 
                 // Mark item as cancelled
@@ -312,22 +341,37 @@ public function cancelOrder(Request $request)
             }
         }
 
-        // 🔑 REVERT CUSTOMER BALANCE TO PREVIOUS STATE
-        $customer->update([
-            'due' => $customer->previous_due ?? 0,
-            'total_paid' => max(0, ($customer->total_paid ?? 0) - $order->pay),
-            'total_orders' => max(0, ($customer->total_orders ?? 0) - 1)
-        ]);
+        // ✅ KEY FIX: When refunding from PAID, DON'T reduce customer due
+        // Only reduce the paid amount since you're refunding outside the system
+        $refundFrom = $request->refund_from;
+        
+        if ($refundFrom === 'due') {
+            // Refund from DUE: Reduce customer's due
+            $customer->update([
+                'due' => max(0, ($customer->due ?? 0) - $refundAmount),
+                'total_orders' => max(0, ($customer->total_orders ?? 0) - 1)
+            ]);
+        } else if ($refundFrom === 'paid') {
+            // Refund from PAID: 
+            // - DO NOT change customer.due (it stays the same)
+            // - Only reduce total_paid by refund amount (since you're refunding outside)
+            // - Reduce total_orders count
+            $customer->update([
+                'total_paid' => max(0, ($customer->total_paid ?? 0) - $refundAmount),
+                'total_orders' => max(0, ($customer->total_orders ?? 0) - 1)
+            ]);
+        }
 
         // Mark order as cancelled
         $order->update([
-            'order_status' => 'cancelled'
+            'order_status' => 'cancelled',
+            'payment_status' => 'cancelled'
         ]);
 
         DB::commit();
 
         return redirect()->back()->with([
-            'message' => 'داواکاری بە سەرکەوتی لابرێت و کاڵاکان کەم کران و کاروباری کڕیار گێڕایەوە',
+            'message' => "✅ داواکاری بە سەرکەوتی لابرێت - {$totalRollsRestored} تۆپ و {$refundAmount} $ گێڕایەوە",
             'alert-type' => 'success'
         ]);
 
