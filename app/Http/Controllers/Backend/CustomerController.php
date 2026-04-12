@@ -22,19 +22,23 @@ public function ShowCustomer($id)
     $customer = Customer::findOrFail($id);
     $customer->load('orders', 'payments');
 
-    // CARD 1: Count orders
-    $order_count = $customer->orders->count();
+    // CARD 1: Count ACTIVE orders only (exclude cancelled)
+    $order_count = $customer->orders->where('order_status', '!=', 'cancelled')->count();
     
-    // CARD 2: Total owed = previous_due + all order sub_totals
+    // CARD 2: Total owed = previous_due + active order sub_totals
     $total_spent = floatval($customer->previous_due ?? 0);
     foreach ($customer->orders as $order) {
-        $total_spent += floatval($order->sub_total ?? 0);
+        if ($order->order_status != 'cancelled') {
+            $total_spent += floatval($order->sub_total ?? 0);
+        }
     }
     
-    // CARD 3: Total paid = all payments + all order pays
+    // CARD 3: Total paid = all payments + active order pays
     $total_paid_all = floatval(Payment::where('customer_id', $customer->id)->sum('payment_amount') ?? 0);
     foreach ($customer->orders as $order) {
-        $total_paid_all += floatval($order->pay ?? 0);
+        if ($order->order_status != 'cancelled') {
+            $total_paid_all += floatval($order->pay ?? 0);
+        }
     }
     
     // CARD 4: Remaining due
