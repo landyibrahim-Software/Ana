@@ -171,7 +171,7 @@ class PosController extends Controller
     /* ===============================
         CREATE INVOICE & UPDATE STOCK
     ================================ */
-   public function CreateInvoice(Request $request)
+ public function CreateInvoice(Request $request)
 {
     $contents = Cart::content();
     $customer = Customer::findOrFail($request->customer_id);
@@ -191,9 +191,29 @@ class PosController extends Controller
         $subTotal += $totalMeters * $item->price;
     }
 
-    // ✅ FIX: Use customer's current due directly from database
-    // This already accounts for all previous orders, payments, and cancellations
-    $previousDue = floatval($customer->due ?? 0);
+    // ✅ FIX: Calculate previousDue EXACTLY like Card 4 in show_customer page
+    // This is the TRUE customer due (what they owe)
+    
+    // Step 1: Get customer's previous due from initial setup
+    $total_spent = floatval($customer->previous_due ?? 0);
+    
+    // Step 2: Add all ACTIVE (non-cancelled) orders' subtotals
+    foreach ($customer->orders as $order) {
+        if ($order->order_status != 'cancelled') {
+            $total_spent += floatval($order->sub_total ?? 0);
+        }
+    }
+    
+    // Step 3: Calculate total paid from all ACTIVE orders
+    $total_paid_all = floatval(\App\Models\Payment::where('customer_id', $customer->id)->sum('payment_amount') ?? 0);
+    foreach ($customer->orders as $order) {
+        if ($order->order_status != 'cancelled') {
+            $total_paid_all += floatval($order->pay ?? 0);
+        }
+    }
+    
+    // Step 4: previousDue = total_spent - total_paid (what customer still owes)
+    $previousDue = max($total_spent - $total_paid_all, 0);
 
     // Return product_invoice WITHOUT creating order
     return view('backend.invoice.product_invoice', compact('contents', 'customer', 'previousDue', 'subTotal'));
