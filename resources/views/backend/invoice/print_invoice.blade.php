@@ -330,11 +330,49 @@
     </div>
 </div>
 
-<!-- ✅ WHATSAPP SCRIPT - SIMPLE -->
+<!-- Add html2canvas library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<!-- ✅ WHATSAPP MODAL -->
+<div class="modal fade" id="whatsappModal" tabindex="-1" aria-labelledby="whatsappModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="whatsappModalLabel">
+                    <i class="fab fa-whatsapp"></i> پسوڵە بۆ واتساپ بنێرە
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Phone number input -->
+                <div class="mb-3">
+                    <label class="form-label"><strong>ژمارەی مۆبایل:</strong></label>
+                    <input 
+                        type="tel" 
+                        id="whatsappPhone" 
+                        class="form-control" 
+                        placeholder="مثال: +964781234567 یان 07812345678"
+                        value="{{ $order->customer->phone ?? '' }}"
+                    >
+                    <small class="text-muted">نمبەری مۆبایل بێت کاردەکاتە دروست بنووسە</small>
+                </div>
+
+                <small class="text-muted">💡 پسوڵە وەک وێنە دێنێرێتەوە</small>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">داخستن</button>
+                <button type="button" class="btn btn-success" onclick="sendInvoiceAsImage()">
+                    <i class="fab fa-whatsapp"></i> بنێرە
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ✅ WHATSAPP SCRIPT - SEND AS IMAGE -->
 <script>
-function sendToWhatsapp() {
+function sendInvoiceAsImage() {
     let phone = document.getElementById('whatsappPhone').value.trim();
-    const message = document.getElementById('whatsappMessage').value;
     
     // Validate phone
     if (!phone) {
@@ -342,13 +380,13 @@ function sendToWhatsapp() {
         return;
     }
     
-    // Clean phone number (remove spaces and dashes)
+    // Clean phone number
     phone = phone.replace(/[\s-()]/g, '');
     
     // Add country code if missing
     if (!phone.startsWith('+')) {
         if (phone.startsWith('0')) {
-            phone = '+964' + phone.substring(1); // Iraqi format
+            phone = '+964' + phone.substring(1);
         } else {
             phone = '+' + phone;
         }
@@ -360,24 +398,68 @@ function sendToWhatsapp() {
         return;
     }
     
-    // Encode message
-    const encodedMessage = encodeURIComponent(message);
+    // Show loading
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> لە درەنوویت...';
+    btn.disabled = true;
     
-    // WhatsApp URL
-    const whatsappURL = `https://wa.me/${phone.substring(1)}?text=${encodedMessage}`;
+    // Get invoice card
+    const invoiceCard = document.querySelector('.card-body');
     
-    // Open WhatsApp
-    window.open(whatsappURL, '_blank');
-    
-    // Close modal
-    const modal = bootstrap.Modal.getInstance(document.getElementById('whatsappModal'));
-    modal.hide();
+    // Convert to image
+    html2canvas(invoiceCard, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        logging: false
+    }).then(canvas => {
+        // Convert to blob
+        canvas.toBlob(blob => {
+            // Create image URL
+            const imageUrl = URL.createObjectURL(blob);
+            
+            // Create download link
+            const link = document.createElement('a');
+            link.href = imageUrl;
+            link.download = 'invoice_{{ $order->id }}.png';
+            
+            // Trigger download
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Open WhatsApp with message
+            const message = encodeURIComponent(
+                `سڵاو {{ $order->customer->name }}!\n\n` +
+                `ئەم پسوڵەی دێ:\n` +
+                `ژمارە: #{{ $order->id }}\n` +
+                `کۆی: ${{ number_format($grandTotal, 2) }}\n\n` +
+                `سوپاس!`
+            );
+            
+            const whatsappURL = `https://wa.me/${phone.substring(1)}?text=${message}`;
+            window.open(whatsappURL, '_blank');
+            
+            // Close modal
+            setTimeout(() => {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('whatsappModal'));
+                modal.hide();
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }, 1000);
+        });
+    }).catch(error => {
+        alert('خرابی: ' + error.message);
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    });
 }
 
-// Allow Enter key to send
+// Allow Enter key
 document.getElementById('whatsappPhone').addEventListener('keypress', function(e) {
     if (e.key === 'Enter') {
-        sendToWhatsapp();
+        sendInvoiceAsImage();
     }
 });
 </script>
