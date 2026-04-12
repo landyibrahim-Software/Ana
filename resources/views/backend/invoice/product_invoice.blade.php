@@ -47,6 +47,17 @@
     font-size: 12px;
     margin: 2px;
 }
+
+.rolls-badge {
+    display: inline-block;
+    background: #d4edda;
+    color: #155724;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    margin: 2px;
+    font-weight: 600;
+}
 </style>
 
 <div class="content">
@@ -110,6 +121,7 @@
     <th>#</th>
     <th>ئایتم</th>
     <th>رەنگەکان</th>
+    <th>تۆپ</th>
     <th>نرخی متر</th>
     <th>کۆی متر</th>
     <th>کۆی گشتی</th>
@@ -127,6 +139,12 @@
     // Get meter data from cart options
     $totalMeters = floatval($item->options['total_meters'] ?? 0);
     $selectedColors = $item->options['selected_colors'] ?? [];
+    
+    // Calculate total rolls
+    $totalRolls = 0;
+    foreach($selectedColors as $color) {
+        $totalRolls += intval($color['rolls'] ?? 0);
+    }
     
     // Calculate row total: total_meters × unit_price
     $rowTotal = $totalMeters * floatval($item->price);
@@ -147,6 +165,13 @@
             @endforeach
         @else
             <span class="text-muted">بێ رەنگ</span>
+        @endif
+    </td>
+    <td>
+        @if($totalRolls > 0)
+            <span class="rolls-badge">{{ $totalRolls }} تۆپ</span>
+        @else
+            <span class="text-muted">—</span>
         @endif
     </td>
     <td>{{ number_format($item->price, 2) }}</td>
@@ -207,7 +232,7 @@
 <input type="hidden" name="payment_status" value="pending">
 <input type="hidden" name="previous_due" value="{{ $previousDue }}">
 
-<!-- SEND ITEMS WITH METERS AND COLORS -->
+<!-- SEND ITEMS WITH METERS, COLORS, AND ROLLS -->
 @foreach($contents as $index => $item)
     @php
         $itemTotalMeters = floatval($item->options['total_meters'] ?? 0);
