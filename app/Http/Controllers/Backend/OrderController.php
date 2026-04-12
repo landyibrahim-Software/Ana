@@ -97,9 +97,13 @@ public function FinalInvoice(Request $request)
         }
     }
 
-    // **Update customer's total due, paid, and orders**
+    // ✅ CORRECT: Only add the ORDER DUE to customer due
+    // If pay > subtotal, the order due is negative, so customer credit increases
+    // This is correct!
+    $newCustomerDue = max(0, ($customer->due ?? 0) + $currentOrderDue);
+    
     $customer->update([
-        'due' => $customer->due + $currentOrderDue,
+        'due' => $newCustomerDue,
         'total_paid' => ($customer->total_paid ?? 0) + $pay,
         'total_orders' => ($customer->total_orders ?? 0) + 1
     ]);
@@ -110,7 +114,6 @@ public function FinalInvoice(Request $request)
     // Redirect to print invoice
     return redirect()->route('print.invoice', $order->id);
 }
-
 
 public function PrintInvoice($id)
 {
