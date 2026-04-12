@@ -261,6 +261,9 @@ $pdf = Pdf::loadView(
 /**
  * Cancel Order and Restore Stock + Customer Balance
  */
+/**
+ * Cancel Order and Restore Stock + Customer Balance
+ */
 public function cancelOrder(Request $request)
 {
     $request->validate([
@@ -296,6 +299,7 @@ public function cancelOrder(Request $request)
         }
 
         $totalRollsRestored = 0;
+        $totalMetersRestored = 0;
 
         // Process each rejected item - RESTORE STOCK & ROLLS
         foreach ($rejectedItemIds as $itemId) {
@@ -311,18 +315,22 @@ public function cancelOrder(Request $request)
                         $totalRolls = 0;
                         
                         foreach ($colors as $color) {
-                            // Restore meter to specific color
+                            // ✅ RESTORE METER TO SPECIFIC COLOR
                             if (isset($color['id'])) {
                                 ProductColor::where('product_id', $orderDetail->product_id)
                                     ->where('id', $color['id'])
                                     ->increment('meters', floatval($color['meter'] ?? 0));
+                                
+                                // Track meters restored
+                                $totalMetersRestored += floatval($color['meter'] ?? 0);
                             }
                             
-                            // Count rolls to restore
-                            $totalRolls += intval($color['rolls'] ?? 0);
+                            // ✅ COUNT ROLLS TO RESTORE (EXACT ROLLS THAT WERE SOLD)
+                            $rollsInThisColor = intval($color['rolls'] ?? 0);
+                            $totalRolls += $rollsInThisColor;
                         }
                         
-                        // ✅ RESTORE ROLLS TO PRODUCT STORE
+                        // ✅ RESTORE ROLLS TO PRODUCT STORE (EXACTLY WHAT WAS SOLD)
                         if ($totalRolls > 0) {
                             $product->increment('product_store', $totalRolls);
                             $product->save();
@@ -339,13 +347,12 @@ public function cancelOrder(Request $request)
                     }
                 }
 
-                // Mark item as cancelled
+                // Mark item as cancelled (set quantity to 0)
                 $orderDetail->update(['quantity' => 0]);
             }
         }
 
-        // ✅ KEY FIX: When refunding from PAID, DON'T reduce customer due
-        // Only reduce the paid amount since you're refunding outside the system
+        // ✅ Handle refund from DUE or PAID
         $refundFrom = $request->refund_from;
         
         if ($refundFrom === 'due') {
@@ -355,10 +362,7 @@ public function cancelOrder(Request $request)
                 'total_orders' => max(0, ($customer->total_orders ?? 0) - 1)
             ]);
         } else if ($refundFrom === 'paid') {
-            // Refund from PAID: 
-            // - DO NOT change customer.due (it stays the same)
-            // - Only reduce total_paid by refund amount (since you're refunding outside)
-            // - Reduce total_orders count
+            // Refund from PAID: Only reduce total_paid
             $customer->update([
                 'total_paid' => max(0, ($customer->total_paid ?? 0) - $refundAmount),
                 'total_orders' => max(0, ($customer->total_orders ?? 0) - 1)
@@ -373,8 +377,9 @@ public function cancelOrder(Request $request)
 
         DB::commit();
 
+        // ✅ IMPROVED MESSAGE showing rolls and meters restored
         return redirect()->back()->with([
-            'message' => "✅ داواکاری بە سەرکەوتی لابرێت - {$totalRollsRestored} تۆپ و {$refundAmount} $ گێڕایەوە",
+            'message' => "✅ داواکاری بە سەرکەوتی لابرێت - {$totalRollsRestored} تۆپ ({$totalMetersRestored}م) و {$refundAmount} $ گێڕایەوە",
             'alert-type' => 'success'
         ]);
 
