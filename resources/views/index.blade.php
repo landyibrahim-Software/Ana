@@ -771,7 +771,7 @@
     }
 @endphp
                                     <tr>
-                                        <td>{{ $order->invoice_no }}</td>
+                                        <td>{{ $order->id }}</td>
                                         <td>{{ $order->customer->name ?? 'N/A' }}</td>
                                         <td>{{ $itemCount }}</td>
                                         <td>${{ number_format($order->total,2) }}</td>

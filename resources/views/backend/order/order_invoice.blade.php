@@ -81,7 +81,7 @@
         </td>
         <td>
           <p class="font">
-            <h3><span style="color: green;">Invoice:</span> # {{ $order->invoice_no }}  </h3>
+            <h3><span style="color: green;">Order ID:</span> # {{ $order->id }}  </h3>
             Order Date:  {{ $order->order_date }} <br>
             Order Status:  {{ $order->order_status }} <br>
             Payment Status: {{ $order->payment_status }}  <br>

@@ -51,7 +51,7 @@
                 <td>{{ $item['customer']['name'] }}</td>
                 <td>{{ $item->order_date }}</td>
                 <td>{{ $item->payment_status }}</td>
-                <td>{{ $item->invoice_no }}</td>
+                <td>{{ $item->id }}</td>
                 <td>{{ $item->pay }}</td>
                 <td> <span class="badge bg-success">{{ $item->order_status }}</span> </td>
                 <td>
