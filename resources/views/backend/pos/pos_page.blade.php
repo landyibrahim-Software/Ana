@@ -295,10 +295,9 @@ body {
 
 @foreach($allcart as $cart)
 @php 
-    $product = \App\Models\Product::with('colors')->find($cart->id);
-    $colors = ($product && $product->colors && $product->colors->count() > 0) ? $product->colors : collect();
+    $cartProduct = \App\Models\Product::with('colors')->find($cart->id);
+    $colors = ($cartProduct && $cartProduct->colors && $cartProduct->colors->count() > 0) ? $cartProduct->colors : collect();
     
-    // Get saved color data
     $savedColors = isset($cart->options['selected_colors']) ? $cart->options['selected_colors'] : [];
     $savedTotalMeters = isset($cart->options['total_meters']) ? $cart->options['total_meters'] : 0;
 @endphp
@@ -328,7 +327,6 @@ body {
             {{-- INDIVIDUAL COLORS --}}
             @foreach($colors as $color)
             @php
-                // Check if this color was previously saved
                 $isSelected = false;
                 $savedMeter = 0;
                 
@@ -498,6 +496,9 @@ if($allcart && $allcart->count() > 0) {
 </div>
 </div>
 </div>
+
+</div>
+
 {{-- BARCODE + PRODUCTS --}}
 <div class="row">
 <div class="col-12">
@@ -565,26 +566,6 @@ Last Scan: <span id="last-barcode">None</span>
 
 </div>
 </div>
-    </tr>
-    @endif
-@endforeach
-</tbody>
-</table>
-</div>
-@else
-<div class="empty-state">
-    <i class="fas fa-box"></i>
-    <h5>بەرهەم نیە</h5>
-</div>
-@endif
-
-</div>
-</div>
-</div>
-</div>
-
-</div>
-</div>
 
 {{-- JS LOGIC --}}
 <script>
@@ -617,7 +598,6 @@ function updateColorMeters(element) {
     if (!rowId) return;
     
     const row = document.querySelector(`tr[data-rowid="${rowId}"]`);
-    
     if (!row) return;
     
     let totalMeters = 0;
@@ -680,6 +660,8 @@ function updateTotalPrice(priceInput) {
     if (!row) return;
     
     const meterInput = row.querySelector('.total-meter');
+    if (!meterInput) return;
+    
     const totalMeters = parseFloat(meterInput.value) || 0;
     const unitPrice = parseFloat(priceInput.value) || 0;
     const totalPrice = totalMeters * unitPrice;
@@ -729,7 +711,6 @@ function saveColorDataAndPriceBeforeSubmit(event) {
         return;
     }
     
-    // Collect color data
     const selectedColors = [];
     let totalMeters = 0;
     
@@ -748,7 +729,6 @@ function saveColorDataAndPriceBeforeSubmit(event) {
         }
     });
     
-    // Set color data
     const colorDataInput = form.querySelector('[name="color_data"]');
     if (colorDataInput) {
         colorDataInput.value = JSON.stringify({
@@ -757,7 +737,6 @@ function saveColorDataAndPriceBeforeSubmit(event) {
         });
     }
     
-    // Set price
     const priceInput = row.querySelector('.price-field');
     const priceHiddenInput = form.querySelector('[name="price"]');
     if (priceInput && priceHiddenInput) {
@@ -893,7 +872,6 @@ function handleBarcode(code){
 
 /* Initialize on page load */
 document.addEventListener('DOMContentLoaded', function() {
-    // Restore all color data
     document.querySelectorAll('.cart-row').forEach(row => {
         const firstCheckbox = row.querySelector('.color-check');
         if (firstCheckbox) {
