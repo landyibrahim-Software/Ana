@@ -70,7 +70,7 @@
 </div>
 
 <div class="card">
-<div class="card-body" style="direction:rtl">
+<div class="card-body" style="direction:rtl" id="invoiceContent">
 
 <!-- HEADER -->
 <div class="invoice-header mb-3">
@@ -214,126 +214,10 @@
 </div>
 </div>
 
-<!-- ✅ WHATSAPP MODAL - IMPROVED -->
-<div class="modal fade" id="whatsappModal" tabindex="-1" aria-labelledby="whatsappModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title" id="whatsappModalLabel">
-                    <i class="fab fa-whatsapp"></i> پسوڵە بۆ واتساپ بنێرە
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <!-- Phone number input -->
-                <div class="mb-3">
-                    <label class="form-label"><strong>ژمارەی مۆبایل:</strong></label>
-                    <input 
-                        type="tel" 
-                        id="whatsappPhone" 
-                        class="form-control" 
-                        placeholder="مثال: +964781234567 یان 07812345678"
-                        value="{{ $order->customer->phone ?? '' }}"
-                    >
-                    <small class="text-muted">نمبەری مۆبایل بێت کاردەکاتە دروست بنووسە</small>
-                </div>
-
-                <!-- Send option -->
-                <div class="mb-3">
-                    <label class="form-label"><strong>چی بنێرێ؟</strong></label>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="sendOption" id="sendPDF" value="pdf" checked>
-                        <label class="form-check-label" for="sendPDF">
-                            <i class="fa fa-file-pdf text-danger"></i> <strong>PDF فایل</strong> (بهتر)
-                        </label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="sendOption" id="sendURL" value="url">
-                        <label class="form-check-label" for="sendURL">
-                            <i class="fa fa-link"></i> <strong>لینک</strong> (بریتاندەر)
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Message preview -->
-                <div class="mb-3">
-                    <label class="form-label"><strong>پەیام:</strong></label>
-                    <textarea id="whatsappMessage" class="form-control" rows="5" readonly style="background-color: #f8f9fa;">سڵاو {{ $order->customer->name }}!
-
-ئەم پسوڵەی دێ:
-📋 ژمارەی پسوڵە: #{{ $order->id }}
-💰 کۆی گشتی: ${{ number_format($grandTotal, 2) }}
-📅 بەرواری: {{ \Carbon\Carbon::parse($order->order_date)->format('Y/m/d') }}
-
-سوپاس! 🙏
-                    </textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">داخستن</button>
-                <button type="button" class="btn btn-success" onclick="sendToWhatsapp()">
-                    <i class="fab fa-whatsapp"></i> بنێرە
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ✅ WHATSAPP MODAL - SIMPLE VERSION -->
-<div class="modal fade" id="whatsappModal" tabindex="-1" aria-labelledby="whatsappModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title" id="whatsappModalLabel">
-                    <i class="fab fa-whatsapp"></i> پسوڵە بۆ واتساپ بنێرە
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <!-- Phone number input -->
-                <div class="mb-3">
-                    <label class="form-label"><strong>ژمارەی مۆبایل:</strong></label>
-                    <input 
-                        type="tel" 
-                        id="whatsappPhone" 
-                        class="form-control" 
-                        placeholder="مثال: +964781234567 یان 07812345678"
-                        value="{{ $order->customer->phone ?? '' }}"
-                    >
-                    <small class="text-muted">نمبەری مۆبایل بێت کاردەکاتە دروست بنووسە</small>
-                </div>
-
-                <!-- Message preview -->
-                <div class="mb-3">
-                    <label class="form-label"><strong>پەیام:</strong></label>
-                    <textarea id="whatsappMessage" class="form-control" rows="5" readonly style="background-color: #f8f9fa;">سڵاو {{ $order->customer->name }}!
-
-ئەم پسوڵەی دێ:
-📋 ژمارەی پسوڵە: #{{ $order->id }}
-💰 کۆی گشتی: ${{ number_format($grandTotal, 2) }}
-📅 بەرواری: {{ \Carbon\Carbon::parse($order->order_date)->format('Y/m/d') }}
-
-پسوڵەی تێدا:
-{{ route('print.invoice', $order->id) }}
-
-سوپاس! 🙏
-                    </textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">داخستن</button>
-                <button type="button" class="btn btn-success" onclick="sendToWhatsapp()">
-                    <i class="fab fa-whatsapp"></i> بنێرە
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- Add html2canvas library -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-<!-- ✅ WHATSAPP MODAL -->
+<!-- ✅ SINGLE WHATSAPP MODAL -->
 <div class="modal fade" id="whatsappModal" tabindex="-1" aria-labelledby="whatsappModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -344,24 +228,21 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <!-- Phone number input -->
                 <div class="mb-3">
                     <label class="form-label"><strong>ژمارەی مۆبایل:</strong></label>
                     <input 
                         type="tel" 
                         id="whatsappPhone" 
                         class="form-control" 
-                        placeholder="مثال: +964781234567 یان 07812345678"
+                        placeholder="07812345678 یان +964781234567"
                         value="{{ $order->customer->phone ?? '' }}"
                     >
-                    <small class="text-muted">نمبەری مۆبایل بێت کاردەکاتە دروست بنووسە</small>
+                    <small class="text-muted">نمبەری دروست بنووسە</small>
                 </div>
-
-                <small class="text-muted">💡 پسوڵە وەک وێنە دێنێرێتەوە</small>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">داخستن</button>
-                <button type="button" class="btn btn-success" onclick="sendInvoiceAsImage()">
+                <button type="button" class="btn btn-success" id="sendBtn" onclick="sendInvoiceAsImage()">
                     <i class="fab fa-whatsapp"></i> بنێرە
                 </button>
             </div>
@@ -369,21 +250,20 @@
     </div>
 </div>
 
-<!-- ✅ WHATSAPP SCRIPT - SEND AS IMAGE -->
+<!-- ✅ WHATSAPP SCRIPT -->
 <script>
 function sendInvoiceAsImage() {
     let phone = document.getElementById('whatsappPhone').value.trim();
+    const btn = document.getElementById('sendBtn');
+    const originalText = btn.innerHTML;
     
-    // Validate phone
     if (!phone) {
         alert('⚠️ تکایە ژمارەی مۆبایل تێبنێ!');
         return;
     }
     
-    // Clean phone number
-    phone = phone.replace(/[\s-()]/g, '');
+    phone = phone.replace(/[\s\-()]/g, '');
     
-    // Add country code if missing
     if (!phone.startsWith('+')) {
         if (phone.startsWith('0')) {
             phone = '+964' + phone.substring(1);
@@ -392,63 +272,57 @@ function sendInvoiceAsImage() {
         }
     }
     
-    // Validate phone format
     if (!/^\+\d{10,15}$/.test(phone)) {
-        alert('⚠️ ژمارەی مۆبایل نادروستە!\nفۆرمات: +964781234567 یان 07812345678');
+        alert('⚠️ ژمارەی مۆبایل نادروستە!\nفۆرمات: 07812345678');
         return;
     }
     
-    // Show loading
-    const btn = event.target;
-    const originalText = btn.innerHTML;
     btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> لە درەنوویت...';
     btn.disabled = true;
     
-    // Get invoice card
-    const invoiceCard = document.querySelector('.card-body');
+    const invoiceContent = document.getElementById('invoiceContent');
     
-    // Convert to image
-    html2canvas(invoiceCard, {
+    html2canvas(invoiceContent, {
         scale: 2,
         backgroundColor: '#ffffff',
         useCORS: true,
         logging: false
     }).then(canvas => {
-        // Convert to blob
-        canvas.toBlob(blob => {
-            // Create image URL
-            const imageUrl = URL.createObjectURL(blob);
-            
-            // Create download link
-            const link = document.createElement('a');
-            link.href = imageUrl;
-            link.download = 'invoice_{{ $order->id }}.png';
-            
-            // Trigger download
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            // Open WhatsApp with message
+        // Convert to image
+        const image = canvas.toDataURL('image/png');
+        
+        // Download the image
+        const link = document.createElement('a');
+        link.href = image;
+        link.download = 'invoice_{{ $order->id }}.png';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Show message to user
+        alert('✅ وێنەی پسوڵە داونلۆد بووە!\n\nئێستا بۆ واتساپ بڕۆ و بێتاپە دریزا بکە');
+        
+        // Open WhatsApp
+        setTimeout(() => {
             const message = encodeURIComponent(
                 `سڵاو {{ $order->customer->name }}!\n\n` +
                 `ئەم پسوڵەی دێ:\n` +
                 `ژمارە: #{{ $order->id }}\n` +
                 `کۆی: ${{ number_format($grandTotal, 2) }}\n\n` +
-                `سوپاس!`
+                `بێتاپە دریزا بکە 👇\n\n` +
+                `سوپاس! 🙏`
             );
             
-            const whatsappURL = `https://wa.me/${phone.substring(1)}?text=${message}`;
-            window.open(whatsappURL, '_blank');
+            window.open(`https://wa.me/${phone.substring(1)}?text=${message}`, '_blank');
             
-            // Close modal
+            // Close modal and reset button
             setTimeout(() => {
                 const modal = bootstrap.Modal.getInstance(document.getElementById('whatsappModal'));
                 modal.hide();
                 btn.innerHTML = originalText;
                 btn.disabled = false;
-            }, 1000);
-        });
+            }, 500);
+        }, 1000);
     }).catch(error => {
         alert('خرابی: ' + error.message);
         btn.innerHTML = originalText;
@@ -456,7 +330,6 @@ function sendInvoiceAsImage() {
     });
 }
 
-// Allow Enter key
 document.getElementById('whatsappPhone').addEventListener('keypress', function(e) {
     if (e.key === 'Enter') {
         sendInvoiceAsImage();
