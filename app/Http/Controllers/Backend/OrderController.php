@@ -192,7 +192,25 @@ public function PrintInvoice($id)
     }// End Method 
 
 
+    public function GenerateInvoicePDF($order_id)
+{
+    $order = Order::with(['customer', 'orderItems.product'])->findOrFail($order_id);
     
+    $previousDue = $order->previous_due;
+    $grandTotal = $order->sub_total + $previousDue;
+    
+    $pdf = PDF::loadView('backend.invoice.print_invoice', compact('order', 'previousDue', 'grandTotal'))
+        ->setPaper('a4', 'portrait')
+        ->setOptions([
+            'defaultFont' => 'DejaVu Sans',
+            'isHtml5ParserEnabled' => true,
+            'isRemoteEnabled' => true,
+            'tempDir' => storage_path('app/temp'),
+            'chroot' => public_path(),
+        ]);
+
+    return $pdf->download('invoice_' . $order->id . '.pdf');
+}
 
 
     public function PendingDue(){

@@ -74,34 +74,26 @@
 
 <!-- HEADER -->
 <div class="invoice-header mb-3">
-
-    <!-- RIGHT : CUSTOMER + META -->
     <div class="invoice-meta text-end">
         <p>
             <strong>بەرواری پسوڵە:</strong>
             {{ \Carbon\Carbon::parse($order->order_date)->format('Y/m/d') }}
         </p>
-
         <p class="mt-2">
             <strong>ناوی کڕیار:</strong> {{ $order->customer->name }}
         </p>
-
         <p>
             <strong>ناوی فرۆشگا:</strong> {{ $order->customer->shopname ?? '—' }}
         </p>
-
         <p>
             <strong>ژمارەی مۆبایل:</strong> {{ $order->customer->phone ?? '—' }}
         </p>
     </div>
 
-    <!-- LEFT : BRAND -->
     <div class="brand-area">
         <img src="{{ asset('backend/assets/images/nza.png') }}" height="90">
-
         <div class="brand-text">
             <h2>کوتاڵی نزا</h2>
-
             <div class="phone-list">
                 <small>
                     <i class="fas fa-phone"></i> 07708130060
@@ -127,7 +119,6 @@
     <th>کۆی گشتی</th>
 </tr>
 </thead>
-
 <tbody>
 @php
     $sl = 1;
@@ -136,22 +127,17 @@
 
 @foreach($order->orderItems as $item)
 @php
-    // Get meter data
     $totalMeters = floatval($item->meters ?? $item->quantity ?? 0);
     $selectedColors = [];
     $totalRolls = 0;
     
-    // Decode selected colors if they exist
     if($item->selected_colors) {
         $selectedColors = json_decode($item->selected_colors, true) ?? [];
-        
-        // Calculate total rolls
         foreach($selectedColors as $color) {
             $totalRolls += intval($color['rolls'] ?? 0);
         }
     }
     
-    // Calculate row total: total_meters × unit_price
     $rowTotal = $totalMeters * floatval($item->unitcost ?? 0);
     $subTotal += $rowTotal;
 @endphp
@@ -159,7 +145,7 @@
 <tr>
     <td>{{ $sl++ }}</td>
     <td>
-        <strong>{{ $item->product->product_name ?? 'Deleted Product' }}</strong>
+        <strong>{{ $item->product->product_name ?? 'Product' }}</strong>
     </td>
     <td>
         @if(is_array($selectedColors) && count($selectedColors) > 0)
@@ -195,146 +181,96 @@
         <h3>کۆی کاڵا: <b>{{ number_format($subTotal, 2) }}</b></h3>
         <h3>کۆی گشتی: <b>{{ number_format($grandTotal, 2) }}</b></h3>
         <p>پارەی دراو: <b>{{ number_format($order->pay ?? 0, 2) }}</b></p>
-        <p>قەرزی ماوە: <b id="remaining-due">{{ number_format(($grandTotal - ($order->pay ?? 0)), 2) }}</b></p>
+        <p>قەرزی ماوە: <b>{{ number_format(($grandTotal - ($order->pay ?? 0)), 2) }}</b></p>
     </div>
 </div>
 
-<!-- ✅ BUTTONS (Not printed) -->
+</div>
+</div>
+</div>
+</div>
+
+<!-- BUTTONS -->
 <div class="mt-4 text-end d-print-none">
-    <button onclick="window.print()" class="btn btn-primary waves-effect waves-light">
+    <button onclick="window.print()" class="btn btn-primary">
         <i class="fa fa-print"></i> چاپکردن
     </button>
-    <button type="button" class="btn btn-success waves-effect waves-light" data-bs-toggle="modal" data-bs-target="#whatsappModal">
+    <button id="whatsappBtn" onclick="sendWhatsApp()" class="btn btn-success">
         <i class="fab fa-whatsapp"></i> واتساپ
     </button>
 </div>
 
-</div>
-</div>
-</div>
-</div>
-
-<!-- Add html2canvas library -->
+<!-- WHATSAPP SCRIPT -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-<!-- ✅ SINGLE WHATSAPP MODAL -->
-<div class="modal fade" id="whatsappModal" tabindex="-1" aria-labelledby="whatsappModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title" id="whatsappModalLabel">
-                    <i class="fab fa-whatsapp"></i> پسوڵە بۆ واتساپ بنێرە
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label"><strong>ژمارەی مۆبایل:</strong></label>
-                    <input 
-                        type="tel" 
-                        id="whatsappPhone" 
-                        class="form-control" 
-                        placeholder="07812345678 یان +964781234567"
-                        value="{{ $order->customer->phone ?? '' }}"
-                    >
-                    <small class="text-muted">نمبەری دروست بنووسە</small>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">داخستن</button>
-                <button type="button" class="btn btn-success" id="sendBtn" onclick="sendInvoiceAsImage()">
-                    <i class="fab fa-whatsapp"></i> بنێرە
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ✅ WHATSAPP SCRIPT -->
 <script>
-function sendInvoiceAsImage() {
-    let phone = document.getElementById('whatsappPhone').value.trim();
-    const btn = document.getElementById('sendBtn');
-    const originalText = btn.innerHTML;
+function sendWhatsApp() {
+    var phone = "{{ $order->customer->phone }}";
+    var name = "{{ $order->customer->name }}";
+    var orderId = "{{ $order->id }}";
+    var total = "{{ number_format($grandTotal, 2) }}";
+    var btn = document.getElementById('whatsappBtn');
     
     if (!phone) {
-        alert('⚠️ تکایە ژمارەی مۆبایل تێبنێ!');
+        alert('ژمارەی مۆبایل نەدۆزرایەوە');
         return;
     }
     
-    phone = phone.replace(/[\s\-()]/g, '');
-    
-    if (!phone.startsWith('+')) {
-        if (phone.startsWith('0')) {
-            phone = '+964' + phone.substring(1);
-        } else {
-            phone = '+' + phone;
-        }
-    }
-    
-    if (!/^\+\d{10,15}$/.test(phone)) {
-        alert('⚠️ ژمارەی مۆبایل نادروستە!\nفۆرمات: 07812345678');
-        return;
-    }
-    
-    btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> لە درەنوویت...';
+    // Disable button
     btn.disabled = true;
+    btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> لە درەنوویت...';
     
-    const invoiceContent = document.getElementById('invoiceContent');
+    // Clean phone
+    phone = phone.replace(/[\s-()]/g, '');
+    if (phone.startsWith('0')) {
+        phone = '964' + phone.substring(1);
+    }
+    if (!phone.startsWith('+')) {
+        phone = '+' + phone;
+    }
     
-    html2canvas(invoiceContent, {
+    // Message to send
+    var msg = encodeURIComponent(
+        'سڵاو ' + name + '!\n\n' +
+        '📋 پسوڵەی دێ:\n' +
+        'ژمارە: #' + orderId + '\n' +
+        'کۆی: $' + total + '\n\n' +
+        'وێنەی دریزا بکە 👇\n\n' +
+        'سوپاس! 🙏'
+    );
+    
+    // Step 1: Convert invoice to image
+    var invoiceCard = document.getElementById('invoiceContent');
+    
+    html2canvas(invoiceCard, {
         scale: 2,
         backgroundColor: '#ffffff',
         useCORS: true,
         logging: false
-    }).then(canvas => {
-        // Convert to image
-        const image = canvas.toDataURL('image/png');
-        
-        // Download the image
-        const link = document.createElement('a');
-        link.href = image;
-        link.download = 'invoice_{{ $order->id }}.png';
+    }).then(function(canvas) {
+        // Step 2: Download image
+        var link = document.createElement('a');
+        link.href = canvas.toDataURL('image/png');
+        link.download = 'invoice_' + orderId + '.png';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         
-        // Show message to user
-        alert('✅ وێنەی پسوڵە داونلۆد بووە!\n\nئێستا بۆ واتساپ بڕۆ و بێتاپە دریزا بکە');
+        // Step 3: Open WhatsApp
+        window.open('https://wa.me/' + phone + '?text=' + msg, '_blank');
         
-        // Open WhatsApp
-        setTimeout(() => {
-            const message = encodeURIComponent(
-                `سڵاو {{ $order->customer->name }}!\n\n` +
-                `ئەم پسوڵەی دێ:\n` +
-                `ژمارە: #{{ $order->id }}\n` +
-                `کۆی: ${{ number_format($grandTotal, 2) }}\n\n` +
-                `بێتاپە دریزا بکە 👇\n\n` +
-                `سوپاس! 🙏`
-            );
-            
-            window.open(`https://wa.me/${phone.substring(1)}?text=${message}`, '_blank');
-            
-            // Close modal and reset button
-            setTimeout(() => {
-                const modal = bootstrap.Modal.getInstance(document.getElementById('whatsappModal'));
-                modal.hide();
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }, 500);
-        }, 1000);
-    }).catch(error => {
-        alert('خرابی: ' + error.message);
-        btn.innerHTML = originalText;
+        // Reset button after 2 seconds
+        setTimeout(function() {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fab fa-whatsapp"></i> واتساپ';
+        }, 2000);
+        
+    }).catch(function(error) {
+        alert('خرابی: ' + error);
         btn.disabled = false;
+        btn.innerHTML = '<i class="fab fa-whatsapp"></i> واتساپ';
     });
 }
-
-document.getElementById('whatsappPhone').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        sendInvoiceAsImage();
-    }
-});
 </script>
 
 @endsection

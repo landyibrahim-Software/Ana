@@ -215,7 +215,7 @@ Route::post('/final-invoice', [OrderController::class, 'FinalInvoice'])->name('f
  Route::get('/complete/order','CompleteOrder')->name('complete.order');
 
  Route::get('/stock','StockManage')->name('stock.manage');
-
+Route::get('/invoice/pdf/{order_id}', [OrderController::class, 'GenerateInvoicePDF'])->name('invoice.pdf');
 
  //// Due All Route 
 

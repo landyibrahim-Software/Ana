@@ -15,7 +15,7 @@
                 }
                 if (evt.key != 'Shift')
                     barcode += evt.key;
-                interval = setInterval(() => barcode = '', 20);
+                interval = setInterval(() => barcode = '', 10);
             });
 
             function handleBarcode(scanned_barcode) {
