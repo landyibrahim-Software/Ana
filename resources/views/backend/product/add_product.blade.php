@@ -80,32 +80,6 @@
         </div>
     </div>
 
-          <!-- ADD CODE DROPDOWN HERE -->
-          <div class="col-md-6">
-        <div class="form-group mb-3">
-            <label for="code_id" class="form-label">کۆد <span class="text-danger">*</span></label>
-            <select name="code_id" class="form-select" id="code_id">
-                    <option selected disabled >کۆدێک هەڵبژێرە</option>
-                    @foreach($codes as $code)
-        <option value="{{ $code->id }}">{{ $code->code_name }}</option>
-                     @endforeach
-                </select>
-           
-        </div>
-    </div>
-    <!-- END CODE DROPDOWN -->
-
-
-
-
-           <!--    <div class="col-md-6">
-        <div class="form-group mb-3">
-            <label for="firstname" class="form-label">Product Code    </label>
-            <input type="text" name="product_code" class="form-control "   >
-            
-           </div>
-        </div> -->
-
 
      
               <div class="col-md-6">

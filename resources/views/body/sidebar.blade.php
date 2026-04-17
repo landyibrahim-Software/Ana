@@ -144,26 +144,6 @@
         </li>
 @endif
 
-@if(Auth::user()->can('category.menu'))
-        <li>
-            <a href="#code" data-bs-toggle="collapse">
-                <i class="mdi mdi-email-multiple-outline"></i>
-                <span> کۆدەکان </span>
-                <span class="menu-arrow"></span>
-            </a>
-            <div class="collapse" id="code">
-                <ul class="nav-second-level">
-                    <li>
-                        <a href="{{ route('all.code') }}">هەموو کۆدەکان </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('add.code') }}">زیادکردنی کۆد </a>
-                    </li>
-                
-                </ul>
-            </div>
-        </li>
-@endif
 
  @if(Auth::user()->can('product.menu'))
          <li>
