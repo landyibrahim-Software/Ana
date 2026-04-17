@@ -13,7 +13,6 @@ class Product extends Model
     'product_name',
     'category_id',
     'supplier_id',
-    'code_id',
     'product_code',
     'product_garage',
     'product_store',
@@ -27,11 +26,6 @@ class Product extends Model
     public function category()
     {
         return $this->belongsTo(Category::class, 'category_id', 'id');
-    }
-
-    public function code()
-    {
-        return $this->belongsTo(Code::class, 'code_id', 'id');
     }
     public function colors()
 {

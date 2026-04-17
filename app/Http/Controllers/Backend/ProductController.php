@@ -7,7 +7,6 @@ use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Supplier;
-use App\Models\Code;
 use App\Models\ProductColor;
 use Intervention\Image\Facades\Image;
 use Carbon\Carbon; 
@@ -29,8 +28,7 @@ class ProductController extends Controller
    public function AddProduct(){
     $category = Category::latest()->get();
     $supplier = Supplier::latest()->get();
-    $codes = Code::latest()->get();  // ADD THIS LINE
-    return view('backend.product.add_product',compact('category','supplier','codes'));
+    return view('backend.product.add_product',compact('category','supplier'));
 }// End Method
 
 public function StoreProduct(Request $request){ 
@@ -59,7 +57,6 @@ public function StoreProduct(Request $request){
         'product_name' => $request->product_name,
         'category_id' => $request->category_id,
         'supplier_id' => $request->supplier_id,
-        'code_id' => $request->code_id,
         'product_code' => $pcode,
         'product_garage' => $request->product_garage,
         'product_store' => $request->product_store,
@@ -96,8 +93,7 @@ public function StoreProduct(Request $request){
     $product = Product::findOrFail($id);
     $category = Category::latest()->get();
     $supplier = Supplier::latest()->get();
-    $codes = Code::latest()->get();  // ADD THIS LINE
-    return view('backend.product.edit_product',compact('product','category','supplier','codes'));
+    return view('backend.product.edit_product',compact('product','category','supplier'));
 } // End Method
 
 
@@ -117,7 +113,6 @@ public function StoreProduct(Request $request){
             'product_name' => $request->product_name,
             'category_id' => $request->category_id,
             'supplier_id' => $request->supplier_id,
-            'code_id' => $request->code_id,
             'product_code' => $request->product_code,
             'product_garage' => $request->product_garage,
             'product_store' => $request->product_store,
@@ -141,7 +136,6 @@ public function StoreProduct(Request $request){
             'product_name' => $request->product_name,
             'category_id' => $request->category_id,
             'supplier_id' => $request->supplier_id,
-            'code_id' => $request->code_id,
             'product_code' => $request->product_code,
             'product_garage' => $request->product_garage,
             'product_store' => $request->product_store,

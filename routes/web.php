@@ -10,7 +10,6 @@ use App\Http\Controllers\Backend\SupplierController;
 use App\Http\Controllers\Backend\SalaryController;
 use App\Http\Controllers\Backend\AttendenceController;
 use App\Http\Controllers\Backend\CategoryController;
-use App\Http\Controllers\Backend\CodeController;
 use App\Http\Controllers\Backend\ProductController;
 use App\Http\Controllers\Backend\ExpenseController;
 use App\Http\Controllers\Backend\PosController;
@@ -137,18 +136,7 @@ Route::post('/update/category','UpdateCategory')->name('category.update');
 Route::get('/delete/category/{id}','DeleteCategory')->name('delete.category'); 
 
 });
-///Code All Route 
-Route::controller(CodeController::class)->group(function(){
 
-Route::get('/all/code','AllCode')->name('all.code');
-Route::get('/add/code','AddCode')->name('add.code');
-Route::post('/store/code','StoreCode')->name('code.store');  
-Route::get('/edit/code/{id}','EditCode')->name('edit.code');
-Route::post('/update/code','UpdateCode')->name('code.update'); 
-Route::get('/delete/code/{id}','DeleteCode')->name('delete.code');
-Route::get('/get/codes/{categoryId}','GetCodesByCategory')->name('get.codes.category');
-
-});
 
 
 ///Product All Route 
