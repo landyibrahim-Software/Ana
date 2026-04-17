@@ -106,7 +106,9 @@
                 <small>
                     <i class="fas fa-phone"></i> 07708130060
                     &nbsp;&nbsp;
-                    <i class="fas fa-phone"></i> 07501792101
+                    <i class="fas fa-phone"></i> 07501561887
+                    &nbsp;&nbsp;
+                    <i class="fas fa-phone"></i> 07701561887
                 </small>
             </div>
         </div>

@@ -101,7 +101,7 @@
                                 <img src="{{ asset('backend/assets/images/nza.png') }}" alt="" height="32">
                             </span>
                             <span class="logo-lg">
-                                <img src="{{ asset('backend/assets/images/MOTHERSTYLE.png') }}" alt="" height="32">
+                                <img src="{{ asset('backend/assets/images/nza.png') }}" alt="" height="32">
                             </span>
                         </a>
                     </div>

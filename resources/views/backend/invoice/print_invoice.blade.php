@@ -95,11 +95,11 @@
         <div class="brand-text">
             <h2>کوتاڵی نزا</h2>
             <div class="phone-list">
-                <small>
-                    <i class="fas fa-phone"></i> 07708130060
+                <i class="fas fa-phone"></i> 07708130060
                     &nbsp;&nbsp;
-                    <i class="fas fa-phone"></i> 07501792101
-                </small>
+                    <i class="fas fa-phone"></i> 07501561887
+                    &nbsp;&nbsp;
+                    <i class="fas fa-phone"></i> 07701561887
             </div>
         </div>
     </div>
@@ -122,10 +122,10 @@
 <tbody>
 @php
     $sl = 1;
-    $subTotal = 0;
+    $calculatedSubTotal = 0;
 @endphp
 
-@foreach($order->orderItems as $item)
+@foreach($order->orderDetails as $item)
 @php
     $totalMeters = floatval($item->meters ?? $item->quantity ?? 0);
     $selectedColors = [];
@@ -139,7 +139,7 @@
     }
     
     $rowTotal = $totalMeters * floatval($item->unitcost ?? 0);
-    $subTotal += $rowTotal;
+    $calculatedSubTotal += $rowTotal;
 @endphp
 
 <tr>
@@ -178,10 +178,10 @@
 <div class="row mt-3" style="direction: rtl;">
     <div class="col-12 text-end">
         <p>قەرزی پێشوو: <b>{{ number_format($previousDue, 2) }}</b></p>
-        <h3>کۆی کاڵا: <b>{{ number_format($subTotal, 2) }}</b></h3>
-        <h3>کۆی گشتی: <b>{{ number_format($grandTotal, 2) }}</b></h3>
+        <h3>کۆی کاڵا: <b>{{ number_format($calculatedSubTotal, 2) }}</b></h3>
+        <h3>کۆی گشتی: <b>{{ number_format($calculatedSubTotal + $previousDue, 2) }}</b></h3>
         <p>پارەی دراو: <b>{{ number_format($order->pay ?? 0, 2) }}</b></p>
-        <p>قەرزی ماوە: <b>{{ number_format(($grandTotal - ($order->pay ?? 0)), 2) }}</b></p>
+        <p>قەرزی ماوە: <b>{{ number_format((($calculatedSubTotal + $previousDue) - ($order->pay ?? 0)), 2) }}</b></p>
     </div>
 </div>
 
@@ -205,14 +205,14 @@
 
 <script>
 function sendWhatsApp() {
-    var phone = "{{ $order->customer->phone }}";
+    var phone = "{{ $order->customer->phone ?? '' }}";
     var name = "{{ $order->customer->name }}";
     var orderId = "{{ $order->id }}";
-    var total = "{{ number_format($grandTotal, 2) }}";
+    var total = "{{ number_format($calculatedSubTotal + $previousDue, 2) }}";
     var btn = document.getElementById('whatsappBtn');
     
-    if (!phone) {
-        alert('ژمارەی مۆبایل نەدۆزرایەوە');
+    if (!phone || phone.trim() === '') {
+        alert('⚠️ ژمارەی مۆبایل نەدۆزرایەوە!');
         return;
     }
     
@@ -229,42 +229,51 @@ function sendWhatsApp() {
         phone = '+' + phone;
     }
     
-    // Message to send
-    var msg = encodeURIComponent(
-        'سڵاو ' + name + '!\n\n' +
-        '📋 پسوڵەی دێ:\n' +
-        'ژمارە: #' + orderId + '\n' +
-        'کۆی: $' + total + '\n\n' +
-        'وێنەی دریزا بکە 👇\n\n' +
-        'سوپاس! 🙏'
-    );
-    
-    // Step 1: Convert invoice to image
+    // Get invoice content
     var invoiceCard = document.getElementById('invoiceContent');
     
+    // Convert to image
     html2canvas(invoiceCard, {
         scale: 2,
         backgroundColor: '#ffffff',
         useCORS: true,
         logging: false
     }).then(function(canvas) {
-        // Step 2: Download image
-        var link = document.createElement('a');
-        link.href = canvas.toDataURL('image/png');
-        link.download = 'invoice_' + orderId + '.png';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        // Step 3: Open WhatsApp
-        window.open('https://wa.me/' + phone + '?text=' + msg, '_blank');
-        
-        // Reset button after 2 seconds
-        setTimeout(function() {
+        try {
+            // Download image
+            var link = document.createElement('a');
+            link.href = canvas.toDataURL('image/png');
+            link.download = 'invoice_' + orderId + '.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Message
+            var msg = encodeURIComponent(
+                'سڵاو ' + name + '!\n\n' +
+                '📋 پسوڵەی دێ:\n' +
+                'ژمارە: #' + orderId + '\n' +
+                'کۆی: $' + total + '\n\n' +
+                'وێنەی دریزا بکە 👇\n\n' +
+                'سوپاس! 🙏'
+            );
+            
+            // Open WhatsApp after 500ms
+            setTimeout(function() {
+                window.open('https://wa.me/' + phone + '?text=' + msg, '_blank');
+                
+                // Reset button after 1 second
+                setTimeout(function() {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fab fa-whatsapp"></i> واتساپ';
+                }, 1000);
+            }, 500);
+            
+        } catch(e) {
+            alert('خرابی: ' + e.message);
             btn.disabled = false;
             btn.innerHTML = '<i class="fab fa-whatsapp"></i> واتساپ';
-        }, 2000);
-        
+        }
     }).catch(function(error) {
         alert('خرابی: ' + error);
         btn.disabled = false;

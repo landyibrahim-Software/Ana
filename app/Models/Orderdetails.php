@@ -19,15 +19,22 @@ class Orderdetails extends Model
         'total',
     ];
 
-    // 🔗 OrderDetails → Product
-    public function product()
-    {
-        return $this->belongsTo(Product::class, 'product_id', 'id');
-    }
+    protected $casts = [
+        'quantity' => 'decimal:2',
+        'unitcost' => 'decimal:2',
+        'meters' => 'decimal:2',
+        'total' => 'decimal:2',
+    ];
 
-    // 🔗 OrderDetails → Order
+    // 🔗 Orderdetails → Order
     public function order()
     {
         return $this->belongsTo(Order::class, 'order_id', 'id');
+    }
+
+    // 🔗 Orderdetails → Product
+    public function product()
+    {
+        return $this->belongsTo(Product::class, 'product_id', 'id');
     }
 }

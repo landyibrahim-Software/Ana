@@ -117,21 +117,21 @@ public function FinalInvoice(Request $request)
 
 public function PrintInvoice($id)
 {
-    // Load order with customer and order items
+    // Load order with customer and order details
     $order = Order::with([
         'customer',
-        'orderItems.product'
+        'orderDetails.product'
     ])->findOrFail($id);
 
-    // ✅ CORRECT: Use the previous_due stored in this order when it was created
-    $previousDue = $order->previous_due;
+    // Use the previous_due stored in this order
+    $previousDue = floatval($order->previous_due ?? 0);
     
-    // Grand total = current order subtotal + previous due
-    $grandTotal = $order->sub_total + $previousDue;
+    // Calculate totals
+    $subTotal = floatval($order->sub_total ?? 0);
+    $grandTotal = $subTotal + $previousDue;
 
-    return view('backend.invoice.print_invoice', compact('order', 'previousDue', 'grandTotal'));
+    return view('backend.invoice.print_invoice', compact('order', 'previousDue', 'grandTotal', 'subTotal'));
 }
-
 
 
 

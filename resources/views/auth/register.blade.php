@@ -13,7 +13,7 @@
                         </a>
                     </div>
                     <h1 class="text-2xl font-bold text-gray-800">دروستکردنی ئەکاونت</h1>
-                    <p class="text-gray-600 text-sm mt-1">Mother Style ofr Kids</p>
+                    <p class="text-gray-600 text-sm mt-1">کوتاڵی نزا</p>
                 </div>
             </x-slot>
 
