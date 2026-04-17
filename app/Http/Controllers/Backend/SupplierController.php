@@ -27,34 +27,30 @@ class SupplierController extends Controller
      public function StoreSupplier(Request $request){
 
         $validateData = $request->validate([
-            'name' => 'required|max:200',
-            'email' => 'required|unique:suppliers|max:200',
-            'phone' => 'required|max:200',
-            'address' => 'required|max:400',
-            'shopname' => 'required|max:200',
-            'type' => 'required',
-            'city' => 'required|max:200',
-            'image' => 'required',  
-        ]);
+    'name' => 'required|max:200',
+    'phone' => 'required|max:200',
+    'address' => 'required|max:400',
+    'shopname' => 'required|max:200',
+    'type' => 'required',
+    'city' => 'required|max:200',
+    'image' => 'required',  
+]);
  
         $image = $request->file('image');
         $name_gen = hexdec(uniqid()).'.'.$image->getClientOriginalExtension();
         Image::make($image)->resize(300,300)->save('upload/supplier/'.$name_gen);
         $save_url = 'upload/supplier/'.$name_gen;
 
-        Supplier::insert([
-
-            'name' => $request->name,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'address' => $request->address,
-            'shopname' => $request->shopname,
-            'type' => $request->type,
-            'city' => $request->city,
-            'image' => $save_url,
-            'created_at' => Carbon::now(), 
-
-        ]);
+       Supplier::insert([
+    'name' => $request->name,
+    'phone' => $request->phone,
+    'address' => $request->address,
+    'shopname' => $request->shopname,
+    'type' => $request->type,
+    'city' => $request->city,
+    'image' => $save_url,
+    'created_at' => Carbon::now(), 
+]);
 
          $notification = array(
             'message' => 'Supplier Inserted Successfully',
@@ -88,7 +84,6 @@ class SupplierController extends Controller
         Supplier::findOrFail($supplier_id)->update([
 
             'name' => $request->name,
-            'email' => $request->email,
             'phone' => $request->phone,
             'address' => $request->address,
             'shopname' => $request->shopname,
@@ -111,7 +106,6 @@ class SupplierController extends Controller
             Supplier::findOrFail($supplier_id)->update([
 
             'name' => $request->name,
-            'email' => $request->email,
             'phone' => $request->phone,
             'address' => $request->address,
             'shopname' => $request->shopname,
