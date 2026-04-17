@@ -7,7 +7,6 @@ use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Supplier;
-use App\Models\ProductColor;
 use Intervention\Image\Facades\Image;
 use Carbon\Carbon; 
 use Haruncpi\LaravelIdGenerator\IdGenerator;
@@ -60,14 +59,11 @@ public function StoreProduct(Request $request){
         'product_code' => $pcode,
         'product_garage' => $request->product_garage,
         'product_store' => $request->product_store,
-        'buying_date' => $request->buying_date,
-        'expire_date' => $request->expire_date,
         'buying_price' => $request->buying_price,
         'selling_price' => $request->selling_price,
         'product_image' => $save_url,
     ]);
 
-  
     $notification = array(
         'message' => 'Product Inserted Successfully',
         'alert-type' => 'success'
@@ -104,8 +100,6 @@ public function StoreProduct(Request $request){
             'product_code' => $request->product_code,
             'product_garage' => $request->product_garage,
             'product_store' => $request->product_store,
-            'buying_date' => $request->buying_date,
-            'expire_date' => $request->expire_date,
             'buying_price' => $request->buying_price,
             'selling_price' => $request->selling_price,
             'product_image' => $save_url,
@@ -127,13 +121,10 @@ public function StoreProduct(Request $request){
             'product_code' => $request->product_code,
             'product_garage' => $request->product_garage,
             'product_store' => $request->product_store,
-            'buying_date' => $request->buying_date,
-            'expire_date' => $request->expire_date,
             'buying_price' => $request->buying_price,
             'selling_price' => $request->selling_price, 
         ]);
 
-     
         $notification = array(
             'message' => 'Product Updated Successfully',
             'alert-type' => 'success'
