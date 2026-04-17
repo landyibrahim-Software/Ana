@@ -99,28 +99,6 @@
            </div>
         </div>
 
-
-
-    
-
-
-              <div class="col-md-6">
-        <div class="form-group mb-3">
-            <label for="firstname" class="form-label">بەرواری کڕین   </label>
-            <input type="date" name="buying_date" class="form-control "   >
-            
-           </div>
-        </div>
-
-    
-              <div class="col-md-6">
-        <div class="form-group mb-3">
-            <label for="firstname" class="form-label">تا چەند بمێنێتەوە    </label>
-            <input type="date" name="expire_date" class="form-control "   >
-            
-           </div>
-        </div>
-
     
               <div class="col-md-6">
         <div class="form-group mb-3">
@@ -139,31 +117,6 @@
             
            </div>
         </div>
-
-
-     <!-- START COLORS SECTION -->
-     <div class="col-12">
-        <div class="form-group mb-3">
-            <label class="form-label">ڕەنگەکان <span class="text-danger">*</span></label>
-            <div id="colors-container">
-                <!-- Colors will be added here dynamically -->
-            </div>
-            <button type="button" class="btn btn-sm btn-success" id="add-color-btn">
-                <i class="mdi mdi-plus"></i> ڕەنگ زیادبکە
-            </button>
-        </div>
-    </div>
-
-    <!-- Total Meters Display -->
-    <div class="col-md-6">
-        <div class="form-group mb-3">
-            <label for="total_meters" class="form-label">کۆی متر </label>
-            <input type="text" class="form-control" id="total_meters" readonly value="0">
-        </div>
-    </div>
-    <!-- END COLORS SECTION -->
-
-
 
   <!-- IMAGE INPUT WITH CAMERA OPTION -->
 <div class="col-md-12">
@@ -370,19 +323,10 @@
                 supplier_id: {
                     required : true,
                 },
-                code_id: {
-                    required : true,
-                }, 
                 product_garage: {
                     required : true,
                 }, 
                 product_store: {
-                    required : true,
-                }, 
-                buying_date: {
-                    required : true,
-                }, 
-                expire_date: {
                     required : true,
                 }, 
                 buying_price: {
@@ -405,20 +349,11 @@
                 supplier_id: {
                     required : 'Please Select Supplier',
                 },
-                code_id: {
-                    required : 'Please Select Code',
-                }, 
                 product_garage: {
                     required : 'Please Enter Product Garage',
                 },
                 product_store: {
                     required : 'Please Enter Product Store',
-                },
-                buying_date: {
-                    required : 'Please Slect Buying Date',
-                },
-                expire_date: {
-                    required : 'Please Slect Expire Date',
                 },
                 buying_price: {
                     required : 'Please Enter Buying Price',
@@ -461,57 +396,5 @@
 	});
 
 </script>
-
-<!-- COLORS JAVASCRIPT -->
-<script type="text/javascript">
-let colorCount = 0;
-
-document.getElementById('add-color-btn').addEventListener('click', function() {
-    colorCount++;
-    const html = `
-        <div class="row mb-2" id="color-${colorCount}">
-            <div class="col-md-5">
-                <input type="text" name="colors[${colorCount}][color_name]" 
-                       class="form-control" placeholder="ڕەنگ (مثال: سور، شین)" required>
-            </div>
-            <div class="col-md-5">
-                <input type="number" name="colors[${colorCount}][meters]" 
-                       class="form-control meters-input" placeholder="متەر" 
-                       step="0.01" required onchange="calculateTotalMeters()">
-            </div>
-            <div class="col-md-2">
-                <button type="button" class="btn btn-sm btn-danger" 
-                        onclick="removeColor(${colorCount})">
-                    <i class="mdi mdi-trash-can"></i>
-                </button>
-            </div>
-        </div>
-    `;
-    document.getElementById('colors-container').insertAdjacentHTML('beforeend', html);
-});
-
-function removeColor(id) {
-    const colorDiv = document.getElementById(`color-${id}`);
-    if(colorDiv) {
-        colorDiv.remove();
-        calculateTotalMeters();
-    }
-}
-
-function calculateTotalMeters() {
-    const inputs = document.querySelectorAll('.meters-input');
-    let total = 0;
-    inputs.forEach(input => {
-        total += parseFloat(input.value) || 0;
-    });
-    document.getElementById('total_meters').value = total.toFixed(2);
-}
-
-// Add first color field by default when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('add-color-btn').click();
-});
-</script>
-<!-- END COLORS JAVASCRIPT -->
 
 @endsection

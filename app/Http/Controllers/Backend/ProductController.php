@@ -67,19 +67,7 @@ public function StoreProduct(Request $request){
         'product_image' => $save_url,
     ]);
 
-    // Add colors if provided
-    if ($request->has('colors') && is_array($request->colors)) {
-        foreach($request->colors as $color) {
-            if(!empty($color['color_name']) && !empty($color['meters'])) {
-                ProductColor::create([
-                    'product_id' => $product->id,
-                    'color_name' => $color['color_name'],
-                    'meters' => $color['meters'],
-                ]);
-            }
-        }
-    }
-
+  
     $notification = array(
         'message' => 'Product Inserted Successfully',
         'alert-type' => 'success'
@@ -145,23 +133,7 @@ public function StoreProduct(Request $request){
             'selling_price' => $request->selling_price, 
         ]);
 
-        // Handle colors update
-        // Delete all existing colors first
-        ProductColor::where('product_id', $product_id)->delete();
-
-        // Add new colors if provided
-        if ($request->has('colors') && is_array($request->colors)) {
-            foreach($request->colors as $color) {
-                if(!empty($color['color_name']) && !empty($color['meters'])) {
-                    ProductColor::create([
-                        'product_id' => $product_id,
-                        'color_name' => $color['color_name'],
-                        'meters' => $color['meters'],
-                    ]);
-                }
-            }
-        }
-
+     
         $notification = array(
             'message' => 'Product Updated Successfully',
             'alert-type' => 'success'

@@ -16,8 +16,6 @@ class Product extends Model
     'product_code',
     'product_garage',
     'product_store',
-    'buying_date',
-    'expire_date',
     'buying_price',
     'selling_price',
     'product_image',
@@ -27,8 +25,9 @@ class Product extends Model
     {
         return $this->belongsTo(Category::class, 'category_id', 'id');
     }
-    public function colors()
-{
-    return $this->hasMany(ProductColor::class, 'product_id', 'id');
-}
+
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class, 'supplier_id', 'id');
+    }
 }
