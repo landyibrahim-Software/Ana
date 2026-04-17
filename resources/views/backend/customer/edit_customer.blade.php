@@ -58,15 +58,7 @@
     </div>
 
 
-              <div class="col-md-6">
-        <div class="mb-3">
-            <label for="firstname" class="form-label">ئیمەیڵی کڕیار</label>
-            <input type="email" name="email" class="form-control @error('email') is-invalid @enderror"   value="{{ $customer->email }}"  >
-             @error('email')
-      <span class="text-danger"> {{ $message }} </span>
-            @enderror
-        </div>
-    </div>
+            
 
 
 

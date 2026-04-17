@@ -59,14 +59,13 @@ public function ShowCustomer($id)
 
      public function StoreCustomer(Request $request){
 
-        $validateData = $request->validate([
-            'name' => 'required|max:200',
-            'email' => 'required|unique:customers|max:200',
-            'phone' => 'required|max:200',
-            'address' => 'required|max:400',
-            'shopname' => 'required|max:200',
-            'image' => 'required',  
-        ]);
+       $validateData = $request->validate([
+    'name' => 'required|max:200',
+    'phone' => 'required|max:200',
+    'address' => 'required|max:400',
+    'shopname' => 'required|max:200',
+    'image' => 'required',  
+]);
  
         $image = $request->file('image');
         $name_gen = hexdec(uniqid()).'.'.$image->getClientOriginalExtension();
@@ -74,18 +73,15 @@ public function ShowCustomer($id)
         $save_url = 'upload/customer/'.$name_gen;
 
         Customer::insert([
-
-            'name' => $request->name,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'address' => $request->address,
-            'shopname' => $request->shopname,
-            'city' => $request->city,
-            'image' => $save_url,
-            'previous_due' => $request->previous_due ?? 0,
-            'created_at' => Carbon::now(), 
-
-        ]);
+    'name' => $request->name,
+    'phone' => $request->phone,
+    'address' => $request->address,
+    'shopname' => $request->shopname,
+    'city' => $request->city,
+    'image' => $save_url,
+    'previous_due' => $request->previous_due ?? 0,
+    'created_at' => Carbon::now(), 
+]);
 
          $notification = array(
             'message' => 'Customer Inserted Successfully',
@@ -118,7 +114,6 @@ public function ShowCustomer($id)
         Customer::findOrFail($customer_id)->update([
 
             'name' => $request->name,
-            'email' => $request->email,
             'phone' => $request->phone,
             'address' => $request->address,
             'shopname' => $request->shopname,
@@ -140,7 +135,6 @@ public function ShowCustomer($id)
             Customer::findOrFail($customer_id)->update([
 
             'name' => $request->name,
-            'email' => $request->email,
             'phone' => $request->phone,
             'address' => $request->address,
             'shopname' => $request->shopname,
