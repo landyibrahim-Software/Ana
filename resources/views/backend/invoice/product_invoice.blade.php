@@ -38,26 +38,6 @@
     font-size:14px;
     line-height:1.8;
 }
-
-.color-badge {
-    display: inline-block;
-    background: #e9ecef;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    margin: 2px;
-}
-
-.rolls-badge {
-    display: inline-block;
-    background: #d4edda;
-    color: #155724;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    margin: 2px;
-    font-weight: 600;
-}
 </style>
 
 <div class="content">
@@ -122,10 +102,8 @@
 <tr>
     <th>#</th>
     <th>ئایتم</th>
-    <th>رەنگەکان</th>
-    <th>تۆپ</th>
-    <th>نرخی متر</th>
-    <th>کۆی متر</th>
+    <th>بڕ</th>
+    <th>نرخ</th>
     <th>کۆی گشتی</th>
 </tr>
 </thead>
@@ -138,18 +116,11 @@
 
 @foreach($contents as $item)
 @php
-    // Get meter data from cart options
-    $totalMeters = floatval($item->options['total_meters'] ?? 0);
-    $selectedColors = $item->options['selected_colors'] ?? [];
+    // FIXED: Use simple quantity instead of meters
+    $quantity = floatval($item->qty);
     
-    // Calculate total rolls
-    $totalRolls = 0;
-    foreach($selectedColors as $color) {
-        $totalRolls += intval($color['rolls'] ?? 0);
-    }
-    
-    // Calculate row total: total_meters × unit_price
-    $rowTotal = $totalMeters * floatval($item->price);
+    // Calculate row total: quantity × unit_price
+    $rowTotal = $quantity * floatval($item->price);
     $subTotal += $rowTotal;
 @endphp
 
@@ -159,25 +130,9 @@
         <strong>{{ $item->name }}</strong>
     </td>
     <td>
-        @if(is_array($selectedColors) && count($selectedColors) > 0)
-            @foreach($selectedColors as $color)
-                <span class="color-badge">
-                    {{ $color['name'] ?? $color['color_name'] }}: {{ $color['meter'] }}م
-                </span>
-            @endforeach
-        @else
-            <span class="text-muted">بێ رەنگ</span>
-        @endif
-    </td>
-    <td>
-        @if($totalRolls > 0)
-            <span class="rolls-badge">{{ $totalRolls }} تۆپ</span>
-        @else
-            <span class="text-muted">—</span>
-        @endif
+        {{ number_format($quantity, 2) }}
     </td>
     <td>{{ number_format($item->price, 2) }}</td>
-    <td>{{ number_format($totalMeters, 2) }}</td>
     <td>{{ number_format($rowTotal, 2) }}</td>
 </tr>
 @endforeach
@@ -193,21 +148,34 @@
 <!-- TOTAL -->
 <div class="row mt-3" style="direction: rtl;">
     <div class="col-12 text-end">
-       
-        
-        
-        <p>قەرزی پێشوو: <b>{{ number_format($previousDue, 2) }}</b></p>
-        <h3>کۆی کاڵا: <b>{{ number_format($subTotal, 2) }}</b></h3>
-        <h3>کۆی گشتی: <b>{{ number_format($grandTotal, 2) }}</b></h3>
-        <p>قەرزی ماوە: <b id="remaining-due">{{ number_format($grandTotal, 2) }}</b></p>
+        <p style="font-size: 16px; margin: 10px 0;">
+            <strong>قەرزی پێشوو:</strong> 
+            <b style="color: #f5576c;">{{ number_format($previousDue, 2) }}</b>
+        </p>
+        <hr>
+        <h3 style="margin: 10px 0; color: #667eea;">
+            <strong>کۆی کاڵا:</strong> 
+            <b>{{ number_format($subTotal, 2) }}</b>
+        </h3>
+        <h2 style="margin: 10px 0; color: #43e97b; font-weight: 700;">
+            <strong>کۆی گشتی:</strong> 
+            <b>{{ number_format($grandTotal, 2) }}</b>
+        </h2>
+        <hr>
+        <p style="font-size: 16px; margin: 10px 0;">
+            <strong>قەرزی ماوە:</strong> 
+            <b id="remaining-due" style="color: #ff6b6b;">{{ number_format($grandTotal, 2) }}</b>
+        </p>
     </div>
 </div>
 
 <!-- ACTIONS -->
 <div class="mt-4 text-end">
-    <button class="btn btn-primary" onclick="window.print()">چاپکردن</button>
+    <button class="btn btn-primary" onclick="window.print()">
+        <i class="mdi mdi-printer"></i> چاپکردن
+    </button>
     <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#paymentModal">
-        پارەدان
+        <i class="mdi mdi-cash-check"></i> پارەدان
     </button>
 </div>
 
@@ -220,9 +188,11 @@
 <div class="modal fade" id="paymentModal">
 <div class="modal-dialog">
 <div class="modal-content">
+<div class="modal-header">
+    <h5 class="modal-title">پسوڵەی {{ $customer->name }}</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
 <div class="modal-body">
-
-<h4 class="text-center mb-3">پسوڵەی {{ $customer->name }}</h4>
 
 <form method="POST" action="{{ route('final.invoice') }}">
 @csrf
@@ -237,22 +207,15 @@
 <input type="hidden" name="payment_status" value="pending">
 <input type="hidden" name="previous_due" value="{{ $previousDue }}">
 
-<!-- SEND ITEMS WITH METERS, COLORS, AND ROLLS -->
+<!-- SEND ITEMS WITH SIMPLE QUANTITY (NO COLORS/METERS) -->
 @foreach($contents as $index => $item)
-    @php
-        $itemTotalMeters = floatval($item->options['total_meters'] ?? 0);
-        $itemSelectedColors = $item->options['selected_colors'] ?? [];
-        $itemSelectedColorsJson = json_encode($itemSelectedColors);
-    @endphp
     <input type="hidden" name="items[{{ $index }}][product_id]" value="{{ $item->id }}">
     <input type="hidden" name="items[{{ $index }}][quantity]" value="{{ $item->qty }}">
     <input type="hidden" name="items[{{ $index }}][unitcost]" value="{{ $item->price }}">
-    <input type="hidden" name="items[{{ $index }}][meters]" value="{{ $itemTotalMeters }}">
-    <input type="hidden" name="items[{{ $index }}][selected_colors]" value="{{ $itemSelectedColorsJson }}">
 @endforeach
 
 <div class="mb-3">
-    <label>جۆری پارەدان</label>
+    <label class="form-label"><strong>جۆری پارەدان</strong></label>
     <select name="payment_method" class="form-select" required>
         <option value="">-- هەڵبژێرە --</option>
         <option value="HandCash">دەستی</option>
@@ -262,13 +225,21 @@
 </div>
 
 <div class="mb-3">
-    <label>پارەی دراو</label>
+    <label class="form-label"><strong>پارەی دراو</strong></label>
     <input type="number" name="pay" id="pay-amount" class="form-control" value="0" min="0" step="0.01" required>
 </div>
 
-<div class="text-center mt-3">
-    <p>قەرزی ماوە: <b id="dynamic-remaining">{{ number_format($grandTotal, 2) }}</b></p>
-    <button type="submit" class="btn btn-primary">تەواوبوو</button>
+<div class="mb-3 p-3" style="background: #f8f9fa; border-radius: 8px;">
+    <p style="margin: 0; font-size: 16px;">
+        <strong>قەرزی ماوە:</strong> 
+        <b id="dynamic-remaining" style="color: #ff6b6b; font-size: 18px;">{{ number_format($grandTotal, 2) }}</b>
+    </p>
+</div>
+
+<div class="text-center mt-4">
+    <button type="submit" class="btn btn-success btn-lg w-100">
+        <i class="mdi mdi-check-circle"></i> تەواوبوو
+    </button>
 </div>
 
 </form>

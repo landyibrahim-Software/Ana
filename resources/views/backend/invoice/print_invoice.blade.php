@@ -38,26 +38,6 @@
     font-size:14px;
     line-height:1.8;
 }
-
-.color-badge {
-    display: inline-block;
-    background: #e9ecef;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    margin: 2px;
-}
-
-.rolls-badge {
-    display: inline-block;
-    background: #d4edda;
-    color: #155724;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    margin: 2px;
-    font-weight: 600;
-}
 </style>
 
 <div class="content">
@@ -112,10 +92,8 @@
 <tr>
     <th>#</th>
     <th>ئایتم</th>
-    <th>رەنگەکان</th>
-    <th>تۆپ</th>
-    <th>نرخی متر</th>
-    <th>کۆی متر</th>
+    <th>بڕ</th>
+    <th>نرخ</th>
     <th>کۆی گشتی</th>
 </tr>
 </thead>
@@ -127,18 +105,11 @@
 
 @foreach($order->orderDetails as $item)
 @php
-    $totalMeters = floatval($item->meters ?? $item->quantity ?? 0);
-    $selectedColors = [];
-    $totalRolls = 0;
+    // FIXED: Use simple quantity instead of meters
+    $quantity = floatval($item->quantity ?? 0);
     
-    if($item->selected_colors) {
-        $selectedColors = json_decode($item->selected_colors, true) ?? [];
-        foreach($selectedColors as $color) {
-            $totalRolls += intval($color['rolls'] ?? 0);
-        }
-    }
-    
-    $rowTotal = $totalMeters * floatval($item->unitcost ?? 0);
+    // Calculate row total: quantity × unitcost
+    $rowTotal = $quantity * floatval($item->unitcost ?? 0);
     $calculatedSubTotal += $rowTotal;
 @endphp
 
@@ -148,25 +119,9 @@
         <strong>{{ $item->product->product_name ?? 'Product' }}</strong>
     </td>
     <td>
-        @if(is_array($selectedColors) && count($selectedColors) > 0)
-            @foreach($selectedColors as $color)
-                <span class="color-badge">
-                    {{ $color['name'] ?? $color['color_name'] }}: {{ $color['meter'] }}م
-                </span>
-            @endforeach
-        @else
-            <span class="text-muted">بێ رەنگ</span>
-        @endif
-    </td>
-    <td>
-        @if($totalRolls > 0)
-            <span class="rolls-badge">{{ $totalRolls }} تۆپ</span>
-        @else
-            <span class="text-muted">—</span>
-        @endif
+        {{ number_format($quantity, 2) }}
     </td>
     <td>{{ number_format($item->unitcost ?? 0, 2) }}</td>
-    <td>{{ number_format($totalMeters, 2) }}</td>
     <td>{{ number_format($rowTotal, 2) }}</td>
 </tr>
 @endforeach
@@ -177,11 +132,28 @@
 <!-- TOTAL SUMMARY -->
 <div class="row mt-3" style="direction: rtl;">
     <div class="col-12 text-end">
-        <p>قەرزی پێشوو: <b>{{ number_format($previousDue, 2) }}</b></p>
-        <h3>کۆی کاڵا: <b>{{ number_format($calculatedSubTotal, 2) }}</b></h3>
-        <h3>کۆی گشتی: <b>{{ number_format($calculatedSubTotal + $previousDue, 2) }}</b></h3>
-        <p>پارەی دراو: <b>{{ number_format($order->pay ?? 0, 2) }}</b></p>
-        <p>قەرزی ماوە: <b>{{ number_format((($calculatedSubTotal + $previousDue) - ($order->pay ?? 0)), 2) }}</b></p>
+        <p style="font-size: 16px; margin: 10px 0;">
+            <strong>قەرزی پێشوو:</strong> 
+            <b style="color: #f5576c;">{{ number_format($previousDue, 2) }}</b>
+        </p>
+        <hr>
+        <h3 style="margin: 10px 0; color: #667eea;">
+            <strong>کۆی کاڵا:</strong> 
+            <b>{{ number_format($calculatedSubTotal, 2) }}</b>
+        </h3>
+        <h2 style="margin: 10px 0; color: #43e97b; font-weight: 700;">
+            <strong>کۆی گشتی:</strong> 
+            <b>{{ number_format($calculatedSubTotal + $previousDue, 2) }}</b>
+        </h2>
+        <hr>
+        <p style="font-size: 16px; margin: 10px 0;">
+            <strong>پارەی دراو:</strong> 
+            <b style="color: #4facfe;">{{ number_format($order->pay ?? 0, 2) }}</b>
+        </p>
+        <p style="font-size: 16px; margin: 10px 0;">
+            <strong>قەرزی ماوە:</strong> 
+            <b style="color: #ff6b6b;">{{ number_format((($calculatedSubTotal + $previousDue) - ($order->pay ?? 0)), 2) }}</b>
+        </p>
     </div>
 </div>
 

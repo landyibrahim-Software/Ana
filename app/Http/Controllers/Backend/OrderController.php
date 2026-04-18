@@ -47,47 +47,31 @@ public function FinalInvoice(Request $request)
         'metter_price'   => 0,
     ]);
 
-    // Save order items WITH meters and colors + UPDATE STOCK
+    // FIXED: Save order items with SIMPLE quantity (NO colors/meters)
     foreach ($request->items as $item) {
-        $meters = $item['meters'] ?? 0;
-        $unitTotal = $meters * $item['unitcost'];
-        $selectedColors = $item['selected_colors'] ?? '[]';
-        
-        // Count rolls from colors
-        $totalRolls = 0;
-        if (!empty($item['selected_colors'])) {
-            $colors = json_decode($item['selected_colors'], true);
-            foreach ($colors as $color) {
-                $totalRolls += intval($color['rolls'] ?? 0);
-            }
-        }
+        $quantity = floatval($item['quantity'] ?? 0);
+        $unitTotal = $quantity * floatval($item['unitcost']);
 
         // Save order detail
         Orderdetails::create([
             'order_id'        => $order->id,
             'product_id'      => $item['product_id'],
-            'quantity'        => $item['quantity'],
+            'quantity'        => $quantity,
             'unitcost'        => $item['unitcost'],
-            'meters'          => $meters,
-            'selected_colors' => $selectedColors,
             'metter_price'    => 0,
             'total'           => $unitTotal,
         ]);
 
-        
-        // 🔥 REDUCE تۆپ (ROLLS) FROM PRODUCT STORE BY ROLLS COUNT
-        if ($totalRolls > 0) {
-            $product = Product::find($item['product_id']);
-            if ($product) {
-                $product->product_store -= $totalRolls;
-                $product->save();
-            }
+        // 🔥 REDUCE STOCK FROM PRODUCT STORE BY QUANTITY
+        $product = Product::find($item['product_id']);
+        if ($product) {
+            $product->product_store -= $quantity;
+            $product->save();
         }
     }
 
     // ✅ CORRECT: Only add the ORDER DUE to customer due
     // If pay > subtotal, the order due is negative, so customer credit increases
-    // This is correct!
     $newCustomerDue = max(0, ($customer->due ?? 0) + $currentOrderDue);
     
     $customer->update([
@@ -161,7 +145,7 @@ public function PrintInvoice($id)
 
      Order::findOrFail($order_id)->update(['order_status' => 'complete']);
 
-         $notification = array(
+          $notification = array(
             'message' => 'Order Done Successfully',
             'alert-type' => 'success'
         ); 
@@ -182,7 +166,7 @@ public function PrintInvoice($id)
 
     public function GenerateInvoicePDF($order_id)
 {
-    $order = Order::with(['customer', 'orderItems.product'])->findOrFail($order_id);
+    $order = Order::with(['customer', 'orderDetails.product'])->findOrFail($order_id);
     
     $previousDue = $order->previous_due;
     $grandTotal = $order->sub_total + $previousDue;
@@ -247,9 +231,6 @@ public function PrintInvoice($id)
 /**
  * Cancel Order and Restore Stock + Customer Balance
  */
-/**
- * Cancel Order and Restore Stock + Customer Balance
- */
 public function cancelOrder(Request $request)
 {
     $request->validate([
@@ -278,58 +259,28 @@ public function cancelOrder(Request $request)
             foreach ($rejectedItemIds as $itemId) {
                 $orderDetail = Orderdetails::find($itemId);
                 if ($orderDetail) {
-                    $itemTotal = ($orderDetail->meters ?? $orderDetail->quantity) * $orderDetail->unitcost;
+                    $itemTotal = floatval($orderDetail->quantity) * floatval($orderDetail->unitcost);
                     $refundAmount += $itemTotal;
                 }
             }
         }
 
-        $totalRollsRestored = 0;
-        $totalMetersRestored = 0;
+        $totalQuantityRestored = 0;
 
-        // Process each rejected item - RESTORE STOCK & ROLLS
+        // FIXED: Process each rejected item - RESTORE STOCK (simple quantity)
         foreach ($rejectedItemIds as $itemId) {
             $orderDetail = Orderdetails::find($itemId);
             
             if ($orderDetail) {
                 $product = Product::find($orderDetail->product_id);
                 
-                if ($product && $orderDetail->selected_colors) {
-                    // Restore colors and meters
-                    $colors = json_decode($orderDetail->selected_colors, true);
-                    if (is_array($colors)) {
-                        $totalRolls = 0;
-                        
-                        foreach ($colors as $color) {
-                            // ✅ RESTORE METER TO SPECIFIC COLOR
-                            if (isset($color['id'])) {
-                                ProductColor::where('product_id', $orderDetail->product_id)
-                                    ->where('id', $color['id'])
-                                    ->increment('meters', floatval($color['meter'] ?? 0));
-                                
-                                // Track meters restored
-                                $totalMetersRestored += floatval($color['meter'] ?? 0);
-                            }
-                            
-                            // ✅ COUNT ROLLS TO RESTORE (EXACT ROLLS THAT WERE SOLD)
-                            $rollsInThisColor = intval($color['rolls'] ?? 0);
-                            $totalRolls += $rollsInThisColor;
-                        }
-                        
-                        // ✅ RESTORE ROLLS TO PRODUCT STORE (EXACTLY WHAT WAS SOLD)
-                        if ($totalRolls > 0) {
-                            $product->increment('product_store', $totalRolls);
-                            $product->save();
-                            $totalRollsRestored += $totalRolls;
-                        }
-                    }
-                } elseif ($product) {
-                    // If no selected colors, just restore basic quantity
-                    $quantityToRestore = intval($orderDetail->quantity ?? 0);
+                if ($product) {
+                    // Restore simple quantity to product store
+                    $quantityToRestore = floatval($orderDetail->quantity ?? 0);
                     if ($quantityToRestore > 0) {
                         $product->increment('product_store', $quantityToRestore);
                         $product->save();
-                        $totalRollsRestored += $quantityToRestore;
+                        $totalQuantityRestored += $quantityToRestore;
                     }
                 }
 
@@ -363,9 +314,9 @@ public function cancelOrder(Request $request)
 
         DB::commit();
 
-        // ✅ IMPROVED MESSAGE showing rolls and meters restored
+        // ✅ IMPROVED MESSAGE showing quantity restored
         return redirect()->back()->with([
-            'message' => "✅ داواکاری بە سەرکەوتی لابرێت - {$totalRollsRestored} تۆپ ({$totalMetersRestored}م) و {$refundAmount} $ گێڕایەوە",
+            'message' => "✅ داواکاری بە سەرکەوتی لابرێت - {$totalQuantityRestored} بڕ و {$refundAmount} $ گێڕایەوە",
             'alert-type' => 'success'
         ]);
 
