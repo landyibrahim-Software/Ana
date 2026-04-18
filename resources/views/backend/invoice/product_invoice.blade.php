@@ -38,6 +38,29 @@
     font-size:14px;
     line-height:1.8;
 }
+
+/* Payment Modal Input Styling */
+.modal-body input.form-control,
+.modal-body select.form-select {
+    background-color: #fff !important;
+    color: #333 !important;
+    border: 2px solid #dee2e6 !important;
+    font-size: 16px !important;
+    padding: 10px 12px !important;
+}
+
+.modal-body input.form-control:focus,
+.modal-body select.form-select:focus {
+    background-color: #fff !important;
+    color: #333 !important;
+    border-color: #0d6efd !important;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25) !important;
+    outline: none !important;
+}
+
+.modal-body input.form-control:hover {
+    border-color: #0d6efd !important;
+}
 </style>
 
 <div class="content">
@@ -185,7 +208,7 @@
 </div>
 
 <!-- PAYMENT MODAL -->
-<div class="modal fade" id="paymentModal">
+<div class="modal fade" id="paymentModal" tabindex="-1">
 <div class="modal-dialog">
 <div class="modal-content">
 <div class="modal-header">
@@ -194,7 +217,7 @@
 </div>
 <div class="modal-body">
 
-<form method="POST" action="{{ route('final.invoice') }}">
+<form method="POST" action="{{ route('final.invoice') }}" id="paymentForm">
 @csrf
 
 <!-- REQUIRED ORDER DATA -->
@@ -226,7 +249,20 @@
 
 <div class="mb-3">
     <label class="form-label"><strong>پارەی دراو</strong></label>
-    <input type="number" name="pay" id="pay-amount" class="form-control" value="0" min="0" step="0.01" required>
+    <input 
+        type="number" 
+        name="pay" 
+        id="pay-amount" 
+        class="form-control" 
+        value="0" 
+        min="0" 
+        max="{{ $grandTotal }}"
+        step="0.01" 
+        required
+        autofocus="autofocus"
+        placeholder="پارەی دراو بنووسە"
+        autocomplete="off"
+        inputmode="decimal">
 </div>
 
 <div class="mb-3 p-3" style="background: #f8f9fa; border-radius: 8px;">
@@ -250,19 +286,47 @@
 
 <!-- JS -->
 <script>
+// Wait for modal to be shown before focusing
+document.getElementById('paymentModal').addEventListener('shown.bs.modal', function() {
+    const payInput = document.getElementById('pay-amount');
+    if (payInput) {
+        payInput.focus();
+        payInput.select();
+    }
+});
+
 const payInput = document.getElementById('pay-amount');
 const dynamicRemaining = document.getElementById('dynamic-remaining');
 const remainingDueText = document.getElementById('remaining-due');
 const totalAmount = {{ $grandTotal }};
 
-payInput.addEventListener('input', function () {
-    let pay = parseFloat(this.value) || 0;
-    if (pay < 0) pay = 0;
-    if (pay > totalAmount) pay = totalAmount;
-    let remaining = totalAmount - pay;
-    dynamicRemaining.innerText = remaining.toFixed(2);
-    remainingDueText.innerText = remaining.toFixed(2);
-});
+if (payInput) {
+    payInput.addEventListener('input', function () {
+        let pay = parseFloat(this.value) || 0;
+        if (pay < 0) pay = 0;
+        if (pay > totalAmount) pay = totalAmount;
+        let remaining = totalAmount - pay;
+        dynamicRemaining.innerText = remaining.toFixed(2);
+        remainingDueText.innerText = remaining.toFixed(2);
+    });
+
+    // Clear default value on focus
+    payInput.addEventListener('focus', function() {
+        if (this.value === '0') {
+            this.value = '';
+        }
+    });
+
+    // Set value on blur if empty
+    payInput.addEventListener('blur', function() {
+        if (this.value === '' || this.value === '0') {
+            this.value = '0';
+            let remaining = totalAmount;
+            dynamicRemaining.innerText = remaining.toFixed(2);
+            remainingDueText.innerText = remaining.toFixed(2);
+        }
+    });
+}
 </script>
 
 @endsection

@@ -33,6 +33,15 @@ body {
     font-size: 18px;
     text-align: center;
     border-radius: 14px;
+    background-color: #fff !important;
+    color: #333 !important;
+}
+
+.table input.form-control:focus {
+    background-color: #fff !important;
+    color: #333 !important;
+    border-color: #0d6efd !important;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25) !important;
 }
 
 .total-box {
@@ -453,12 +462,18 @@ document.querySelectorAll('.qty-field').forEach(input => {
     });
 });
 
-/* BARCODE SCANNER */
+/* BARCODE SCANNER - FIXED: Allow input in fields */
 let barcode = '';
 let timer = null;
 
 document.addEventListener('keydown', e => {
-    if (e.target.tagName === 'INPUT') return;
+    // FIXED: Allow INPUT fields to receive input for quantity/price
+    if (e.target.tagName === 'INPUT') {
+        // Only handle Enter key for barcode, allow all other keys
+        if (e.key !== 'Enter') {
+            return;
+        }
+    }
     
     if(timer) clearTimeout(timer);
     

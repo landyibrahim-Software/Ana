@@ -38,6 +38,15 @@
     font-size:14px;
     line-height:1.8;
 }
+
+@media print {
+    .d-print-none {
+        display: none !important;
+    }
+    body {
+        background: white;
+    }
+}
 </style>
 
 <div class="content">
@@ -71,15 +80,17 @@
     </div>
 
     <div class="brand-area">
-        <img src="{{ asset('backend/assets/images/nza.png') }}" height="90">
+        <img src="{{ asset('backend/assets/images/nza.png') }}" height="90" alt="کوتاڵی نزا">
         <div class="brand-text">
             <h2>کوتاڵی نزا</h2>
             <div class="phone-list">
-                <i class="fas fa-phone"></i> 07708130060
+                <small>
+                    <i class="fas fa-phone"></i> 07708130060
                     &nbsp;&nbsp;
                     <i class="fas fa-phone"></i> 07501561887
                     &nbsp;&nbsp;
                     <i class="fas fa-phone"></i> 07701561887
+                </small>
             </div>
         </div>
     </div>
@@ -89,7 +100,7 @@
 <div class="table-responsive mt-4">
 <table class="table table-bordered text-center">
 <thead>
-<tr>
+<tr style="background: linear-gradient(45deg, #0d6efd, #6610f2); color: white;">
     <th>#</th>
     <th>ئایتم</th>
     <th>بڕ</th>
@@ -164,7 +175,7 @@
 
 <!-- BUTTONS -->
 <div class="mt-4 text-end d-print-none">
-    <button onclick="window.print()" class="btn btn-primary">
+    <button onclick="window.print()" class="btn btn-primary me-2">
         <i class="fa fa-print"></i> چاپکردن
     </button>
     <button id="whatsappBtn" onclick="sendWhatsApp()" class="btn btn-success">
@@ -234,20 +245,22 @@ function sendWhatsApp() {
             setTimeout(function() {
                 window.open('https://wa.me/' + phone + '?text=' + msg, '_blank');
                 
-                // Reset button after 1 second
+                // Reset button after 2 seconds
                 setTimeout(function() {
                     btn.disabled = false;
                     btn.innerHTML = '<i class="fab fa-whatsapp"></i> واتساپ';
-                }, 1000);
+                }, 2000);
             }, 500);
             
         } catch(e) {
+            console.error('Error:', e);
             alert('خرابی: ' + e.message);
             btn.disabled = false;
             btn.innerHTML = '<i class="fab fa-whatsapp"></i> واتساپ';
         }
     }).catch(function(error) {
-        alert('خرابی: ' + error);
+        console.error('Canvas Error:', error);
+        alert('خرابی: وێنە دروستنەکردن');
         btn.disabled = false;
         btn.innerHTML = '<i class="fab fa-whatsapp"></i> واتساپ';
     });
