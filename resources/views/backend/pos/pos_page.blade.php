@@ -149,8 +149,8 @@ body {
 <thead>
 <tr>
     <th>ناوی بەرهەم</th>
-    <th width="100">مەترە</th>
-    <th width="130">نرخی متر</th>
+    <th width="100">دەرزەن</th>
+    <th width="130">نرخی دەرزەن</th>
     <th width="140">کۆی گشتی نرخ</th>
     <th width="100">کردار</th>
 </tr>
@@ -299,7 +299,7 @@ Last Scan: <span id="last-barcode">None</span>
         <th>ناوی بەرهەم</th>
         <th>جۆر</th>
         <th>نرخی فرۆشتن</th>
-        <th>دستدا</th>
+        <th>بەردەستە</th>
         <th width="80">کردار</th>
     </tr>
 </thead>
