@@ -3,15 +3,6 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
 
 <style>
-.color-badge {
-    display: inline-block;
-    background: #e9ecef;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    margin: 2px;
-}
-
 .kpi-card {
     border-radius: 15px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.1);
@@ -47,10 +38,10 @@
                 <div class="page-title-box">
                     <div class="page-title-right">
                         <ol class="breadcrumb m-0">
-                            <li class="breadcrumb-item"><a href="javascript: void(0);">وردەکاری داواکاری </a></li>
+                            <li class="breadcrumb-item"><a href="javascript: void(0);">وردەکاری داواکاری</a></li>
                         </ol>
                     </div>
-                    <h4 class="page-title"> وردەکاری داواکاری</h4>
+                    <h4 class="page-title">وردەکاری داواکاری #{{ $order->id }}</h4>
                 </div>
             </div>
         </div>     
@@ -78,7 +69,7 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label for="firstname" class="form-label"> وێنەی کڕیار</label>
+                                            <label for="firstname" class="form-label">وێنەی کڕیار</label>
                                             @if($order->customer && $order->customer->image)
                                                 <img id="showImage" src="{{ asset($order->customer->image) }}" class="rounded-circle avatar-lg img-thumbnail" alt="profile-image">
                                             @else
@@ -90,63 +81,82 @@
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label for="firstname" class="form-label">ناوی کڕیار</label>
-                                            <p class="text-danger"> {{ $order->customer->name ?? 'Unknown' }} </p>
+                                            <p class="text-danger"><strong>{{ $order->customer->name ?? 'نەناسراو' }}</strong></p>
                                         </div>
                                     </div>
 
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label for="firstname" class="form-label">ئیمەیڵی کڕیار</label>
-                                            <p class="text-danger"> {{ $order->customer->email ?? 'N/A' }} </p>
+                                            <p class="text-danger"><strong>{{ $order->customer->email ?? 'N/A' }}</strong></p>
                                         </div>
                                     </div>
 
                                     <div class="col-md-6">
                                         <div class="mb-3">
                                             <label for="firstname" class="form-label">ژمارەی کڕیار</label>
-                                            <p class="text-danger"> {{ $order->customer->phone ?? 'N/A' }} </p>
+                                            <p class="text-danger"><strong>{{ $order->customer->phone ?? 'N/A' }}</strong></p>
                                         </div>
                                     </div>
 
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label for="firstname" class="form-label">بەرواری داواکاری </label>
-                                            <p class="text-danger"> {{ $order->order_date }} </p>
+                                            <label for="firstname" class="form-label">بەرواری داواکاری</label>
+                                            <p class="text-danger"><strong>{{ \Carbon\Carbon::parse($order->order_date)->format('Y-m-d') }}</strong></p>
                                         </div>
                                     </div>
 
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label for="firstname" class="form-label">پسوڵەی داواکاری </label>
-                                            <p class="text-danger"> {{ $order->id }} </p>
+                                            <label for="firstname" class="form-label">پسوڵەی داواکاری</label>
+                                            <p class="text-danger"><strong>#{{ $order->id }}</strong></p>
                                         </div>
                                     </div>
 
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label for="firstname" class="form-label">شێوازی پارەدان </label>
-                                            <p class="text-danger"> {{ $order->payment_status }} </p>
+                                            <label for="firstname" class="form-label">شێوازی پارەدان</label>
+                                            <p class="text-danger">
+                                                @if($order->payment_status == 'HandCash')
+                                                    <span class="badge bg-info">دەستی</span>
+                                                @elseif($order->payment_status == 'Cheque')
+                                                    <span class="badge bg-warning">چەک</span>
+                                                @elseif($order->payment_status == 'Bank')
+                                                    <span class="badge bg-success">بانک</span>
+                                                @else
+                                                    <strong>{{ $order->payment_status }}</strong>
+                                                @endif
+                                            </p>
                                         </div>
                                     </div>
 
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label for="firstname" class="form-label">بڕی پارە </label>
-                                            <p class="text-danger"> {{ $order->pay }} </p>
+                                            <label for="firstname" class="form-label">بڕی پارەی دراو</label>
+                                            <p class="text-success"><strong>${{ number_format($order->pay, 2) }}</strong></p>
                                         </div>
                                     </div>
 
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label for="firstname" class="form-label">پارەی قەرز </label>
-                                            <p class="text-danger"> {{ $order->due }} </p>
+                                            <label for="firstname" class="form-label">پارەی قەرز</label>
+                                            <p class="text-danger"><strong>${{ number_format($order->due, 2) }}</strong></p>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="firstname" class="form-label">کۆی کاڵا</label>
+                                            <p class="text-info"><strong>${{ number_format($order->sub_total, 2) }}</strong></p>
                                         </div>
                                     </div>
                                 </div> <!-- end row -->
                                 
                                 <div class="text-end">
                                     @if($order->order_status !== 'cancelled')
-                                        <button type="submit" class="btn btn-success waves-effect waves-light mt-2"><i class="mdi mdi-content-save"></i> داواکاری تەواوبوو </button>
+                                        <button type="submit" class="btn btn-success waves-effect waves-light mt-2">
+                                            <i class="mdi mdi-content-save me-1"></i> داواکاری تەواوبوو
+                                        </button>
                                         <button type="button" class="btn btn-danger waves-effect waves-light mt-2" data-bs-toggle="modal" data-bs-target="#cancelOrderModal">
                                             <i class="mdi mdi-delete me-1"></i> لابردنی داواکاری
                                         </button>
@@ -158,18 +168,18 @@
                         </div>
                         <!-- end settings content-->
 
-                        <!-- NEW TABLE WITH COLORS AND METERS -->
-                        <div class="col-12">
+                        <!-- ORDER ITEMS TABLE - FIXED FOR NEW SYSTEM -->
+                        <div class="col-12 mt-4">
                             <div class="card">
                                 <div class="card-body">
+                                    <h5 class="mb-3">ئایتمە کڕیاریەکان</h5>
                                     <table class="table table-bordered text-center">
                                         <thead>
-                                            <tr>
+                                            <tr style="background: linear-gradient(45deg, #0d6efd, #6610f2); color: white;">
                                                 <th>#</th>
-                                                <th>ئایتم</th>
-                                                <th>رەنگەکان</th>
-                                                <th>نرخی متر</th>
-                                                <th>کۆی متر</th>
+                                                <th>ناوی بەرهەم</th>
+                                                <th>بڕ</th>
+                                                <th>نرخ</th>
                                                 <th>کۆی گشتی</th>
                                             </tr>
                                         </thead>
@@ -179,33 +189,30 @@
                                                 $subTotal = 0;
                                             @endphp
 
-                                            @foreach($orderItem as $item)
+                                            @forelse($orderItem as $item)
                                             @php
-                                                $rowTotal = ($item->meters ?? $item->quantity) * $item->unitcost;
+                                                // FIXED: Use simple quantity instead of meters
+                                                $quantity = floatval($item->quantity ?? 0);
+                                                $rowTotal = $quantity * floatval($item->unitcost);
                                                 $subTotal += $rowTotal;
                                             @endphp
                                             <tr>
-                                                <td>{{ $sl++ }}</td>
-                                                <td><strong>{{ optional($item->product)->product_name ?? 'Deleted Product' }}</strong></td>
-                                                <td>
-                                                    @if($item->selected_colors)
-                                                        @php $colors = json_decode($item->selected_colors, true); @endphp
-                                                        @foreach($colors as $color)
-                                                            <span class="color-badge">
-                                                                {{ $color['name'] }}: {{ $color['meter'] }}م
-                                                            </span>
-                                                        @endforeach
-                                                    @else
-                                                        <span class="text-muted">بێ رەنگ</span>
-                                                    @endif
-                                                </td>
-                                                <td>{{ number_format($item->unitcost, 2) }}</td>
-                                                <td>{{ number_format($item->meters ?? $item->quantity, 2) }}</td>
-                                                <td>{{ number_format($rowTotal, 2) }}</td>
+                                                <td><strong>{{ $sl++ }}</strong></td>
+                                                <td><strong>{{ optional($item->product)->product_name ?? 'سڕاودەتوانی بەرهەم' }}</strong></td>
+                                                <td>{{ number_format($quantity, 2) }}</td>
+                                                <td>${{ number_format($item->unitcost, 2) }}</td>
+                                                <td><strong>${{ number_format($rowTotal, 2) }}</strong></td>
                                             </tr>
-                                            @endforeach
+                                            @empty
+                                            <tr>
+                                                <td colspan="5" class="text-center text-muted py-3">ئایتم نیە</td>
+                                            </tr>
+                                            @endforelse
                                         </tbody>
                                     </table>
+                                    <div class="text-end mt-2">
+                                        <h5>کۆی کاڵا: <strong style="color: #0d6efd;">${{ number_format($subTotal, 2) }}</strong></h5>
+                                    </div>
                                 </div>
                             </div> <!-- end card -->
                         </div><!-- end col-->
@@ -248,34 +255,24 @@
                                     <tr>
                                         <th style="width: 50px; text-align: center;"><i class="mdi mdi-checkbox-blank-outline"></i></th>
                                         <th>ناوی ئایتم</th>
-                                        <th>رەنگەکان</th>
                                         <th style="text-align: right;">نرخ</th>
-                                        <th style="text-align: right;">کۆی متر</th>
+                                        <th style="text-align: right;">بڕ</th>
                                         <th style="text-align: right;">کۆی</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach($orderItem as $item)
                                     @php
-                                        $itemTotal = ($item->meters ?? $item->quantity) * $item->unitcost;
+                                        $quantity = floatval($item->quantity ?? 0);
+                                        $itemTotal = $quantity * floatval($item->unitcost);
                                     @endphp
                                     <tr>
                                         <td style="text-align: center;">
                                             <input type="checkbox" name="rejected_items[]" value="{{ $item->id }}" class="form-check-input item-checkbox" data-item-cost="{{ $itemTotal }}">
                                         </td>
-                                        <td><strong>{{ optional($item->product)->product_name ?? 'Deleted' }}</strong></td>
-                                        <td>
-                                            @if($item->selected_colors)
-                                                @php $colors = json_decode($item->selected_colors, true); @endphp
-                                                @foreach($colors as $color)
-                                                    <span class="color-badge">{{ $color['name'] }}: {{ $color['meter'] }}م</span>
-                                                @endforeach
-                                            @else
-                                                <span class="text-muted">-</span>
-                                            @endif
-                                        </td>
+                                        <td><strong>{{ optional($item->product)->product_name ?? 'سڕاودەتوانی' }}</strong></td>
                                         <td style="text-align: right;">${{ number_format($item->unitcost, 2) }}</td>
-                                        <td style="text-align: right;">{{ number_format($item->meters ?? $item->quantity, 2) }}م</td>
+                                        <td style="text-align: right;">{{ number_format($quantity, 2) }}</td>
                                         <td style="text-align: right;"><strong>${{ number_format($itemTotal, 2) }}</strong></td>
                                     </tr>
                                     @endforeach
@@ -328,7 +325,7 @@
                                 <div class="form-check" style="padding: 12px 15px; background: #f8f9fa; border-radius: 8px; margin-bottom: 10px;">
                                     <input class="form-check-input" type="radio" name="refund_from" value="paid" id="refund_from_paid">
                                     <label class="form-check-label" for="refund_from_paid" style="margin-left: 8px; cursor: pointer; margin-bottom: 0;">
-                                        <strong> پارەی دراو (Paid)</strong><br>
+                                        <strong>پارەی دراو (Paid)</strong><br>
                                         <span style="color: #666; font-size: 0.9rem;">پارەی دراو: <strong style="color: #27ae60;">${{ number_format($order->pay, 2) }}</strong></span>
                                     </label>
                                 </div>
@@ -368,7 +365,7 @@
                         <i class="mdi mdi-close me-1"></i> داخستن
                     </button>
                     <button type="submit" class="btn btn-danger" style="border-radius: 8px; background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%); border: none;">
-                        <i class="mdi mdi-check me-1"></i> لابردنی داواکاری پشتڕاستکردن
+                        <i class="mdi mdi-check me-1"></i> پشتڕاستکردن و لابردن
                     </button>
                 </div>
             </form>
@@ -376,7 +373,7 @@
     </div>
 </div>
 
-<!-- CANCEL ORDER JAVASCRIPT - FIXED -->
+<!-- CANCEL ORDER JAVASCRIPT -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const itemCheckboxes = document.querySelectorAll('.item-checkbox');
@@ -417,8 +414,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Refund from DUE: Just reduce the due by refund amount
             newDue = currentDue - refundAmount;
         } else if (refundFrom === 'paid') {
-            // Refund from PAID: Only reduce due by order subtotal (not the full refund)
-            // The extra paid is refunded outside the system
+            // Refund from PAID: Only reduce due by order subtotal
             newDue = currentDue - orderSubtotal;
         }
 
