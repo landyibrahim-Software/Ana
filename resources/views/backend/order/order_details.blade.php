@@ -332,7 +332,8 @@
     </div> <!-- container -->
 </div> <!-- content -->
 
-<!-- CANCEL ORDER MODAL -->
+<!-- CANCEL ORDER MODAL - Only show if not cancelled -->
+@if($order->order_status !== 'cancelled')
 <div class="modal fade" id="cancelOrderModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-xl">
         <div class="modal-content" style="border-radius: 12px; box-shadow: 0 15px 50px rgba(0,0,0,0.15); border: none;">
@@ -548,5 +549,6 @@ document.addEventListener('DOMContentLoaded', function() {
     updateRefundCalculations();
 });
 </script>
+@endif
 
 @endsection
