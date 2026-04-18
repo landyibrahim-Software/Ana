@@ -549,7 +549,7 @@
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 <i class="mdi mdi-cash-remove text-danger me-2"></i>
-                                                <span>{{ $expense->details ?? 'Expense' }}</span>
+                                                <span>Expense</span>
                                             </div>
                                         </td>
                                         <td class="text-end text-danger">
@@ -591,7 +591,7 @@
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 <i class="mdi mdi-bank-transfer text-success me-2"></i>
-                                                <span>{{ $payment->supplier->name ?? 'نەناسراو' }}</span>
+                                                <span>{{ $payment->supplier->supplier_name ?? 'نەناسراو' }}</span>
                                             </div>
                                         </td>
                                         <td class="text-end text-success">
@@ -726,7 +726,7 @@
                                             {{ $item->category_name ?? 'N/A' }}
                                         </td>
                                         <td class="text-center">
-                                            <span class="badge bg-primary">{{ number_format($item->total_meters_sold, 2) }}</span>
+                                            <span class="badge bg-primary">{{ number_format($item->total_sold, 2) }}</span>
                                         </td>
                                         <td class="text-center">
                                             <span class="badge bg-{{ $item->product_store > 50 ? 'success' : 'warning' }}">
@@ -788,7 +788,7 @@
                                         <td><strong>#{{ $order->id }}</strong></td>
                                         <td>{{ $order->customer->name ?? 'N/A' }}</td>
                                         <td>{{ $itemCount }}</td>
-                                        <td><strong>${{ number_format($order->total,2) }}</strong></td>
+                                        <td><strong>${{ number_format($order->sub_total,2) }}</strong></td>
                                         <td class="text-success"><strong>${{ number_format($order->pay,2) }}</strong></td>
                                         <td class="text-danger"><strong>${{ number_format($order->due,2) }}</strong></td>
                                         <td>

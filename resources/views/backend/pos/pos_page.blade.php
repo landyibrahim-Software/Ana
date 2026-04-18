@@ -259,7 +259,7 @@ if($allcart && $allcart->count() > 0) {
 <select name="customer_id" class="form-select customer-select mb-3" required>
 <option value="">-- کڕیار هەڵبژێرە --</option>
 @forelse($customer as $cus)
-<option value="{{ $cus->id }}">{{ $cus->name }}</option>
+<option value="{{ $cus->id }}">{{ $cus->name }} ({{ $cus->phone ?? 'No Phone' }})</option>
 @empty
 <option disabled>کڕیار نیە</option>
 @endforelse
@@ -315,15 +315,21 @@ Last Scan: <span id="last-barcode">None</span>
         @endif
     </td>
     <td class="fw-bold">{{ $item->product_name ?? 'Unknown' }}</td>
-    <td>{{ optional($item->category)->category_name ?? '-' }}</td>
-    <td class="text-success fw-bold">{{ $item->selling_price ?? 0 }}</td>
-    <td>{{ $item->product_store ?? 0 }}</td>
+    <td>
+        @if($item->category)
+            {{ $item->category->category_name ?? 'N/A' }}
+        @else
+            N/A
+        @endif
+    </td>
+    <td class="text-success fw-bold">{{ number_format($item->selling_price ?? 0, 2) }}</td>
+    <td>{{ number_format($item->product_store ?? 0, 2) }}</td>
     <td>
         <form method="POST" action="{{ url('/add-cart') }}" style="display:inline;">
         @csrf
         <input type="hidden" name="id" value="{{ $item->id }}">
         <input type="hidden" name="qty" value="1">
-        <button type="submit" class="btn btn-success btn-sm">
+        <button type="submit" class="btn btn-success btn-sm" title="Add to Cart">
         <i class="fas fa-plus-square"></i>
         </button>
         </form>

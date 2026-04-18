@@ -18,20 +18,17 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        // ✅ Create cache key based on filter
         $filterType = $request->input('filter', 'today');
         $customStartDate = $request->input('start_date');
         $customEndDate = $request->input('end_date');
         $cacheKey = 'dashboard_' . $filterType . '_' . md5($customStartDate . $customEndDate) . '_' . auth()->id();
 
-        // ✅ Check if data is cached
         if (Cache::has($cacheKey)) {
             $cachedData = Cache::get($cacheKey);
             $cachedData['cached'] = true;
             return view('index', $cachedData);
         }
 
-        // Create date range based on filter
         $startDate = null;
         $endDate = Carbon::now();
 
@@ -78,7 +75,7 @@ class DashboardController extends Controller
 
             $totalPaid = floatval($orderPayments) + floatval($customerPayments);
 
-            // ✅ TOTAL DUE (Simple calculation)
+            // ✅ TOTAL DUE
             $totalDue = Order::where('order_status', '!=', 'cancelled')
                 ->select('due')
                 ->sum('due');
@@ -119,8 +116,8 @@ class DashboardController extends Controller
             // ✅ MONTHLY PAID
             $monthlyPaid = $this->getMonthlyPaidData();
 
-            // ✅ RECENT EXPENSES
-            $recentExpenses = Expense::select(['id', 'description', 'amount', 'date', 'created_at'])
+            // ✅ RECENT EXPENSES (FIXED: removed 'description')
+            $recentExpenses = Expense::select(['id', 'amount', 'date', 'created_at'])
                 ->orderBy('created_at', 'desc')
                 ->limit(5)
                 ->get();
@@ -195,7 +192,6 @@ class DashboardController extends Controller
             return view('index', $data);
 
         } catch (\Exception $e) {
-            // Fallback if something goes wrong
             return view('index', [
                 'totalPaid' => 0,
                 'totalDue' => 0,
@@ -223,9 +219,6 @@ class DashboardController extends Controller
         }
     }
 
-    /* ===============================
-        HELPER - Calculate Profit & Loss
-    ================================ */
     private function calculateProfitAndLoss($startDate, $endDate)
     {
         try {
@@ -268,9 +261,6 @@ class DashboardController extends Controller
         }
     }
 
-    /* ===============================
-        HELPER - Calculate Stock Value
-    ================================ */
     private function calculateStockValue()
     {
         try {
@@ -285,9 +275,6 @@ class DashboardController extends Controller
         }
     }
 
-    /* ===============================
-        HELPER - Get Monthly Paid Data
-    ================================ */
     private function getMonthlyPaidData()
     {
         try {
@@ -310,9 +297,6 @@ class DashboardController extends Controller
         }
     }
 
-    /* ===============================
-        HELPER - Get Best Selling Products
-    ================================ */
     private function getBestSellingProducts()
     {
         try {
