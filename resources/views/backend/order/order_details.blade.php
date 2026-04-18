@@ -3,6 +3,32 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
 
 <style>
+.info-card {
+    border-radius: 12px;
+    padding: 20px;
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.info-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+.info-label {
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: 500;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.info-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
 .kpi-card {
     border-radius: 15px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.1);
@@ -11,12 +37,26 @@
     border: none;
 }
 
+.kpi-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+}
+
+.status-badge {
+    padding: 8px 16px;
+    border-radius: 25px;
+    font-weight: 600;
+    display: inline-block;
+    font-size: 0.9rem;
+}
+
 @media print {
     .page-title-box, 
     .breadcrumb, 
     .btn, 
     form, 
-    .text-end {
+    .text-end,
+    .action-buttons {
         display: none !important;
     }
     .card {
@@ -38,7 +78,8 @@
                 <div class="page-title-box">
                     <div class="page-title-right">
                         <ol class="breadcrumb m-0">
-                            <li class="breadcrumb-item"><a href="javascript: void(0);">وردەکاری داواکاری</a></li>
+                            <li class="breadcrumb-item"><a href="{{ route('pending.order') }}">داواکاریەکان</a></li>
+                            <li class="breadcrumb-item active">وردەکاری #{{ $order->id }}</li>
                         </ol>
                     </div>
                     <h4 class="page-title">وردەکاری داواکاری #{{ $order->id }}</h4>
@@ -47,184 +88,251 @@
         </div>     
         <!-- end page title -->
 
-        <!-- PRINT BUTTON -->
-        <div class="row mb-3">
-            <div class="col-12 text-end">
-                <button onclick="window.print()" class="btn btn-primary">
-                    <i class="mdi mdi-printer me-1"></i> چاپکردن
-                </button>
+        <!-- ACTION BUTTONS -->
+        <div class="row mb-4 action-buttons">
+            <div class="col-12">
+                <div class="d-flex gap-2 justify-content-end">
+                    <button onclick="window.print()" class="btn btn-outline-primary btn-lg">
+                        <i class="mdi mdi-printer me-2"></i> چاپکردن
+                    </button>
+                    @if($order->order_status !== 'cancelled')
+                        <form method="post" action="{{ route('order.status.update') }}" style="display:inline;">
+                            @csrf
+                            <input type="hidden" name="id" value="{{ $order->id }}">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="mdi mdi-check-circle me-2"></i> تەواوبوو نیشان بدە
+                            </button>
+                        </form>
+                    @endif
+                </div>
             </div>
         </div>
 
-        <div class="row">
-            <div class="col-lg-8 col-xl-12">
+        <!-- CUSTOMER INFO CARDS -->
+        <div class="row g-3 mb-4">
+            <!-- Customer Image & Name -->
+            <div class="col-md-6">
+                <div class="card info-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <div class="text-center">
+                        @if($order->customer && $order->customer->image)
+                            <img src="{{ asset($order->customer->image) }}" class="rounded-circle mb-3" style="width: 100px; height: 100px; object-fit: cover; border: 4px solid white;">
+                        @else
+                            <img src="https://via.placeholder.com/100?text=No+Image" class="rounded-circle mb-3" style="width: 100px; height: 100px; object-fit: cover; border: 4px solid white;">
+                        @endif
+                        <h4 style="margin-bottom: 5px;">{{ $order->customer->name ?? 'نەناسراو' }}</h4>
+                        <p style="opacity: 0.9; margin-bottom: 0;">کڕیار</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Phone Number -->
+            <div class="col-md-6">
+                <div class="card info-card">
+                    <span class="info-label"><i class="mdi mdi-phone me-2" style="color: #667eea;"></i>ژمارەی پەیوەندی</span>
+                    <p class="info-value mb-0">{{ $order->customer->phone ?? 'نیە' }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ORDER INFO CARDS -->
+        <div class="row g-3 mb-4">
+            <!-- Order ID -->
+            <div class="col-md-3">
+                <div class="card info-card" style="border-left: 4px solid #0d6efd;">
+                    <span class="info-label"><i class="mdi mdi-receipt me-2" style="color: #0d6efd;"></i>ژمارەی پسوڵە</span>
+                    <p class="info-value mb-0" style="color: #0d6efd;">#{{ $order->id }}</p>
+                </div>
+            </div>
+
+            <!-- Order Date -->
+            <div class="col-md-3">
+                <div class="card info-card" style="border-left: 4px solid #28a745;">
+                    <span class="info-label"><i class="mdi mdi-calendar me-2" style="color: #28a745;"></i>بەرواری داواکاری</span>
+                    <p class="info-value mb-0" style="color: #28a745;">{{ \Carbon\Carbon::parse($order->order_date)->format('Y-m-d') }}</p>
+                </div>
+            </div>
+
+            <!-- Payment Method -->
+            <div class="col-md-3">
+                <div class="card info-card" style="border-left: 4px solid #ffc107;">
+                    <span class="info-label"><i class="mdi mdi-cash me-2" style="color: #ffc107;"></i>شێوازی پارەدان</span>
+                    <p class="info-value mb-0">
+                        @if($order->payment_status == 'HandCash')
+                            <span class="status-badge" style="background: #d1ecf1; color: #0c5460;">دەستی</span>
+                        @elseif($order->payment_status == 'Cheque')
+                            <span class="status-badge" style="background: #fff3cd; color: #856404;">چەک</span>
+                        @elseif($order->payment_status == 'Bank')
+                            <span class="status-badge" style="background: #d4edda; color: #155724;">بانک</span>
+                        @else
+                            <span class="status-badge">{{ $order->payment_status }}</span>
+                        @endif
+                    </p>
+                </div>
+            </div>
+
+            <!-- Order Status -->
+            <div class="col-md-3">
+                <div class="card info-card" style="border-left: 4px solid #dc3545;">
+                    <span class="info-label"><i class="mdi mdi-information me-2" style="color: #dc3545;"></i>دۆخی داواکاری</span>
+                    <p class="info-value mb-0">
+                        @if($order->order_status == 'pending')
+                            <span class="status-badge" style="background: #f8d7da; color: #721c24;">چاوەروانی</span>
+                        @elseif($order->order_status == 'complete')
+                            <span class="status-badge" style="background: #d4edda; color: #155724;">تەواو</span>
+                        @elseif($order->order_status == 'cancelled')
+                            <span class="status-badge" style="background: #f5f5f5; color: #666;">لابردراو</span>
+                        @else
+                            <span class="status-badge">{{ $order->order_status }}</span>
+                        @endif
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- FINANCIAL INFO - KPI CARDS -->
+        <div class="row g-3 mb-4">
+            <!-- Sub Total -->
+            <div class="col-md-3">
+                <div class="card kpi-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <div class="card-body text-center">
+                        <i class="mdi mdi-cart" style="font-size: 2rem; opacity: 0.5;"></i>
+                        <h5 style="margin-top: 10px; margin-bottom: 5px;">کۆی کاڵا</h5>
+                        <h3 style="margin: 0;">${{ number_format($order->sub_total, 2) }}</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Paid Amount -->
+            <div class="col-md-3">
+                <div class="card kpi-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white;">
+                    <div class="card-body text-center">
+                        <i class="mdi mdi-cash-check" style="font-size: 2rem; opacity: 0.5;"></i>
+                        <h5 style="margin-top: 10px; margin-bottom: 5px;">پارەی دراو</h5>
+                        <h3 style="margin: 0;">${{ number_format($order->pay, 2) }}</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Due Amount -->
+            <div class="col-md-3">
+                <div class="card kpi-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+                    <div class="card-body text-center">
+                        <i class="mdi mdi-alert-circle" style="font-size: 2rem; opacity: 0.5;"></i>
+                        <h5 style="margin-top: 10px; margin-bottom: 5px;">پارەی قەرز</h5>
+                        <h3 style="margin: 0;">${{ number_format($order->due, 2) }}</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Items Count -->
+            <div class="col-md-3">
+                <div class="card kpi-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;">
+                    <div class="card-body text-center">
+                        <i class="mdi mdi-package" style="font-size: 2rem; opacity: 0.5;"></i>
+                        <h5 style="margin-top: 10px; margin-bottom: 5px;">ئایتمەکان</h5>
+                        <h3 style="margin: 0;">{{ $orderItem->count() }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ORDER ITEMS TABLE -->
+        <div class="row mb-4">
+            <div class="col-12">
                 <div class="card">
                     <div class="card-body">
-                        <div class="tab-pane" id="settings">
-                            <form method="post" action="{{ route('order.status.update') }}" enctype="multipart/form-data">
-                                @csrf
-                                <input type="hidden" name="id" value="{{ $order->id }}">
-                                <h5 class="mb-4 text-uppercase"><i class="mdi mdi-account-circle me-1"></i> وردەکاری داواکاری</h5>
+                        <h5 class="card-title mb-3">
+                            <i class="mdi mdi-package-multiple me-2" style="color: #0d6efd;"></i>ئایتمە کڕیاریەکان
+                        </h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr style="background: linear-gradient(45deg, #0d6efd, #6610f2); color: white;">
+                                        <th>#</th>
+                                        <th>ناوی بەرهەم</th>
+                                        <th class="text-center">بڕ</th>
+                                        <th class="text-end">نرخ</th>
+                                        <th class="text-end">کۆی</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @php
+                                        $sl = 1;
+                                        $calculatedTotal = 0;
+                                    @endphp
 
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="firstname" class="form-label">وێنەی کڕیار</label>
-                                            @if($order->customer && $order->customer->image)
-                                                <img id="showImage" src="{{ asset($order->customer->image) }}" class="rounded-circle avatar-lg img-thumbnail" alt="profile-image">
-                                            @else
-                                                <img src="https://via.placeholder.com/100?text=No+Image" class="rounded-circle avatar-lg img-thumbnail" alt="profile-image">
-                                            @endif
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="firstname" class="form-label">ناوی کڕیار</label>
-                                            <p class="text-danger"><strong>{{ $order->customer->name ?? 'نەناسراو' }}</strong></p>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="firstname" class="form-label">ئیمەیڵی کڕیار</label>
-                                            <p class="text-danger"><strong>{{ $order->customer->email ?? 'N/A' }}</strong></p>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="firstname" class="form-label">ژمارەی کڕیار</label>
-                                            <p class="text-danger"><strong>{{ $order->customer->phone ?? 'N/A' }}</strong></p>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="firstname" class="form-label">بەرواری داواکاری</label>
-                                            <p class="text-danger"><strong>{{ \Carbon\Carbon::parse($order->order_date)->format('Y-m-d') }}</strong></p>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="firstname" class="form-label">پسوڵەی داواکاری</label>
-                                            <p class="text-danger"><strong>#{{ $order->id }}</strong></p>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="firstname" class="form-label">شێوازی پارەدان</label>
-                                            <p class="text-danger">
-                                                @if($order->payment_status == 'HandCash')
-                                                    <span class="badge bg-info">دەستی</span>
-                                                @elseif($order->payment_status == 'Cheque')
-                                                    <span class="badge bg-warning">چەک</span>
-                                                @elseif($order->payment_status == 'Bank')
-                                                    <span class="badge bg-success">بانک</span>
-                                                @else
-                                                    <strong>{{ $order->payment_status }}</strong>
-                                                @endif
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="firstname" class="form-label">بڕی پارەی دراو</label>
-                                            <p class="text-success"><strong>${{ number_format($order->pay, 2) }}</strong></p>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="firstname" class="form-label">پارەی قەرز</label>
-                                            <p class="text-danger"><strong>${{ number_format($order->due, 2) }}</strong></p>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="firstname" class="form-label">کۆی کاڵا</label>
-                                            <p class="text-info"><strong>${{ number_format($order->sub_total, 2) }}</strong></p>
-                                        </div>
-                                    </div>
-                                </div> <!-- end row -->
-                                
-                                <div class="text-end">
-                                    @if($order->order_status !== 'cancelled')
-                                        <button type="submit" class="btn btn-success waves-effect waves-light mt-2">
-                                            <i class="mdi mdi-content-save me-1"></i> داواکاری تەواوبوو
-                                        </button>
-                                        <button type="button" class="btn btn-danger waves-effect waves-light mt-2" data-bs-toggle="modal" data-bs-target="#cancelOrderModal">
-                                            <i class="mdi mdi-delete me-1"></i> لابردنی داواکاری
-                                        </button>
-                                    @else
-                                        <span class="badge bg-danger" style="font-size: 1.1rem;">ئەم داواکاریە لابردراوە</span>
-                                    @endif
-                                </div>
-                            </form>
+                                    @forelse($orderItem as $item)
+                                    @php
+                                        $quantity = floatval($item->quantity ?? 0);
+                                        $rowTotal = $quantity * floatval($item->unitcost);
+                                        $calculatedTotal += $rowTotal;
+                                    @endphp
+                                    <tr>
+                                        <td><strong>{{ $sl++ }}</strong></td>
+                                        <td>
+                                            <strong>{{ optional($item->product)->product_name ?? 'سڕاودەتوانی بەرهەم' }}</strong>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-light text-dark">{{ number_format($quantity, 2) }}</span>
+                                        </td>
+                                        <td class="text-end">
+                                            <strong>${{ number_format($item->unitcost, 2) }}</strong>
+                                        </td>
+                                        <td class="text-end">
+                                            <strong style="color: #0d6efd;">${{ number_format($rowTotal, 2) }}</strong>
+                                        </td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted py-4">
+                                            <i class="mdi mdi-inbox" style="font-size: 2rem; opacity: 0.5;"></i>
+                                            <p class="mt-2">ئایتم نیە</p>
+                                        </td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
                         </div>
-                        <!-- end settings content-->
-
-                        <!-- ORDER ITEMS TABLE - FIXED FOR NEW SYSTEM -->
-                        <div class="col-12 mt-4">
-                            <div class="card">
-                                <div class="card-body">
-                                    <h5 class="mb-3">ئایتمە کڕیاریەکان</h5>
-                                    <table class="table table-bordered text-center">
-                                        <thead>
-                                            <tr style="background: linear-gradient(45deg, #0d6efd, #6610f2); color: white;">
-                                                <th>#</th>
-                                                <th>ناوی بەرهەم</th>
-                                                <th>بڕ</th>
-                                                <th>نرخ</th>
-                                                <th>کۆی گشتی</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @php
-                                                $sl = 1;
-                                                $subTotal = 0;
-                                            @endphp
-
-                                            @forelse($orderItem as $item)
-                                            @php
-                                                // FIXED: Use simple quantity instead of meters
-                                                $quantity = floatval($item->quantity ?? 0);
-                                                $rowTotal = $quantity * floatval($item->unitcost);
-                                                $subTotal += $rowTotal;
-                                            @endphp
-                                            <tr>
-                                                <td><strong>{{ $sl++ }}</strong></td>
-                                                <td><strong>{{ optional($item->product)->product_name ?? 'سڕاودەتوانی بەرهەم' }}</strong></td>
-                                                <td>{{ number_format($quantity, 2) }}</td>
-                                                <td>${{ number_format($item->unitcost, 2) }}</td>
-                                                <td><strong>${{ number_format($rowTotal, 2) }}</strong></td>
-                                            </tr>
-                                            @empty
-                                            <tr>
-                                                <td colspan="5" class="text-center text-muted py-3">ئایتم نیە</td>
-                                            </tr>
-                                            @endforelse
-                                        </tbody>
-                                    </table>
-                                    <div class="text-end mt-2">
-                                        <h5>کۆی کاڵا: <strong style="color: #0d6efd;">${{ number_format($subTotal, 2) }}</strong></h5>
-                                    </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="text-end">
+                                    <h5 style="color: #666; margin-bottom: 0;">
+                                        کۆی کاڵا: 
+                                        <strong style="color: #0d6efd; font-size: 1.2rem;">
+                                            ${{ number_format($calculatedTotal, 2) }}
+                                        </strong>
+                                    </h5>
                                 </div>
-                            </div> <!-- end card -->
-                        </div><!-- end col-->
+                            </div>
+                        </div>
                     </div>
-                </div> <!-- end card-->
-            </div> <!-- end col -->
+                </div>
+            </div>
         </div>
-        <!-- end row-->
+
+        <!-- CANCEL ORDER SECTION (Only if not cancelled) -->
+        @if($order->order_status !== 'cancelled')
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert alert-warning" role="alert" style="border-radius: 12px; border-left: 4px solid #ffc107;">
+                    <h5 class="alert-heading mb-2">
+                        <i class="mdi mdi-information me-2"></i>ئەگەر دەتەوێ داواکاری لابدە
+                    </h5>
+                    <p class="mb-0">
+                        لە خوار بکلیێ دواتر دەتوانی ئایتمەکان هەڵبژێریت و بڕی کەمکردن تێبکەیت
+                    </p>
+                    <button type="button" class="btn btn-warning btn-lg mt-3" data-bs-toggle="modal" data-bs-target="#cancelOrderModal">
+                        <i class="mdi mdi-delete-alert me-2"></i>داواکاری لابردن
+                    </button>
+                </div>
+            </div>
+        </div>
+        @endif
+
     </div> <!-- container -->
 </div> <!-- content -->
 
-<!-- BEAUTIFUL CANCEL ORDER MODAL -->
+<!-- CANCEL ORDER MODAL -->
 <div class="modal fade" id="cancelOrderModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-xl">
         <div class="modal-content" style="border-radius: 12px; box-shadow: 0 15px 50px rgba(0,0,0,0.15); border: none;">
@@ -232,7 +340,7 @@
             <!-- MODAL HEADER -->
             <div class="modal-header" style="background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%); color: white; border: none; border-radius: 12px 12px 0 0;">
                 <h5 class="modal-title" style="font-weight: 600; font-size: 1.2rem;">
-                    <i class="mdi mdi-delete me-2"></i> لابردنی داواکاری
+                    <i class="mdi mdi-delete-alert me-2"></i> داواکاری لابردن
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
@@ -361,11 +469,11 @@
 
                 <!-- MODAL FOOTER -->
                 <div class="modal-footer" style="border-top: 2px solid #f0f0f0; padding: 20px;">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius: 8px;">
+                    <button type="button" class="btn btn-secondary btn-lg" data-bs-dismiss="modal" style="border-radius: 8px;">
                         <i class="mdi mdi-close me-1"></i> داخستن
                     </button>
-                    <button type="submit" class="btn btn-danger" style="border-radius: 8px; background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%); border: none;">
-                        <i class="mdi mdi-check me-1"></i> پشتڕاستکردن و لابردن
+                    <button type="submit" class="btn btn-danger btn-lg" style="border-radius: 8px; background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%); border: none;">
+                        <i class="mdi mdi-check-circle me-1"></i> پشتڕاستکردن و لابردن
                     </button>
                 </div>
             </form>
