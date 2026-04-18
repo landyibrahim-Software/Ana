@@ -73,15 +73,21 @@ class DashboardController extends Controller
 
             $totalPaid = floatval($orderPayments ?? 0) + floatval($customerPayments ?? 0);
 
-            // ✅ TOTAL DUE (Only orders within date range)
-            $totalDue = Order::where('order_status', '!=', 'cancelled')
+            // ✅ TOTAL DUE IN DATE RANGE (sub_total - pay from orders)
+            $totalDueInRange = Order::where('order_status', '!=', 'cancelled')
                 ->whereBetween(DB::raw("STR_TO_DATE(order_date, '%Y-%m-%d')"), [$startDate, $endDate])
-                ->sum('due');
-            $totalDue = floatval($totalDue ?? 0);
+                ->selectRaw('SUM(CAST(sub_total AS DECIMAL(10,2)) - CAST(pay AS DECIMAL(10,2))) as total_due')
+                ->value('total_due');
 
-            // ✅ TOTAL DUE FROM CUSTOMERS (All outstanding customer dues)
-            $totalCustomerDue = Customer::sum('previous_due');
+            $totalDue = floatval($totalDueInRange ?? 0);
+
+            // ✅ TOTAL CUSTOMER DUE (Outstanding dues from previous_due field)
+            $totalCustomerDue = Customer::where('previous_due', '>', 0)
+                ->sum('previous_due');
             $totalCustomerDue = floatval($totalCustomerDue ?? 0);
+
+            // ✅ COMBINED TOTAL DUE
+            $combinedTotalDue = $totalDue + $totalCustomerDue;
 
             // ✅ PROFIT & LOSS
             $profitLoss = $this->calculateProfitAndLoss($startDate, $endDate);
@@ -174,6 +180,7 @@ class DashboardController extends Controller
                 'totalPaid' => $totalPaid,
                 'totalDue' => $totalDue,
                 'totalCustomerDue' => $totalCustomerDue,
+                'combinedTotalDue' => $combinedTotalDue,
                 'profit' => $profit,
                 'loss' => $loss,
                 'totalStockValue' => $totalStockValue,
@@ -206,6 +213,7 @@ class DashboardController extends Controller
                 'totalPaid' => 0,
                 'totalDue' => 0,
                 'totalCustomerDue' => 0,
+                'combinedTotalDue' => 0,
                 'profit' => 0,
                 'loss' => 0,
                 'totalStockValue' => 0,
