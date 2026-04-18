@@ -31,7 +31,7 @@ public function FinalInvoice(Request $request)
     // ✅ CORRECT: Use the previousDue passed from product_invoice
     $previousDue = floatval($request->previous_due ?? 0);
 
-    // Save the order
+    // Save the order (REMOVED: metter_price)
     $order = Order::create([
         'customer_id'    => $customer->id,
         'order_date'     => now(),
@@ -44,21 +44,19 @@ public function FinalInvoice(Request $request)
         'pay'            => $pay,
         'due'            => $currentOrderDue,
         'previous_due'   => $previousDue,
-        'metter_price'   => 0,
     ]);
 
-    // FIXED: Save order items with SIMPLE quantity (NO colors/meters)
+    // FIXED: Save order items with SIMPLE quantity (NO colors/meters/metter_price)
     foreach ($request->items as $item) {
         $quantity = floatval($item['quantity'] ?? 0);
         $unitTotal = $quantity * floatval($item['unitcost']);
 
-        // Save order detail
+        // Save order detail (REMOVED: metter_price)
         Orderdetails::create([
             'order_id'        => $order->id,
             'product_id'      => $item['product_id'],
             'quantity'        => $quantity,
             'unitcost'        => $item['unitcost'],
-            'metter_price'    => 0,
             'total'           => $unitTotal,
         ]);
 

@@ -103,8 +103,8 @@
 <tr style="background: linear-gradient(45deg, #0d6efd, #6610f2); color: white;">
     <th>#</th>
     <th>ئایتم</th>
-    <th>بڕ</th>
-    <th>نرخ</th>
+    <th>دەرزەن</th>
+    <th>نرخی دەرزەن</th>
     <th>کۆی گشتی</th>
 </tr>
 </thead>
