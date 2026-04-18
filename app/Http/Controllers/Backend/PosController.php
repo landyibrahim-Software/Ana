@@ -6,40 +6,42 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Customer;
-use Cart;
+use Gloudemans\Shoppingcart\Facades\Cart;
 
-public function Pos()
+class PosController extends Controller
 {
-    try {
-        // ✅ Load products with category
-        $product = Product::with('category:id,category_name')
-            ->where('product_store', '>', 0)
-            ->select([
-                'id', 
-                'product_name', 
-                'product_code', 
-                'product_store', 
-                'selling_price', 
-                'buying_price',
-                'category_id',
-                'product_image'
-            ])
-            ->latest()
-            ->get();
-        
-        $customer = Customer::select(['id', 'name', 'phone', 'previous_due'])
-            ->latest()
-            ->get();
+    public function Pos()
+    {
+        try {
+            // ✅ Load products with category
+            $product = Product::with('category:id,category_name')
+                ->where('product_store', '>', 0)
+                ->select([
+                    'id', 
+                    'product_name', 
+                    'product_code', 
+                    'product_store', 
+                    'selling_price', 
+                    'buying_price',
+                    'category_id',
+                    'product_image'
+                ])
+                ->latest()
+                ->get();
+            
+            $customer = Customer::select(['id', 'name', 'phone', 'previous_due'])
+                ->latest()
+                ->get();
 
-        return view('backend.pos.pos_page', compact('product', 'customer'));
+            return view('backend.pos.pos_page', compact('product', 'customer'));
 
-    } catch (\Exception $e) {
-        return redirect()->back()->with([
-            'message' => 'Error: ' . $e->getMessage(),
-            'alert-type' => 'error'
-        ]);
+        } catch (\Exception $e) {
+            return redirect()->back()->with([
+                'message' => 'Error: ' . $e->getMessage(),
+                'alert-type' => 'error'
+            ]);
+        }
     }
-}
 
     public function AddCart(Request $request)
     {
