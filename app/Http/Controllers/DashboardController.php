@@ -63,23 +63,25 @@ class DashboardController extends Controller
         }
 
         try {
-            // ✅ TOTAL PAID
+            // ✅ TOTAL PAID (Orders within date range + Customer Payments)
             $orderPayments = Order::where('order_status', '!=', 'cancelled')
                 ->whereBetween(DB::raw("STR_TO_DATE(order_date, '%Y-%m-%d')"), [$startDate, $endDate])
-                ->select('pay')
                 ->sum('pay');
 
             $customerPayments = Payment::whereBetween('payment_date', [$startDate, $endDate])
-                ->select('payment_amount')
                 ->sum('payment_amount');
 
-            $totalPaid = floatval($orderPayments) + floatval($customerPayments);
+            $totalPaid = floatval($orderPayments ?? 0) + floatval($customerPayments ?? 0);
 
-            // ✅ TOTAL DUE
+            // ✅ TOTAL DUE (Only orders within date range)
             $totalDue = Order::where('order_status', '!=', 'cancelled')
-                ->select('due')
+                ->whereBetween(DB::raw("STR_TO_DATE(order_date, '%Y-%m-%d')"), [$startDate, $endDate])
                 ->sum('due');
             $totalDue = floatval($totalDue ?? 0);
+
+            // ✅ TOTAL DUE FROM CUSTOMERS (All outstanding customer dues)
+            $totalCustomerDue = Customer::sum('previous_due');
+            $totalCustomerDue = floatval($totalCustomerDue ?? 0);
 
             // ✅ PROFIT & LOSS
             $profitLoss = $this->calculateProfitAndLoss($startDate, $endDate);
@@ -88,8 +90,8 @@ class DashboardController extends Controller
 
             // ✅ SUPPLIER PAYMENTS
             $totalSupplierPayment = SupplierPayment::whereBetween('payment_date', [$startDate, $endDate])
-                ->select('payment_amount')
                 ->sum('payment_amount');
+            $totalSupplierPayment = floatval($totalSupplierPayment ?? 0);
 
             // ✅ STOCK VALUE
             $totalStockValue = $this->calculateStockValue();
@@ -99,24 +101,30 @@ class DashboardController extends Controller
             
             $todaySales = Order::where('order_status', '!=', 'cancelled')
                 ->whereDate('order_date', $today)
-                ->select('sub_total')
                 ->sum('sub_total');
+            $todaySales = floatval($todaySales ?? 0);
             
             $todayOrders = Order::where('order_status', '!=', 'cancelled')
                 ->whereDate('order_date', $today)
                 ->count();
             
             $todayExpenses = Expense::whereDate('date', $today)
-                ->select('amount')
                 ->sum('amount');
+            $todayExpenses = floatval($todayExpenses ?? 0);
 
-            // ✅ TOTAL EXPENSES
-            $totalExpenses = Expense::select('amount')->sum('amount');
+            // ✅ TOTAL EXPENSES (All time)
+            $totalExpenses = Expense::sum('amount');
+            $totalExpenses = floatval($totalExpenses ?? 0);
+
+            // ✅ EXPENSES IN DATE RANGE
+            $rangeExpenses = Expense::whereBetween('date', [$startDate, $endDate])
+                ->sum('amount');
+            $rangeExpenses = floatval($rangeExpenses ?? 0);
 
             // ✅ MONTHLY PAID
             $monthlyPaid = $this->getMonthlyPaidData();
 
-            // ✅ RECENT EXPENSES (FIXED: removed 'description')
+            // ✅ RECENT EXPENSES
             $recentExpenses = Expense::select(['id', 'amount', 'date', 'created_at'])
                 ->orderBy('created_at', 'desc')
                 ->limit(5)
@@ -165,6 +173,7 @@ class DashboardController extends Controller
             $data = [
                 'totalPaid' => $totalPaid,
                 'totalDue' => $totalDue,
+                'totalCustomerDue' => $totalCustomerDue,
                 'profit' => $profit,
                 'loss' => $loss,
                 'totalStockValue' => $totalStockValue,
@@ -179,6 +188,7 @@ class DashboardController extends Controller
                 'filterType' => $filterType,
                 'orders' => $orders,
                 'totalExpenses' => $totalExpenses,
+                'rangeExpenses' => $rangeExpenses,
                 'startDate' => $startDate,
                 'endDate' => $endDate,
                 'totalSupplierPayment' => $totalSupplierPayment,
@@ -195,6 +205,7 @@ class DashboardController extends Controller
             return view('index', [
                 'totalPaid' => 0,
                 'totalDue' => 0,
+                'totalCustomerDue' => 0,
                 'profit' => 0,
                 'loss' => 0,
                 'totalStockValue' => 0,
@@ -209,6 +220,7 @@ class DashboardController extends Controller
                 'filterType' => $filterType,
                 'orders' => collect(),
                 'totalExpenses' => 0,
+                'rangeExpenses' => 0,
                 'startDate' => $startDate,
                 'endDate' => $endDate,
                 'totalSupplierPayment' => 0,
@@ -239,8 +251,8 @@ class DashboardController extends Controller
 
             foreach ($orderItems as $item) {
                 $buyingPrice = floatval($item->buying_price ?? 0);
-                $sellingPrice = floatval($item->unitcost);
-                $quantity = floatval($item->quantity);
+                $sellingPrice = floatval($item->unitcost ?? 0);
+                $quantity = floatval($item->quantity ?? 0);
                 
                 $itemProfit = ($sellingPrice - $buyingPrice) * $quantity;
 
