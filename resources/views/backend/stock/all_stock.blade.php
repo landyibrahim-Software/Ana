@@ -19,6 +19,7 @@
    &nbsp;&nbsp;&nbsp;
 
       <a href="{{ route('add.product') }}" class="btn btn-primary rounded-pill waves-effect waves-light">زیادکردنی بەرهەم </a>  
+
                                         </ol>
                                     </div>
                                     <h4 class="page-title">هەموو بەرهەمەکان</h4>
@@ -38,44 +39,39 @@
                             <tr>
                                 <th>Sl</th>
                                 <th>وێنە</th>
-                                <th>ناو</th>
+                                <th>ناوی بەرهەم</th>
                                 <th>جۆر</th>
-                                <th>مخزن</th>
-                                <th style="min-width: 200px;">رەنگ و مەتر</th>
-                                <th style="text-align: center;">کۆی مەتر</th>
-                                <th>تۆپ</th> 
+                                <th>دابینکەر</th>
+                                <th>کۆدی بەرهەم</th>
+                                <th>کۆگا</th>
+                                <th>عدد</th>
+                                <th>نرخی کڕین</th>
+                                <th>نرخی فرۆشتن</th>
+                                <th>کردار</th>
                             </tr>
                         </thead>
                     
     
         <tbody>
         	@foreach($product as $key=> $item)
-            @php
-                $totalMeters = 0;
-                foreach($item->colors as $color) {
-                    $totalMeters += $color->meters;
-                }
-            @endphp
             <tr>
                 <td>{{ $key+1 }}</td>
                 <td> <img src="{{ asset($item->product_image) }}" style="width:50px; height: 40px;"> </td>
-                <td>{{ $item->product_name }}</td>  
-                <td>{{ optional($item->category)->category_name ?? 'N/A' }}</td>
+                <td>{{ $item->product_name }}</td>
+                <td>{{ optional($item->category)->category_name }}</td>
+                <td>{{ optional($item->supplier)->name }}</td>
+                <td>{{ $item->product_code }}</td>
                 <td>{{ $item->product_garage }}</td>
-                <td style="min-width: 200px;">
-                    @forelse($item->colors as $color)
-                        <div style="margin-bottom: 5px;">
-                            <strong>{{ $color->color_name }}:</strong> {{ $color->meters }}
-                        </div>
-                    @empty
-                        <span style="color: #999;">-</span>
-                    @endforelse
+                <td>
+                    <button class="btn btn-warning waves-effect waves-light">{{ $item->product_store }}</button>
                 </td>
-                <td style="text-align: center;">
-                    <strong style="font-size: 16px; color: #ff6b6b;">{{ $totalMeters }}</strong>
+                <td>{{ $item->buying_price }}</td>
+                <td>{{ $item->selling_price }}</td>
+                <td>
+                    <a href="{{ route('edit.product',$item->id) }}" class="btn btn-blue rounded-pill waves-effect waves-light" title="Edit"><i class="fa fa-pencil" aria-hidden="true"></i></a>
+                    <a href="{{ route('barcode.product',$item->id) }}" class="btn btn-info rounded-pill waves-effect waves-light" title="Barcode"><i class="fa fa-barcode" aria-hidden="true"></i></a>
+                    <a href="{{ route('delete.product',$item->id) }}" class="btn btn-danger rounded-pill waves-effect waves-light" id="delete" title="Delete"><i class="fa fa-trash" aria-hidden="true"></i></a>
                 </td>
-                <td> <button class="btn btn-warning waves-effect waves-light">{{ $item->product_store }}</button> </td>
-      
             </tr>
             @endforeach
         </tbody>

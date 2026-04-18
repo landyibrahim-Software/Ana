@@ -41,9 +41,12 @@
                                 <th>وێنە</th>
                                 <th>ناوی بەرهەم</th>
                                 <th>جۆر</th>
-                                <th>ئۆردەر کۆد</th>
-                                <th>کۆد</th>
-                                <th>نرخ</th>
+                                <th>دابینکەر</th>
+                                <th>کۆدی بەرهەم</th>
+                                <th>کۆگا</th>
+                                <th>عدد</th>
+                                <th>نرخی کڕین</th>
+                                <th>نرخی فرۆشتن</th>
                                 <th>کردار</th>
                             </tr>
                         </thead>
@@ -52,18 +55,22 @@
         <tbody>
         	@foreach($product as $key=> $item)
             <tr>
-    <td>{{ $key+1 }}</td>
-    <td> <img src="{{ asset($item->product_image) }}" style="width:50px; height: 40px;"> </td>
-    <td>{{ $item->product_name }}</td>
-    <td>{{ optional($item->category)->category_name }}</td>
-    <td>{{ $item->product_code }}</td>
-    <td>{{ $item->selling_price }}</td>
-    <td>
-        <a href="{{ route('edit.product',$item->id) }}" class="btn btn-blue rounded-pill waves-effect waves-light"><i class="fa fa-pencil" aria-hidden="true"></i></a>
-        <a href="{{ route('barcode.product',$item->id) }}" class="btn btn-info rounded-pill waves-effect waves-light"><i class="fa fa-barcode" aria-hidden="true"></i></a>
-        <a href="{{ route('delete.product',$item->id) }}" class="btn btn-danger rounded-pill waves-effect waves-light" id="delete"><i class="fa fa-trash" aria-hidden="true"></i></a>
-    </td>
-</tr>
+                <td>{{ $key+1 }}</td>
+                <td> <img src="{{ asset($item->product_image) }}" style="width:50px; height: 40px;"> </td>
+                <td>{{ $item->product_name }}</td>
+                <td>{{ optional($item->category)->category_name }}</td>
+                <td>{{ optional($item->supplier)->name }}</td>
+                <td>{{ $item->product_code }}</td>
+                <td>{{ $item->product_garage }}</td>
+                <td>{{ $item->product_store }}</td>
+                <td>{{ $item->buying_price }}</td>
+                <td>{{ $item->selling_price }}</td>
+                <td>
+                    <a href="{{ route('edit.product',$item->id) }}" class="btn btn-blue rounded-pill waves-effect waves-light"><i class="fa fa-pencil" aria-hidden="true"></i></a>
+                    <a href="{{ route('barcode.product',$item->id) }}" class="btn btn-info rounded-pill waves-effect waves-light"><i class="fa fa-barcode" aria-hidden="true"></i></a>
+                    <a href="{{ route('delete.product',$item->id) }}" class="btn btn-danger rounded-pill waves-effect waves-light" id="delete"><i class="fa fa-trash" aria-hidden="true"></i></a>
+                </td>
+            </tr>
             @endforeach
         </tbody>
                     </table>
@@ -82,4 +89,4 @@
                 </div> <!-- content -->
 
 
-@endsection 
+@endsection
