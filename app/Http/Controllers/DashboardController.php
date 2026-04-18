@@ -97,8 +97,9 @@ class DashboardController extends Controller
             foreach ($order->orderItems as $item) {
                 $buyingPrice = $item->product->buying_price ?? 0;
                 $sellingPrice = $item->unitcost;
-                $meters = $item->meters ?? $item->quantity;
-                $orderProfit = ($sellingPrice - $buyingPrice) * $meters;
+                // FIXED: Use quantity instead of meters
+                $quantity = $item->quantity;
+                $orderProfit = ($sellingPrice - $buyingPrice) * $quantity;
 
                 if ($orderProfit > 0) {
                     $profit += $orderProfit;
@@ -112,12 +113,12 @@ class DashboardController extends Controller
         $totalSupplierPayment = SupplierPayment::whereBetween('payment_date', [$startDate, $endDate])
             ->sum('payment_amount');
 
-       // ===== 5. STOCK VALUE =====
-// FIXED: Changed from product_colors to use product_store directly
-$totalStockValue = DB::selectOne("
-    SELECT SUM(CAST(p.product_store AS DECIMAL(10,2)) * CAST(p.buying_price AS DECIMAL(10,2))) as total
-    FROM products p
-")->total ?? 0;
+        // ===== 5. STOCK VALUE =====
+        // FIXED: Changed from product_colors to use product_store directly
+        $totalStockValue = DB::selectOne("
+            SELECT SUM(CAST(p.product_store AS DECIMAL(10,2)) * CAST(p.buying_price AS DECIMAL(10,2))) as total
+            FROM products p
+        ")->total ?? 0;
 
         // ===== 6. TODAY'S SALES & ORDERS - EXCLUDE CANCELLED =====
         $today = date('Y-m-d');
@@ -155,6 +156,7 @@ $totalStockValue = DB::selectOne("
             ->get();
 
         // ===== BEST SELLING PRODUCTS - EXCLUDE CANCELLED =====
+        // FIXED: Changed from od.meters to od.quantity
         $bestSellingProducts = DB::table('orderdetails as od')
             ->join('products as p', 'od.product_id', '=', 'p.id')
             ->join('orders as o', 'od.order_id', '=', 'o.id')
@@ -166,7 +168,7 @@ $totalStockValue = DB::selectOne("
                 p.product_image,
                 c.category_name,
                 p.product_store,
-                SUM(CAST(od.meters AS DECIMAL(10,2))) as total_meters_sold,
+                SUM(CAST(od.quantity AS DECIMAL(10,2))) as total_meters_sold,
                 p.buying_price,
                 p.category_id
             ')
@@ -174,7 +176,7 @@ $totalStockValue = DB::selectOne("
             ->whereRaw('MONTH(od.created_at) = MONTH(NOW())')
             ->whereRaw('YEAR(od.created_at) = YEAR(NOW())')
             ->groupBy('od.product_id', 'p.id', 'p.product_name', 'p.product_code', 'p.product_image', 'c.category_name', 'p.product_store', 'p.buying_price', 'p.category_id')
-            ->orderByRaw('SUM(CAST(od.meters AS DECIMAL(10,2))) DESC')
+            ->orderByRaw('SUM(CAST(od.quantity AS DECIMAL(10,2))) DESC')
             ->limit(10)
             ->get();
 
