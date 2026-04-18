@@ -12,15 +12,24 @@ use App\Models\Orderdetails;
 use App\Models\SupplierPayment;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        // Get filter type from request (default = 'today')
+        // ✅ Create cache key based on filter
         $filterType = $request->input('filter', 'today');
         $customStartDate = $request->input('start_date');
         $customEndDate = $request->input('end_date');
+        $cacheKey = 'dashboard_' . $filterType . '_' . md5($customStartDate . $customEndDate) . '_' . auth()->id();
+
+        // ✅ Check if data is cached
+        if (Cache::has($cacheKey)) {
+            $cachedData = Cache::get($cacheKey);
+            $cachedData['cached'] = true;
+            return view('index', $cachedData);
+        }
 
         // Create date range based on filter
         $startDate = null;
@@ -56,149 +65,283 @@ class DashboardController extends Controller
                 $startDate = Carbon::now()->startOfDay();
         }
 
-        // ===== 1. TOTAL PAID (Filtered by Date) - EXCLUDE CANCELLED =====
-        $orderPayments = Order::where('order_status', '!=', 'cancelled')
-            ->whereBetween(DB::raw("STR_TO_DATE(order_date, '%Y-%m-%d')"), [$startDate, $endDate])
-            ->sum('pay');
+        try {
+            // ✅ TOTAL PAID
+            $orderPayments = Order::where('order_status', '!=', 'cancelled')
+                ->whereBetween(DB::raw("STR_TO_DATE(order_date, '%Y-%m-%d')"), [$startDate, $endDate])
+                ->select('pay')
+                ->sum('pay');
 
-        $customerPayments = Payment::whereBetween('payment_date', [$startDate, $endDate])
-            ->sum('payment_amount');
+            $customerPayments = Payment::whereBetween('payment_date', [$startDate, $endDate])
+                ->select('payment_amount')
+                ->sum('payment_amount');
 
-        $totalPaid = $orderPayments + $customerPayments;
+            $totalPaid = floatval($orderPayments) + floatval($customerPayments);
 
-        // ===== 2. TOTAL DUE (Current Remaining Balance) - EXCLUDE CANCELLED =====
-        $totalDue = 0;
-        $customers = Customer::all();
-        foreach ($customers as $customer) {
-            $total_spent = $customer->previous_due;
-            foreach ($customer->orders()->where('order_status', '!=', 'cancelled')->get() as $order) {
-                $total_spent += $order->sub_total;
-            }
+            // ✅ TOTAL DUE (Simple calculation)
+            $totalDue = Order::where('order_status', '!=', 'cancelled')
+                ->select('due')
+                ->sum('due');
+            $totalDue = floatval($totalDue ?? 0);
+
+            // ✅ PROFIT & LOSS
+            $profitLoss = $this->calculateProfitAndLoss($startDate, $endDate);
+            $profit = $profitLoss['profit'];
+            $loss = $profitLoss['loss'];
+
+            // ✅ SUPPLIER PAYMENTS
+            $totalSupplierPayment = SupplierPayment::whereBetween('payment_date', [$startDate, $endDate])
+                ->select('payment_amount')
+                ->sum('payment_amount');
+
+            // ✅ STOCK VALUE
+            $totalStockValue = $this->calculateStockValue();
+
+            // ✅ TODAY'S DATA
+            $today = date('Y-m-d');
             
-            $total_paid = Payment::where('customer_id', $customer->id)->sum('payment_amount');
-            foreach ($customer->orders()->where('order_status', '!=', 'cancelled')->get() as $order) {
-                $total_paid += ($order->pay ?? 0);
-            }
+            $todaySales = Order::where('order_status', '!=', 'cancelled')
+                ->whereDate('order_date', $today)
+                ->select('sub_total')
+                ->sum('sub_total');
             
-            $customer_due = max($total_spent - $total_paid, 0);
-            $totalDue += $customer_due;
+            $todayOrders = Order::where('order_status', '!=', 'cancelled')
+                ->whereDate('order_date', $today)
+                ->count();
+            
+            $todayExpenses = Expense::whereDate('date', $today)
+                ->select('amount')
+                ->sum('amount');
+
+            // ✅ TOTAL EXPENSES
+            $totalExpenses = Expense::select('amount')->sum('amount');
+
+            // ✅ MONTHLY PAID
+            $monthlyPaid = $this->getMonthlyPaidData();
+
+            // ✅ RECENT EXPENSES
+            $recentExpenses = Expense::select(['id', 'description', 'amount', 'date', 'created_at'])
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get();
+
+            // ✅ LOW STOCK PRODUCTS
+            $lowStockProducts = Product::where('product_store', '<=', 10)
+                ->select(['id', 'product_name', 'product_code', 'product_store', 'selling_price', 'buying_price'])
+                ->orderBy('product_store', 'asc')
+                ->limit(5)
+                ->get();
+
+            // ✅ TOP CUSTOMERS
+            $topCustomers = Order::where('order_status', '!=', 'cancelled')
+                ->select('customer_id', DB::raw('SUM(pay) as total_spent'))
+                ->groupBy('customer_id')
+                ->with('customer:id,name,phone')
+                ->orderBy('total_spent', 'desc')
+                ->limit(5)
+                ->get();
+
+            // ✅ BEST SELLING PRODUCTS
+            $bestSellingProducts = $this->getBestSellingProducts();
+
+            // ✅ RECENT SUPPLIER PAYMENTS
+            $recentSupplierPayments = SupplierPayment::whereBetween('payment_date', [$startDate, $endDate])
+                ->with('supplier:id,supplier_name')
+                ->select(['id', 'supplier_id', 'payment_amount', 'payment_date', 'created_at'])
+                ->orderBy('payment_date', 'desc')
+                ->limit(5)
+                ->get();
+
+            // ✅ RECENT ORDERS
+            $orders = Order::where('order_status', '!=', 'cancelled')
+                ->with([
+                    'orderItems:id,order_id,product_id,quantity,unitcost',
+                    'orderItems.product:id,product_name,product_code',
+                    'customer:id,name,phone'
+                ])
+                ->select(['id', 'customer_id', 'order_date', 'sub_total', 'pay', 'due', 'order_status', 'payment_status'])
+                ->orderBy('created_at', 'desc')
+                ->limit(50)
+                ->get();
+
+            // ✅ Prepare data array
+            $data = [
+                'totalPaid' => $totalPaid,
+                'totalDue' => $totalDue,
+                'profit' => $profit,
+                'loss' => $loss,
+                'totalStockValue' => $totalStockValue,
+                'todayOrders' => $todayOrders,
+                'todayExpenses' => $todayExpenses,
+                'todaySales' => $todaySales,
+                'monthlyPaid' => $monthlyPaid,
+                'topCustomers' => $topCustomers,
+                'recentExpenses' => $recentExpenses,
+                'lowStockProducts' => $lowStockProducts,
+                'bestSellingProducts' => $bestSellingProducts,
+                'filterType' => $filterType,
+                'orders' => $orders,
+                'totalExpenses' => $totalExpenses,
+                'startDate' => $startDate,
+                'endDate' => $endDate,
+                'totalSupplierPayment' => $totalSupplierPayment,
+                'recentSupplierPayments' => $recentSupplierPayments,
+                'cached' => false
+            ];
+
+            // ✅ Cache for 1 hour
+            Cache::put($cacheKey, $data, 3600);
+
+            return view('index', $data);
+
+        } catch (\Exception $e) {
+            // Fallback if something goes wrong
+            return view('index', [
+                'totalPaid' => 0,
+                'totalDue' => 0,
+                'profit' => 0,
+                'loss' => 0,
+                'totalStockValue' => 0,
+                'todayOrders' => 0,
+                'todayExpenses' => 0,
+                'todaySales' => 0,
+                'monthlyPaid' => array_fill(0, 12, 0),
+                'topCustomers' => collect(),
+                'recentExpenses' => collect(),
+                'lowStockProducts' => collect(),
+                'bestSellingProducts' => collect(),
+                'filterType' => $filterType,
+                'orders' => collect(),
+                'totalExpenses' => 0,
+                'startDate' => $startDate,
+                'endDate' => $endDate,
+                'totalSupplierPayment' => 0,
+                'recentSupplierPayments' => collect(),
+                'cached' => false,
+                'error' => $e->getMessage()
+            ]);
         }
+    }
 
-        // ===== 3. PROFIT & LOSS (From Filtered Orders) - EXCLUDE CANCELLED =====
-        $filteredOrders = Order::where('order_status', '!=', 'cancelled')
-            ->whereBetween(DB::raw("STR_TO_DATE(order_date, '%Y-%m-%d')"), [$startDate, $endDate])
-            ->with('orderItems.product')
-            ->get();
+    /* ===============================
+        HELPER - Calculate Profit & Loss
+    ================================ */
+    private function calculateProfitAndLoss($startDate, $endDate)
+    {
+        try {
+            $orderItems = DB::table('orderdetails as od')
+                ->join('orders as o', 'od.order_id', '=', 'o.id')
+                ->join('products as p', 'od.product_id', '=', 'p.id')
+                ->select(
+                    'od.quantity',
+                    'od.unitcost',
+                    'p.buying_price'
+                )
+                ->where('o.order_status', '!=', 'cancelled')
+                ->whereBetween(DB::raw("STR_TO_DATE(o.order_date, '%Y-%m-%d')"), [$startDate, $endDate])
+                ->get();
 
-        $profit = 0;
-        $loss = 0;
+            $profit = 0;
+            $loss = 0;
 
-        foreach ($filteredOrders as $order) {
-            foreach ($order->orderItems as $item) {
-                $buyingPrice = $item->product->buying_price ?? 0;
-                $sellingPrice = $item->unitcost;
-                // FIXED: Use quantity instead of meters
-                $quantity = $item->quantity;
-                $orderProfit = ($sellingPrice - $buyingPrice) * $quantity;
+            foreach ($orderItems as $item) {
+                $buyingPrice = floatval($item->buying_price ?? 0);
+                $sellingPrice = floatval($item->unitcost);
+                $quantity = floatval($item->quantity);
+                
+                $itemProfit = ($sellingPrice - $buyingPrice) * $quantity;
 
-                if ($orderProfit > 0) {
-                    $profit += $orderProfit;
+                if ($itemProfit > 0) {
+                    $profit += $itemProfit;
                 } else {
-                    $loss += abs($orderProfit);
+                    $loss += abs($itemProfit);
                 }
             }
+
+            return [
+                'profit' => floatval($profit),
+                'loss' => floatval($loss)
+            ];
+
+        } catch (\Exception $e) {
+            return ['profit' => 0, 'loss' => 0];
         }
+    }
 
-        // ===== 4. SUPPLIER PAYMENTS (Filtered by Date) =====
-        $totalSupplierPayment = SupplierPayment::whereBetween('payment_date', [$startDate, $endDate])
-            ->sum('payment_amount');
+    /* ===============================
+        HELPER - Calculate Stock Value
+    ================================ */
+    private function calculateStockValue()
+    {
+        try {
+            $stockValue = DB::table('products')
+                ->select(DB::raw('SUM(CAST(product_store AS DECIMAL(10,2)) * CAST(buying_price AS DECIMAL(10,2))) as total'))
+                ->value('total');
 
-        // ===== 5. STOCK VALUE =====
-        // FIXED: Changed from product_colors to use product_store directly
-        $totalStockValue = DB::selectOne("
-            SELECT SUM(CAST(p.product_store AS DECIMAL(10,2)) * CAST(p.buying_price AS DECIMAL(10,2))) as total
-            FROM products p
-        ")->total ?? 0;
+            return floatval($stockValue ?? 0);
 
-        // ===== 6. TODAY'S SALES & ORDERS - EXCLUDE CANCELLED =====
-        $today = date('Y-m-d');
-        $todaySales = Order::where('order_status', '!=', 'cancelled')
-            ->whereDate('order_date', $today)
-            ->sum('sub_total');
-        
-        $todayOrders = Order::where('order_status', '!=', 'cancelled')
-            ->whereDate('order_date', $today)
-            ->count();
-        
-        $todayExpenses = Expense::whereDate('date', $today)->sum('amount');
+        } catch (\Exception $e) {
+            return 0;
+        }
+    }
 
-        // ===== 7. TOTAL EXPENSES =====
-        $totalExpenses = Expense::sum('amount');
-
-        // ===== 8. OTHER DATA =====
-        $monthlyPaid = [];
-        for ($month = 1; $month <= 12; $month++) {
-            $monthlyPaid[] = Order::where('order_status', '!=', 'cancelled')
-                ->whereMonth('order_date', $month)
+    /* ===============================
+        HELPER - Get Monthly Paid Data
+    ================================ */
+    private function getMonthlyPaidData()
+    {
+        try {
+            $monthlyData = Order::where('order_status', '!=', 'cancelled')
                 ->whereYear('order_date', date('Y'))
-                ->sum('pay');
+                ->selectRaw('MONTH(order_date) as month, SUM(pay) as total')
+                ->groupBy(DB::raw('MONTH(order_date)'))
+                ->pluck('total', 'month')
+                ->toArray();
+
+            $monthlyPaid = [];
+            for ($month = 1; $month <= 12; $month++) {
+                $monthlyPaid[] = floatval($monthlyData[$month] ?? 0);
+            }
+
+            return $monthlyPaid;
+
+        } catch (\Exception $e) {
+            return array_fill(0, 12, 0);
         }
+    }
 
-        $recentExpenses = Expense::orderBy('created_at', 'desc')->take(5)->get();
-        $lowStockProducts = Product::where('product_store', '<=', 10)->orderBy('product_store', 'asc')->take(5)->get();
+    /* ===============================
+        HELPER - Get Best Selling Products
+    ================================ */
+    private function getBestSellingProducts()
+    {
+        try {
+            $bestSellingProducts = DB::table('orderdetails as od')
+                ->join('products as p', 'od.product_id', '=', 'p.id')
+                ->join('orders as o', 'od.order_id', '=', 'o.id')
+                ->leftJoin('categories as c', 'p.category_id', '=', 'c.id')
+                ->select(
+                    'p.id',
+                    'p.product_name',
+                    'p.product_code',
+                    'p.product_image',
+                    'c.category_name',
+                    'p.product_store',
+                    'p.buying_price',
+                    DB::raw('SUM(CAST(od.quantity AS DECIMAL(10,2))) as total_sold')
+                )
+                ->where('o.order_status', '!=', 'cancelled')
+                ->whereMonth('od.created_at', now()->month)
+                ->whereYear('od.created_at', now()->year)
+                ->groupBy('od.product_id', 'p.id', 'p.product_name', 'p.product_code', 'p.product_image', 'c.category_name', 'p.product_store', 'p.buying_price')
+                ->orderByRaw('SUM(CAST(od.quantity AS DECIMAL(10,2))) DESC')
+                ->limit(10)
+                ->get();
 
-        $topCustomers = Order::where('order_status', '!=', 'cancelled')
-            ->select('customer_id', DB::raw('SUM(pay) as total_spent'))
-            ->groupBy('customer_id')
-            ->with('customer')
-            ->orderBy('total_spent', 'desc')
-            ->take(5)
-            ->get();
+            return $bestSellingProducts;
 
-        // ===== BEST SELLING PRODUCTS - EXCLUDE CANCELLED =====
-        // FIXED: Changed from od.meters to od.quantity
-        $bestSellingProducts = DB::table('orderdetails as od')
-            ->join('products as p', 'od.product_id', '=', 'p.id')
-            ->join('orders as o', 'od.order_id', '=', 'o.id')
-            ->leftJoin('categories as c', 'p.category_id', '=', 'c.id')
-            ->selectRaw('
-                p.id,
-                p.product_name,
-                p.product_code,
-                p.product_image,
-                c.category_name,
-                p.product_store,
-                SUM(CAST(od.quantity AS DECIMAL(10,2))) as total_meters_sold,
-                p.buying_price,
-                p.category_id
-            ')
-            ->where('o.order_status', '!=', 'cancelled')
-            ->whereRaw('MONTH(od.created_at) = MONTH(NOW())')
-            ->whereRaw('YEAR(od.created_at) = YEAR(NOW())')
-            ->groupBy('od.product_id', 'p.id', 'p.product_name', 'p.product_code', 'p.product_image', 'c.category_name', 'p.product_store', 'p.buying_price', 'p.category_id')
-            ->orderByRaw('SUM(CAST(od.quantity AS DECIMAL(10,2))) DESC')
-            ->limit(10)
-            ->get();
-
-        $recentSupplierPayments = SupplierPayment::whereBetween('payment_date', [$startDate, $endDate])
-            ->with('supplier')
-            ->orderBy('payment_date', 'desc')
-            ->take(5)
-            ->get();
-
-        // EXCLUDE CANCELLED ORDERS FROM RECENT ORDERS TABLE
-        $orders = Order::where('order_status', '!=', 'cancelled')
-            ->with(['orderItems.product','customer'])
-            ->get();
-
-        // Pass all data to view
-        return view('index', compact(
-            'totalPaid', 'totalDue', 'profit', 'loss',
-            'totalStockValue', 'todayOrders', 'todayExpenses', 'todaySales',
-            'monthlyPaid', 'topCustomers', 'recentExpenses', 'lowStockProducts',
-            'bestSellingProducts', 'filterType',
-            'orders', 'totalExpenses',
-            'startDate', 'endDate', 'totalSupplierPayment', 'recentSupplierPayments'
-        ));
+        } catch (\Exception $e) {
+            return collect();
+        }
     }
 }
