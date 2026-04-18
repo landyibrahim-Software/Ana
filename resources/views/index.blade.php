@@ -683,22 +683,12 @@
                                         <th>بەرهەم</th>
                                         <th>کۆد</th>
                                         <th>جۆر</th>
-                                        <th class="text-center"> متر فرۆشراوە</th>
-                                        <th class="text-center">متر ماوە  </th>
-                                        
+                                        <th class="text-center">متری فرۆشراوە</th>
+                                        <th class="text-center">متری ماوە</th>
                                     </tr>
                                 </thead>
                                <tbody>
     @foreach($bestSellingProducts as $item)
-    @php
-        // Calculate remaining meters from product_colors
-        $remainingMeters = 0;
-        if($item->id) {
-            $remainingMeters = DB::table('product_colors')
-                ->where('product_id', $item->id)
-                ->sum('meters');
-        }
-    @endphp
     <tr>
         <td>
             <div class="d-flex align-items-center">
@@ -715,11 +705,11 @@
             {{ $item->category_name ?? 'N/A' }}
         </td>
         <td class="text-center">
-            <span class="badge bg-primary">{{ number_format($item->total_meters_sold, 2) }} m</span>
+            <span class="badge bg-primary">{{ number_format($item->total_meters_sold, 2) }}</span>
         </td>
         <td class="text-center">
-            <span class="badge bg-{{ $remainingMeters > 100 ? 'success' : 'warning' }}">
-                {{ number_format($remainingMeters, 2) }} m
+            <span class="badge bg-{{ $item->product_store > 50 ? 'success' : 'warning' }}">
+                {{ number_format($item->product_store, 2) }}
             </span>
         </td>
     </tr>
@@ -763,11 +753,11 @@
     
     foreach($order->orderItems as $item) {
         $buyingPrice = floatval($item->product->buying_price ?? 0);
-        $sellingPrice = floatval($item->unitcost ?? 0); // unitcost is selling price per meter
-        $meters = floatval($item->meters ?? 0);
+        $sellingPrice = floatval($item->unitcost ?? 0);
+        $quantity = floatval($item->quantity ?? 0);
         
-        // Profit/Loss = (sellingPrice - buyingPrice) × meters
-        $orderProfit += ($sellingPrice - $buyingPrice) * $meters;
+        // Profit/Loss = (sellingPrice - buyingPrice) × quantity
+        $orderProfit += ($sellingPrice - $buyingPrice) * $quantity;
     }
 @endphp
                                     <tr>

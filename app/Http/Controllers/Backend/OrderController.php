@@ -8,7 +8,6 @@ use App\Models\Product;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Orderdetails;
-use App\Models\ProductColor;
 use Carbon\Carbon; 
 use Gloudemans\Shoppingcart\Facades\Cart;
 use DB;
@@ -75,17 +74,6 @@ public function FinalInvoice(Request $request)
             'total'           => $unitTotal,
         ]);
 
-        // 🔥 REDUCE COLOR METERS FROM PRODUCTCOLOR TABLE
-        if (!empty($item['selected_colors'])) {
-            $colors = json_decode($item['selected_colors'], true);
-            
-            foreach ($colors as $color) {
-                // Find the color record and reduce meters
-                \App\Models\ProductColor::where('product_id', $item['product_id'])
-                    ->where('id', $color['id'])
-                    ->decrement('meters', floatval($color['meter'] ?? 0));
-            }
-        }
         
         // 🔥 REDUCE تۆپ (ROLLS) FROM PRODUCT STORE BY ROLLS COUNT
         if ($totalRolls > 0) {

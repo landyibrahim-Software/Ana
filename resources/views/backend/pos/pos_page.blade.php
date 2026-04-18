@@ -1,7 +1,6 @@
 @extends('admin_dashboard')
 @section('admin')
 
-{{-- ================= STYLES ================= --}}
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
 
 <style>
@@ -82,176 +81,21 @@ body {
     height: 50px !important;
 }
 
-.colors-box {
-    background: #f8f9fa;
-    border-radius: 12px;
-    padding: 15px;
-    max-height: 350px;
-    overflow-y: auto;
-}
-
-.all-colors-item {
-    display: flex;
-    align-items: center;
-    margin-bottom: 15px;
-    gap: 10px;
-    padding: 14px;
+.product-img {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
     border-radius: 8px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border: 2px solid #667eea;
 }
 
-.all-colors-item input[type="checkbox"] {
-    width: 24px;
-    height: 24px;
-    cursor: pointer;
-    flex-shrink: 0;
-    accent-color: white;
+.price-field {
+    height: 50px !important;
 }
 
-.all-colors-item label {
-    font-weight: 700;
-    color: white;
-    font-size: 15px;
-    margin: 0;
-    cursor: pointer;
-    flex: 1;
-}
-
-.color-item {
-    display: flex;
-    align-items: center;
-    margin-bottom: 15px;
-    gap: 10px;
-    padding: 12px;
-    border-radius: 8px;
-    background: white;
-    border: 2px solid #dee2e6;
-    flex-wrap: wrap;
-}
-
-.color-item:hover {
-    background: #f8f9fa;
-    border-color: #0d6efd;
-}
-
-.color-item input[type="checkbox"] {
-    width: 22px;
-    height: 22px;
-    cursor: pointer;
-    flex-shrink: 0;
-}
-
-.color-info {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-width: 100px;
-}
-
-.color-name {
-    font-weight: 600;
-    color: #333;
-    font-size: 14px;
-}
-
-.color-available {
-    font-size: 12px;
-    color: #6c757d;
-}
-
-.color-input-group {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    margin-left: 10px;
-}
-
-.color-input-group label {
-    font-size: 12px;
-    font-weight: 500;
-    color: #6c757d;
-    margin: 0;
-    min-width: 50px;
-}
-
-.customer-meter {
-    width: 70px;
-    height: 36px;
-    font-size: 14px;
-    padding: 5px;
-    border: 2px solid #dee2e6;
-    border-radius: 6px;
+.qty-field {
+    height: 50px !important;
     text-align: center;
-    background-color: white;
-    cursor: text;
-}
-
-.customer-meter:disabled {
-    background-color: #e9ecef;
-    cursor: not-allowed;
-    color: #6c757d;
-}
-
-.customer-meter:enabled {
-    background-color: #fff;
-    border-color: #0d6efd;
-}
-
-.customer-meter:focus {
-    border-color: #0d6efd;
-    outline: none;
-    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-}
-
-.customer-rolls {
-    width: 60px;
-    height: 36px;
-    font-size: 14px;
-    padding: 5px;
-    border: 2px solid #28a745;
-    border-radius: 6px;
-    text-align: center;
-    background-color: #f0f8f4;
-    cursor: text;
-    font-weight: 600;
-    color: #28a745;
-}
-
-.customer-rolls:disabled {
-    background-color: #e9ecef;
-    cursor: not-allowed;
-    color: #6c757d;
-    border-color: #dee2e6;
-}
-
-.customer-rolls:enabled {
-    background-color: #f0f8f4;
-    border-color: #28a745;
-}
-
-.customer-rolls:focus {
-    border-color: #28a745;
-    outline: none;
-    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
-}
-
-.color-remaining {
-    font-weight: 600;
-    color: #28a745;
-    font-size: 13px;
-    min-width: 70px;
-    text-align: right;
-}
-
-.color-remaining.warning {
-    color: #ff6b6b;
-}
-
-.price-total {
     font-weight: bold;
-    color: #28a745;
-    font-size: 16px;
 }
 
 .empty-state {
@@ -264,26 +108,6 @@ body {
     font-size: 48px;
     margin-bottom: 20px;
     opacity: 0.5;
-}
-
-.product-img {
-    width: 50px;
-    height: 50px;
-    object-fit: cover;
-    border-radius: 8px;
-}
-
-.meter-input {
-    height: 50px;
-    font-size: 18px;
-    text-align: center;
-    border-radius: 10px;
-    border: 2px solid #dee2e6;
-    background-color: #f8f9fa;
-}
-
-.price-field {
-    height: 50px !important;
 }
 </style>
 
@@ -315,9 +139,8 @@ body {
 <table class="table table-bordered align-middle">
 <thead>
 <tr>
-    <th>ناوی ئایتم</th>
-    <th style="min-width: 600px;">مێترەی ھر رەنگ</th>
-    <th width="120">کۆی گشتی مێتر</th>
+    <th>ناوی بەرهەم</th>
+    <th width="100">مەترە</th>
     <th width="130">نرخی متر</th>
     <th width="140">کۆی گشتی نرخ</th>
     <th width="100">کردار</th>
@@ -326,14 +149,6 @@ body {
 <tbody>
 
 @foreach($allcart as $cart)
-@php 
-    $cartProduct = \App\Models\Product::with('colors')->find($cart->id);
-    $colors = ($cartProduct && $cartProduct->colors && $cartProduct->colors->count() > 0) ? $cartProduct->colors : collect();
-    
-    $savedColors = isset($cart->options['selected_colors']) ? $cart->options['selected_colors'] : [];
-    $savedTotalMeters = isset($cart->options['total_meters']) ? $cart->options['total_meters'] : 0;
-@endphp
-
 <tr class="cart-row" data-rowid="{{ $cart->rowId }}" data-product-id="{{ $cart->id }}">
 
     {{-- ITEM NAME --}}
@@ -341,106 +156,15 @@ body {
         {{ $cart->name }}
     </td>
 
-    {{-- COLORS WITH INPUT FIELDS --}}
-    <td>
-        @if($colors && $colors->count() > 0)
-        <div class="colors-box">
-            
-            {{-- ALL CHECKBOX --}}
-            <div class="all-colors-item">
-                <input type="checkbox" 
-                       class="check-all"
-                       id="check-all-{{ $cart->rowId }}"
-                       data-rowid="{{ $cart->rowId }}"
-                       onchange="selectAllColors(this)">
-                <label for="check-all-{{ $cart->rowId }}">✓ ھەموو رەنگەکان</label>
-            </div>
-
-            {{-- INDIVIDUAL COLORS --}}
-            @foreach($colors as $color)
-            @php
-                $isSelected = false;
-                $savedMeter = 0;
-                $savedRolls = 0;
-                
-                if(is_array($savedColors) && count($savedColors) > 0) {
-                    foreach($savedColors as $saved) {
-                        if(isset($saved['id']) && $saved['id'] == $color->id) {
-                            $isSelected = true;
-                            $savedMeter = isset($saved['meter']) ? $saved['meter'] : 0;
-                            $savedRolls = isset($saved['rolls']) ? $saved['rolls'] : 0;
-                            break;
-                        }
-                    }
-                }
-            @endphp
-            
-            <div class="color-item">
-                <input type="checkbox" 
-                       class="color-check"
-                       data-color-id="{{ $color->id }}"
-                       data-color-name="{{ $color->color_name }}"
-                       data-available-meters="{{ $color->meters }}"
-                       data-rowid="{{ $cart->rowId }}"
-                       {{ $isSelected ? 'checked' : '' }}
-                       onchange="updateColorMeters(this)">
-                
-                <div class="color-info">
-                    <span class="color-name">{{ $color->color_name }}</span>
-                    <span class="color-available">دستدا: {{ $color->meters }}م</span>
-                </div>
-
-                <div class="color-input-group">
-                    <label>مێتر:</label>
-                    <input type="number" 
-                           class="customer-meter"
-                           data-color-id="{{ $color->id }}"
-                           data-rowid="{{ $cart->rowId }}"
-                           data-available="{{ $color->meters }}"
-                           placeholder="0"
-                           min="0"
-                           max="{{ $color->meters }}"
-                           step="0.01"
-                           value="{{ $savedMeter }}"
-                           {{ $isSelected ? '' : 'disabled' }}
-                           onchange="validateMeterInput(this)"
-                           oninput="validateMeterInput(this)">
-                    <span class="color-remaining" data-color-id="{{ $color->id }}">{{ ($color->meters - $savedMeter) }}م</span>
-                </div>
-
-                {{-- NEW: ROLLS INPUT --}}
-                <div class="color-input-group">
-                    <label>تۆپ:</label>
-                    <input type="number" 
-                           class="customer-rolls"
-                           data-color-id="{{ $color->id }}"
-                           data-rowid="{{ $cart->rowId }}"
-                           placeholder="0"
-                           min="0"
-                           step="1"
-                           value="{{ $savedRolls }}"
-                           {{ $isSelected ? '' : 'disabled' }}
-                           onchange="validateRollsInput(this)"
-                           oninput="validateRollsInput(this)">
-                </div>
-            </div>
-            @endforeach
-
-        </div>
-        @else
-        <span class="text-muted">بێ رەنگ</span>
-        @endif
-    </td>
-
-    {{-- TOTAL METER --}}
+    {{-- QUANTITY/METER --}}
     <td>
         <input type="number" 
-               class="form-control meter-input total-meter"
-               value="{{ $savedTotalMeters }}"
+               class="form-control qty-field"
+               value="{{ $cart->qty }}"
                data-rowid="{{ $cart->rowId }}"
-               readonly
-               min="0"
-               step="0.01">
+               min="1"
+               step="0.01"
+               onchange="updateCartQty(this)">
     </td>
 
     {{-- UNIT PRICE --}}
@@ -450,7 +174,6 @@ body {
                value="{{ $cart->price }}"
                data-rowid="{{ $cart->rowId }}"
                data-buying="{{ isset($cart->options['buying_price']) ? $cart->options['buying_price'] : 0 }}"
-               data-original-price="{{ $cart->price }}"
                min="0"
                step="0.01"
                onchange="updateTotalPrice(this)"
@@ -459,17 +182,16 @@ body {
     </td>
 
     {{-- TOTAL PRICE --}}
-    <td class="price-total">
-        {{ number_format($savedTotalMeters * $cart->price, 2) }}
+    <td class="price-total fw-bold">
+        {{ number_format($cart->qty * $cart->price, 2) }}
     </td>
 
     {{-- ACTIONS --}}
     <td>
-        <form method="POST" action="{{ url('/cart-update/'.$cart->rowId) }}" style="display:inline;" onsubmit="saveColorDataAndPriceBeforeSubmit(event)">
+        <form method="POST" action="{{ url('/cart-update/'.$cart->rowId) }}" style="display:inline;" onsubmit="saveQtyAndPrice(event)">
             @csrf
-            <input type="hidden" name="qty" value="{{ $cart->qty }}">
+            <input type="hidden" name="qty" id="qty-input-{{ $cart->rowId }}" value="{{ $cart->qty }}">
             <input type="hidden" name="price" id="price-input-{{ $cart->rowId }}" value="{{ $cart->price }}">
-            <input type="hidden" name="color_data" id="color-data-{{ $cart->rowId }}" value="">
             <button type="submit" class="btn btn-success btn-sm px-3" title="Save">
                 <i class="fas fa-check"></i>
             </button>
@@ -505,8 +227,7 @@ body {
 $subTotal = 0;
 if($allcart && $allcart->count() > 0) {
     foreach($allcart as $c){
-        $totalMeters = isset($c->options['total_meters']) ? $c->options['total_meters'] : 0;
-        $subTotal += $totalMeters * $c->price;
+        $subTotal += $c->qty * $c->price;
     }
 }
 @endphp
@@ -535,9 +256,7 @@ if($allcart && $allcart->count() > 0) {
 @endforelse
 </select>
 
-<input type="hidden" id="cart-data" name="cart_data" value="">
-
-<button type="button" class="btn btn-primary btn-lg w-100" {{ ($allcart && $allcart->count() > 0) ? '' : 'disabled' }} onclick="prepareInvoiceData()">
+<button type="submit" class="btn btn-primary btn-lg w-100" {{ ($allcart && $allcart->count() > 0) ? '' : 'disabled' }}>
 پسوڵە دروستبکە
 </button>
 
@@ -569,7 +288,10 @@ Last Scan: <span id="last-barcode">None</span>
     <tr>
         <th width="70">وێنە</th>
         <th>ناوی بەرهەم</th>
-        <th width="100">کردار</th>
+        <th>جۆر</th>
+        <th>نرخی فرۆشتن</th>
+        <th>دستدا</th>
+        <th width="80">کردار</th>
     </tr>
 </thead>
 <tbody>
@@ -584,13 +306,14 @@ Last Scan: <span id="last-barcode">None</span>
         @endif
     </td>
     <td class="fw-bold">{{ $item->product_name ?? 'Unknown' }}</td>
+    <td>{{ optional($item->category)->category_name ?? '-' }}</td>
+    <td class="text-success fw-bold">{{ $item->selling_price ?? 0 }}</td>
+    <td>{{ $item->product_store ?? 0 }}</td>
     <td>
         <form method="POST" action="{{ url('/add-cart') }}" style="display:inline;">
         @csrf
         <input type="hidden" name="id" value="{{ $item->id }}">
-        <input type="hidden" name="name" value="{{ $item->product_name ?? 'Unknown' }}">
         <input type="hidden" name="qty" value="1">
-        <input type="hidden" name="price" value="{{ $item->selling_price ?? 0 }}">
         <button type="submit" class="btn btn-success btn-sm">
         <i class="fas fa-plus-square"></i>
         </button>
@@ -626,134 +349,20 @@ $('.customer-select').select2({
     width: '100%'
 });
 
-/* SELECT ALL COLORS */
-function selectAllColors(checkAllElement) {
-    const rowId = checkAllElement.dataset.rowid;
-    const row = document.querySelector(`tr[data-rowid="${rowId}"]`);
-    
-    if (!row) return;
-    
-    const isChecked = checkAllElement.checked;
-    const allColorCheckboxes = row.querySelectorAll('.color-check');
-    
-    allColorCheckboxes.forEach(checkbox => {
-        checkbox.checked = isChecked;
-        updateColorMeters(checkbox);
-    });
-}
-
-/* VALIDATE METER INPUT - PREVENT EXCEEDING AVAILABLE METERS */
-function validateMeterInput(input) {
-    const availableMeters = parseFloat(input.dataset.available) || 0;
-    let inputValue = parseFloat(input.value) || 0;
-    
-    // Prevent negative values
-    if (inputValue < 0) {
-        input.value = 0;
-        inputValue = 0;
-    }
-    
-    // Prevent exceeding available meters
-    if (inputValue > availableMeters) {
-        input.value = availableMeters;
-        inputValue = availableMeters;
-        alert(`⚠️ زۆر زیات! تۆ نتوانی لە ${availableMeters}م بەتری ئەم رەنگە دانێن`);
-    }
-    
-    // Update color meters
-    updateColorMeters(input);
-}
-
-/* VALIDATE ROLLS INPUT - ONLY REDUCES STOCK */
-function validateRollsInput(input) {
-    let inputValue = parseFloat(input.value) || 0;
-    
-    // Prevent negative values
-    if (inputValue < 0) {
-        input.value = 0;
-        inputValue = 0;
-    }
-    
-    // Force integer (no decimals for rolls)
-    input.value = Math.floor(inputValue);
-    
-    // Just update UI - rolls don't affect other calculations
-    updateColorMeters(input);
-}
-
-/* UPDATE COLOR METERS */
-function updateColorMeters(element) {
-    const rowId = element.dataset.rowid || (element.closest('.color-item') && element.closest('.color-item').querySelector('.color-check') ? element.closest('.color-item').querySelector('.color-check').dataset.rowid : null);
-    if (!rowId) return;
-    
+/* UPDATE CART QTY */
+function updateCartQty(input) {
+    const rowId = input.dataset.rowid;
     const row = document.querySelector(`tr[data-rowid="${rowId}"]`);
     if (!row) return;
     
-    let totalMeters = 0;
-    const colorItems = row.querySelectorAll('.color-item');
-    
-    colorItems.forEach(item => {
-        const checkbox = item.querySelector('.color-check');
-        const input = item.querySelector('.customer-meter');
-        
-        if (!checkbox || !input) return;
-        
-        const colorId = checkbox.dataset.colorId;
-        const availableMeters = parseFloat(checkbox.dataset.availableMeters) || 0;
-        const customerMeter = parseFloat(input.value) || 0;
-        
-        if (checkbox.checked) {
-            input.disabled = false;
-            input.max = availableMeters;
-            totalMeters += customerMeter;
-            
-            const remaining = availableMeters - customerMeter;
-            const remainingSpan = item.querySelector(`[data-color-id="${colorId}"].color-remaining`);
-            if (remainingSpan) {
-                remainingSpan.innerText = remaining.toFixed(2) + 'م';
-                
-                if (remaining < 0) {
-                    remainingSpan.classList.add('warning');
-                } else {
-                    remainingSpan.classList.remove('warning');
-                }
-            }
-            
-            // Enable rolls input
-            const rollsInput = item.querySelector('.customer-rolls');
-            if (rollsInput) {
-                rollsInput.disabled = false;
-            }
-        } else {
-            input.disabled = true;
-            input.value = '0';
-            
-            const remainingSpan = item.querySelector(`[data-color-id="${colorId}"].color-remaining`);
-            if (remainingSpan) {
-                remainingSpan.innerText = availableMeters.toFixed(2) + 'م';
-                remainingSpan.classList.remove('warning');
-            }
-            
-            // Disable and reset rolls input
-            const rollsInput = item.querySelector('.customer-rolls');
-            if (rollsInput) {
-                rollsInput.disabled = true;
-                rollsInput.value = '0';
-            }
-        }
-    });
-    
-    const meterInput = row.querySelector('.total-meter');
-    if (meterInput) {
-        meterInput.value = totalMeters.toFixed(2);
+    let qty = parseFloat(input.value) || 0;
+    if (qty < 0) {
+        input.value = 0;
+        qty = 0;
     }
+    input.value = qty;
     
-    const priceField = row.querySelector('.price-field');
-    if (priceField) {
-        updateTotalPrice(priceField);
-    }
-    
-    updateGrandTotal();
+    updateTotalPrice(row.querySelector('.price-field'));
 }
 
 /* UPDATE TOTAL PRICE */
@@ -761,12 +370,12 @@ function updateTotalPrice(priceInput) {
     const row = priceInput.closest('tr');
     if (!row) return;
     
-    const meterInput = row.querySelector('.total-meter');
-    if (!meterInput) return;
+    const qtyInput = row.querySelector('.qty-field');
+    if (!qtyInput) return;
     
-    const totalMeters = parseFloat(meterInput.value) || 0;
+    const qty = parseFloat(qtyInput.value) || 0;
     const unitPrice = parseFloat(priceInput.value) || 0;
-    const totalPrice = totalMeters * unitPrice;
+    const totalPrice = qty * unitPrice;
     
     const priceDisplay = row.querySelector('.price-total');
     if (priceDisplay) {
@@ -800,8 +409,8 @@ function updateGrandTotal() {
     }
 }
 
-/* SAVE COLOR DATA AND PRICE BEFORE FORM SUBMIT */
-function saveColorDataAndPriceBeforeSubmit(event) {
+/* SAVE QTY AND PRICE BEFORE FORM SUBMIT */
+function saveQtyAndPrice(event) {
     event.preventDefault();
     
     const form = event.target;
@@ -813,100 +422,15 @@ function saveColorDataAndPriceBeforeSubmit(event) {
         return;
     }
     
-    const selectedColors = [];
-    let totalMeters = 0;
-    
-    row.querySelectorAll('.color-item').forEach(item => {
-        const checkbox = item.querySelector('.color-check');
-        const meterInput = item.querySelector('.customer-meter');
-        const rollsInput = item.querySelector('.customer-rolls');
-        
-        if (checkbox && checkbox.checked && meterInput) {
-            const meter = parseFloat(meterInput.value) || 0;
-            const rolls = parseInt(rollsInput.value) || 0;
-            
-            selectedColors.push({
-                id: checkbox.dataset.colorId,
-                name: checkbox.dataset.colorName,
-                meter: meter,
-                rolls: rolls
-            });
-            totalMeters += meter;
-        }
-    });
-    
-    const colorDataInput = form.querySelector('[name="color_data"]');
-    if (colorDataInput) {
-        colorDataInput.value = JSON.stringify({
-            selected_colors: selectedColors,
-            total_meters: totalMeters
-        });
-    }
-    
+    const qtyInput = row.querySelector('.qty-field');
     const priceInput = row.querySelector('.price-field');
-    const priceHiddenInput = form.querySelector('[name="price"]');
-    if (priceInput && priceHiddenInput) {
-        priceHiddenInput.value = parseFloat(priceInput.value) || 0;
+    
+    if (qtyInput && priceInput) {
+        document.getElementById(`qty-input-${rowId}`).value = parseFloat(qtyInput.value) || 0;
+        document.getElementById(`price-input-${rowId}`).value = parseFloat(priceInput.value) || 0;
     }
     
     form.submit();
-}
-
-/* PREPARE INVOICE DATA */
-function prepareInvoiceData() {
-    const cartData = [];
-    
-    document.querySelectorAll('.cart-row').forEach(row => {
-        const rowId = row.dataset.rowid;
-        const productId = row.dataset.productId;
-        const meterInput = row.querySelector('.total-meter');
-        const priceInput = row.querySelector('.price-field');
-        
-        if (!meterInput || !priceInput) return;
-        
-        const totalMeters = parseFloat(meterInput.value) || 0;
-        const unitPrice = parseFloat(priceInput.value) || 0;
-        const productNameElement = row.querySelector('td.fw-bold');
-        const productName = productNameElement ? productNameElement.innerText : 'Unknown';
-        
-        const selectedColors = [];
-        const colorItems = row.querySelectorAll('.color-item');
-        
-        colorItems.forEach(item => {
-            const checkbox = item.querySelector('.color-check');
-            const meterInput = item.querySelector('.customer-meter');
-            const rollsInput = item.querySelector('.customer-rolls');
-            
-            if (checkbox && checkbox.checked && meterInput) {
-                selectedColors.push({
-                    id: checkbox.dataset.colorId,
-                    name: checkbox.dataset.colorName,
-                    meter: parseFloat(meterInput.value) || 0,
-                    rolls: parseInt(rollsInput.value) || 0
-                });
-            }
-        });
-        
-        if (selectedColors.length > 0) {
-            cartData.push({
-                rowId: rowId,
-                productId: productId,
-                name: productName,
-                totalMeters: totalMeters,
-                unitPrice: unitPrice,
-                totalPrice: totalMeters * unitPrice,
-                selectedColors: selectedColors
-            });
-        }
-    });
-    
-    if (cartData.length === 0) {
-        alert('❌ لە کم دوو ببە یەک رەنگ دیاری بکە');
-        return;
-    }
-    
-    document.getElementById('cart-data').value = JSON.stringify(cartData);
-    document.getElementById('invoice-form').submit();
 }
 
 /* PRICE FIELD CHANGE */
@@ -919,23 +443,13 @@ document.querySelectorAll('.price-field').forEach(input => {
     });
 });
 
-/* CUSTOMER METER INPUT */
-document.querySelectorAll('.customer-meter').forEach(input => {
+/* QUANTITY FIELD CHANGE */
+document.querySelectorAll('.qty-field').forEach(input => {
     input.addEventListener('input', function() {
-        validateMeterInput(this);
+        updateCartQty(this);
     });
     input.addEventListener('change', function() {
-        validateMeterInput(this);
-    });
-});
-
-/* CUSTOMER ROLLS INPUT */
-document.querySelectorAll('.customer-rolls').forEach(input => {
-    input.addEventListener('input', function() {
-        validateRollsInput(this);
-    });
-    input.addEventListener('change', function() {
-        validateRollsInput(this);
+        updateCartQty(this);
     });
 });
 
@@ -987,13 +501,6 @@ function handleBarcode(code){
 
 /* Initialize on page load */
 document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.cart-row').forEach(row => {
-        const firstCheckbox = row.querySelector('.color-check');
-        if (firstCheckbox) {
-            updateColorMeters(firstCheckbox);
-        }
-    });
-    
     updateGrandTotal();
 });
 </script>

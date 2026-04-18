@@ -17,8 +17,8 @@ class PosController extends Controller
     ================================ */
     public function Pos()
     {
-        // Load ALL products with relationships
-        $allProducts = Product::with('category', 'code', 'colors')
+        // Load ALL products with relationships (FIXED: removed 'code', 'colors')
+        $allProducts = Product::with('category', 'supplier')
                               ->where('product_store', '>', 0)
                               ->latest()
                               ->get();
@@ -119,28 +119,10 @@ class PosController extends Controller
             $options['buying_price'] = $item->options['buying_price'];
         }
 
-        // ALWAYS add/update color data if sent
-        if ($request->has('color_data') && !empty($request->color_data)) {
-            $colorData = json_decode($request->color_data, true);
-            
-            if (is_array($colorData)) {
-                $options['selected_colors'] = $colorData['selected_colors'] ?? [];
-                $options['total_meters'] = $colorData['total_meters'] ?? 0;
-            }
-        } else {
-            // If no color data sent, preserve existing color data
-            if (isset($item->options['selected_colors'])) {
-                $options['selected_colors'] = $item->options['selected_colors'];
-            }
-            if (isset($item->options['total_meters'])) {
-                $options['total_meters'] = $item->options['total_meters'];
-            }
-        }
-
         // Get the new price from the request, or keep the old one
         $newPrice = $request->has('price') ? floatval($request->price) : $item->price;
 
-        // Update cart - with NEW PRICE support
+        // Update cart - with NEW PRICE support (FIXED: removed color_data handling)
         Cart::update($rowId, [
             'qty' => $request->qty ?? $item->qty,
             'price' => $newPrice,
@@ -171,51 +153,49 @@ class PosController extends Controller
     /* ===============================
         CREATE INVOICE & UPDATE STOCK
     ================================ */
- public function CreateInvoice(Request $request)
-{
-    $contents = Cart::content();
-    $customer = Customer::findOrFail($request->customer_id);
+    public function CreateInvoice(Request $request)
+    {
+        $contents = Cart::content();
+        $customer = Customer::findOrFail($request->customer_id);
 
-    if ($contents->count() == 0) {
-        return redirect()->back()->with([
-            'message' => 'Cart is empty',
-            'alert-type' => 'error'
-        ]);
-    }
-
-    // Calculate total from cart with meters
-    $subTotal = 0;
-    
-    foreach ($contents as $item) {
-        $totalMeters = $item->options['total_meters'] ?? 0;
-        $subTotal += $totalMeters * $item->price;
-    }
-
-    // ✅ FIX: Calculate previousDue EXACTLY like Card 4 in show_customer page
-    // This is the TRUE customer due (what they owe)
-    
-    // Step 1: Get customer's previous due from initial setup
-    $total_spent = floatval($customer->previous_due ?? 0);
-    
-    // Step 2: Add all ACTIVE (non-cancelled) orders' subtotals
-    foreach ($customer->orders as $order) {
-        if ($order->order_status != 'cancelled') {
-            $total_spent += floatval($order->sub_total ?? 0);
+        if ($contents->count() == 0) {
+            return redirect()->back()->with([
+                'message' => 'Cart is empty',
+                'alert-type' => 'error'
+            ]);
         }
-    }
-    
-    // Step 3: Calculate total paid from all ACTIVE orders
-    $total_paid_all = floatval(\App\Models\Payment::where('customer_id', $customer->id)->sum('payment_amount') ?? 0);
-    foreach ($customer->orders as $order) {
-        if ($order->order_status != 'cancelled') {
-            $total_paid_all += floatval($order->pay ?? 0);
-        }
-    }
-    
-    // Step 4: previousDue = total_spent - total_paid (what customer still owes)
-    $previousDue = max($total_spent - $total_paid_all, 0);
 
-    // Return product_invoice WITHOUT creating order
-    return view('backend.invoice.product_invoice', compact('contents', 'customer', 'previousDue', 'subTotal'));
-}
+        // Calculate total from cart (FIXED: removed color/meters calculation)
+        $subTotal = 0;
+        
+        foreach ($contents as $item) {
+            $qty = $item->qty;
+            $subTotal += $qty * $item->price;
+        }
+
+        // ✅ Calculate previousDue (what customer owes)
+        // Step 1: Get customer's previous due from initial setup
+        $total_spent = floatval($customer->previous_due ?? 0);
+        
+        // Step 2: Add all ACTIVE (non-cancelled) orders' subtotals
+        foreach ($customer->orders as $order) {
+            if ($order->order_status != 'cancelled') {
+                $total_spent += floatval($order->sub_total ?? 0);
+            }
+        }
+        
+        // Step 3: Calculate total paid from all ACTIVE orders
+        $total_paid_all = floatval(\App\Models\Payment::where('customer_id', $customer->id)->sum('payment_amount') ?? 0);
+        foreach ($customer->orders as $order) {
+            if ($order->order_status != 'cancelled') {
+                $total_paid_all += floatval($order->pay ?? 0);
+            }
+        }
+        
+        // Step 4: previousDue = total_spent - total_paid (what customer still owes)
+        $previousDue = max($total_spent - $total_paid_all, 0);
+
+        // Return product_invoice WITHOUT creating order
+        return view('backend.invoice.product_invoice', compact('contents', 'customer', 'previousDue', 'subTotal'));
+    }
 }

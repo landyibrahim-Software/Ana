@@ -112,12 +112,12 @@ class DashboardController extends Controller
         $totalSupplierPayment = SupplierPayment::whereBetween('payment_date', [$startDate, $endDate])
             ->sum('payment_amount');
 
-        // ===== 5. STOCK VALUE =====
-        $totalStockValue = DB::selectOne("
-            SELECT SUM(CAST(pc.meters AS DECIMAL(10,2)) * CAST(p.buying_price AS DECIMAL(10,2))) as total
-            FROM product_colors pc
-            JOIN products p ON pc.product_id = p.id
-        ")->total ?? 0;
+       // ===== 5. STOCK VALUE =====
+// FIXED: Changed from product_colors to use product_store directly
+$totalStockValue = DB::selectOne("
+    SELECT SUM(CAST(p.product_store AS DECIMAL(10,2)) * CAST(p.buying_price AS DECIMAL(10,2))) as total
+    FROM products p
+")->total ?? 0;
 
         // ===== 6. TODAY'S SALES & ORDERS - EXCLUDE CANCELLED =====
         $today = date('Y-m-d');
