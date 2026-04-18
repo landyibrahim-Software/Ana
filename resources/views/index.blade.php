@@ -285,7 +285,7 @@
                                 <select name="filter" id="filterType" class="form-control filter-select" onchange="handleFilterChange()">
                                     <option value="today" {{ $filterType == 'today' ? 'selected' : '' }}>📅 ئەمڕۆ</option>
                                     <option value="yesterday" {{ $filterType == 'yesterday' ? 'selected' : '' }}>📆 دوێنێ</option>
-                                    <option value="last_week" {{ $filterType == 'last_week' ? 'selected' : '' }}>📊  هەفتەی پێشوو</option>
+                                    <option value="last_week" {{ $filterType == 'last_week' ? 'selected' : '' }}>📊 هەفتەی پێشوو</option>
                                     <option value="last_month" {{ $filterType == 'last_month' ? 'selected' : '' }}>📈 مانگی پێشوو</option>
                                     <option value="last_year" {{ $filterType == 'last_year' ? 'selected' : '' }}>📉 ساڵی پێشوو</option>
                                     <option value="custom" {{ $filterType == 'custom' ? 'selected' : '' }}>📋 دیاریکردن</option>
@@ -399,7 +399,7 @@
                     <i class="mdi mdi-bank-transfer kpi-icon"></i>
                     <div class="card-body">
                         <h4>{{ number_format($totalSupplierPayment, 2) }}</h4>
-                        <p>  پارەدانی دابینکەر</p>
+                        <p>پارەدانی دابینکەر</p>
                     </div>
                 </div>
             </div>
@@ -494,7 +494,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($topCustomers as $customerData)
+                                    @forelse($topCustomers as $customerData)
                                         @if($customerData->customer)
                                         <tr>
                                             <td>
@@ -505,7 +505,7 @@
                                                     <div>
                                                         <strong>{{ $customerData->customer->name }}</strong>
                                                         <br>
-                                                        <small class="text-muted">{{ $customerData->customer->email ?? 'No email' }}</small>
+                                                        <small class="text-muted">{{ $customerData->customer->phone ?? 'No Phone' }}</small>
                                                     </div>
                                                 </div>
                                             </td>
@@ -514,7 +514,11 @@
                                             </td>
                                         </tr>
                                         @endif
-                                    @endforeach
+                                    @empty
+                                    <tr>
+                                        <td colspan="2" class="text-center text-muted">کڕیار نیە</td>
+                                    </tr>
+                                    @endforelse
                                 </tbody>
                             </table>
                         </div>
@@ -540,7 +544,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($recentExpenses as $expense)
+                                    @forelse($recentExpenses as $expense)
                                     <tr>
                                         <td>
                                             <div class="d-flex align-items-center">
@@ -555,7 +559,11 @@
                                             <small>{{ \Carbon\Carbon::parse($expense->created_at)->format('d M Y') }}</small>
                                         </td>
                                     </tr>
-                                    @endforeach
+                                    @empty
+                                    <tr>
+                                        <td colspan="3" class="text-center text-muted">خەرجی نیە</td>
+                                    </tr>
+                                    @endforelse
                                 </tbody>
                             </table>
                         </div>
@@ -567,7 +575,7 @@
             <div class="col-lg-6">
                 <div class="card" style="border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.08); border: none; border-top: 4px solid #4facfe; height: 100%;">
                     <div class="card-body">
-                        <h4 class="dashboard-section-title">  پارەدانی دابینکەر</h4>
+                        <h4 class="dashboard-section-title">پارەدانی دابینکەر</h4>
                         <div class="table-responsive">
                             <table class="table table-sm table-hover mb-0">
                                 <thead>
@@ -595,7 +603,7 @@
                                     </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="3" class="text-center text-muted">هیچ پارەدانێک نیە</td>
+                                        <td colspan="3" class="text-center text-muted">پارەدانی نیە</td>
                                     </tr>
                                     @endforelse
                                 </tbody>
@@ -617,12 +625,12 @@
                                 <thead>
                                     <tr>
                                         <th>بەرهەم</th>
-                                        <th>تۆپ</th>
+                                        <th>بڕ</th>
                                         <th>دۆخ</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($lowStockProducts as $product)
+                                    @forelse($lowStockProducts as $product)
                                     @php
                                         $stockPercentage = ($product->product_store / 10) * 100;
                                         $statusColor = $product->product_store <= 3 ? 'danger' : ($product->product_store <= 5 ? 'warning' : 'info');
@@ -630,10 +638,12 @@
                                     <tr>
                                         <td>
                                             <div class="d-flex align-items-center">
-                                                @if($product->product_image)
+                                                @if($product->product_image && file_exists(public_path($product->product_image)))
                                                 <img src="{{ asset($product->product_image) }}" 
                                                      class="product-img-sm me-2" 
                                                      alt="{{ $product->product_name }}">
+                                                @else
+                                                <img src="https://via.placeholder.com/40?text=No" class="product-img-sm me-2" alt="No Image">
                                                 @endif
                                                 <span class="text-truncate" style="max-width: 150px;">
                                                     {{ $product->product_name }}
@@ -641,14 +651,17 @@
                                             </div>
                                         </td>
                                         <td>
-                                            <strong class="text-{{ $statusColor }}">{{ $product->product_store }}</strong>
+                                            <strong class="text-{{ $statusColor }}">{{ number_format($product->product_store, 2) }}</strong>
                                         </td>
                                         <td>
                                             <div class="d-flex align-items-center">
-                                                <div class="progress progress-thin flex-grow-1 me-2">
+                                                <div class="progress progress-thin flex-grow-1 me-2" style="height: 6px;">
                                                     <div class="progress-bar bg-{{ $statusColor }}" 
                                                          role="progressbar" 
-                                                         style="width: {{ min($stockPercentage, 100) }}%">
+                                                         style="width: {{ min($stockPercentage, 100) }}%"
+                                                         aria-valuenow="{{ min($stockPercentage, 100) }}" 
+                                                         aria-valuemin="0" 
+                                                         aria-valuemax="100">
                                                     </div>
                                                 </div>
                                                 @if($product->product_store <= 3)
@@ -661,7 +674,11 @@
                                             </div>
                                         </td>
                                     </tr>
-                                    @endforeach
+                                    @empty
+                                    <tr>
+                                        <td colspan="3" class="text-center text-muted">بەرهەمی کەم نیە</td>
+                                    </tr>
+                                    @endforelse
                                 </tbody>
                             </table>
                         </div>
@@ -683,39 +700,46 @@
                                         <th>بەرهەم</th>
                                         <th>کۆد</th>
                                         <th>جۆر</th>
-                                        <th class="text-center">متری فرۆشراوە</th>
-                                        <th class="text-center">متری ماوە</th>
+                                        <th class="text-center">فرۆشتنی مانگ</th>
+                                        <th class="text-center">ماوە</th>
                                     </tr>
                                 </thead>
                                <tbody>
-    @foreach($bestSellingProducts as $item)
-    <tr>
-        <td>
-            <div class="d-flex align-items-center">
-                <img src="{{ asset($item->product_image) }}" 
-                     class="product-img-sm me-2" 
-                     alt="{{ $item->product_name }}">
-                <span>{{ $item->product_name }}</span>
-            </div>
-        </td>
-        <td>
-            <span class="badge bg-light text-dark">{{ $item->product_code }}</span>
-        </td>
-        <td>
-            {{ $item->category_name ?? 'N/A' }}
-        </td>
-        <td class="text-center">
-            <span class="badge bg-primary">{{ number_format($item->total_meters_sold, 2) }}</span>
-        </td>
-        <td class="text-center">
-            <span class="badge bg-{{ $item->product_store > 50 ? 'success' : 'warning' }}">
-                {{ number_format($item->product_store, 2) }}
-            </span>
-        </td>
-    </tr>
-    @endforeach
-</tbody>
-                                   
+                                    @forelse($bestSellingProducts as $item)
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                @if($item->product_image && file_exists(public_path($item->product_image)))
+                                                <img src="{{ asset($item->product_image) }}" 
+                                                     class="product-img-sm me-2" 
+                                                     alt="{{ $item->product_name }}">
+                                                @else
+                                                <img src="https://via.placeholder.com/40?text=No" class="product-img-sm me-2" alt="No Image">
+                                                @endif
+                                                <span>{{ $item->product_name }}</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-light text-dark">{{ $item->product_code ?? '-' }}</span>
+                                        </td>
+                                        <td>
+                                            {{ $item->category_name ?? 'N/A' }}
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-primary">{{ number_format($item->total_meters_sold, 2) }}</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-{{ $item->product_store > 50 ? 'success' : 'warning' }}">
+                                                {{ number_format($item->product_store, 2) }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted">بەرهەم نیە</td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
                             </table>
                         </div>
                     </div>
@@ -746,27 +770,27 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($orders->sortByDesc('created_at')->take(10) as $order)
-                   @php
-    $itemCount = $order->orderItems->sum('quantity');
-    $orderProfit = 0;
-    
-    foreach($order->orderItems as $item) {
-        $buyingPrice = floatval($item->product->buying_price ?? 0);
-        $sellingPrice = floatval($item->unitcost ?? 0);
-        $quantity = floatval($item->quantity ?? 0);
-        
-        // Profit/Loss = (sellingPrice - buyingPrice) × quantity
-        $orderProfit += ($sellingPrice - $buyingPrice) * $quantity;
-    }
-@endphp
+                                    @forelse($orders->sortByDesc('created_at')->take(10) as $order)
+                                    @php
+                                        $itemCount = $order->orderItems->sum('quantity');
+                                        $orderProfit = 0;
+                                        
+                                        foreach($order->orderItems as $item) {
+                                            $buyingPrice = floatval($item->product->buying_price ?? 0);
+                                            $sellingPrice = floatval($item->unitcost ?? 0);
+                                            $quantity = floatval($item->quantity ?? 0);
+                                            
+                                            // Profit/Loss = (sellingPrice - buyingPrice) × quantity
+                                            $orderProfit += ($sellingPrice - $buyingPrice) * $quantity;
+                                        }
+                                    @endphp
                                     <tr>
-                                        <td>{{ $order->id }}</td>
+                                        <td><strong>#{{ $order->id }}</strong></td>
                                         <td>{{ $order->customer->name ?? 'N/A' }}</td>
                                         <td>{{ $itemCount }}</td>
-                                        <td>${{ number_format($order->total,2) }}</td>
-                                        <td>${{ number_format($order->pay,2) }}</td>
-                                        <td>${{ number_format($order->due,2) }}</td>
+                                        <td><strong>${{ number_format($order->total,2) }}</strong></td>
+                                        <td class="text-success"><strong>${{ number_format($order->pay,2) }}</strong></td>
+                                        <td class="text-danger"><strong>${{ number_format($order->due,2) }}</strong></td>
                                         <td>
                                             @if($orderProfit >= 0)
                                                 <span class="badge bg-success">+${{ number_format($orderProfit,2) }}</span>
@@ -782,9 +806,13 @@
                                                 <span class="badge bg-warning">چاوەروانی</span>
                                             @endif
                                         </td>
-                                        <td>{{ \Carbon\Carbon::parse($order->order_date)->format('d-M-Y') }}</td>
+                                        <td><small>{{ \Carbon\Carbon::parse($order->order_date)->format('d-M-Y') }}</small></td>
                                     </tr>
-                                    @endforeach
+                                    @empty
+                                    <tr>
+                                        <td colspan="10" class="text-center text-muted">داواکاری نیە</td>
+                                    </tr>
+                                    @endforelse
                                 </tbody>
                             </table>
                         </div>
