@@ -408,7 +408,7 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label" style="color: #555; font-weight: 500;">یان بە دەستی بنووسە</label>
-                                    <input type="number" id="manualRefundAmount" name="refund_amount" class="form-control" style="border-radius: 8px; border: 2px solid #e9ecef;" step="0.01" placeholder="0.00">
+<input type="number" id="manualRefundAmount" name="refund_amount" class="form-control" style="border-radius: 8px; border: 2px solid #e9ecef;" step="0.01" placeholder="0.00">
                                     <small class="text-muted" style="display: block; margin-top: 8px;">ئەگەر دەتەوێ جیاوازی بڕ بنووسە</small>
                                 </div>
                             </div>
