@@ -46,30 +46,25 @@ class DashboardController extends Controller
             // ✅ TOTAL DUE
             $totalDue = Order::whereBetween('created_at', [$startDate, $endDate])->sum('due') ?? 0;
 
-            // ✅ PROFIT CALCULATION
-            $profit = 0;
-            $loss = 0;
-            
-            $ordersForProfit = Order::whereBetween('created_at', [$startDate, $endDate])
-                ->with('orderDetails.product')
-                ->get();
-            
-            foreach ($ordersForProfit as $order) {
-                if ($order->orderDetails) {
-                    foreach ($order->orderDetails as $item) {
-                        $sellingPrice = floatval($item->unitcost ?? 0);
-                        $buyingPrice = floatval($item->product->buying_price ?? 0);
-                        $quantity = floatval($item->quantity ?? 0);
-                        $itemProfit = ($sellingPrice - $buyingPrice) * $quantity;
-                        
-                        if ($itemProfit > 0) {
-                            $profit += $itemProfit;
-                        } else {
-                            $loss += abs($itemProfit);
-                        }
-                    }
-                }
-            }
+           // ✅ PROFIT CALCULATION — single SQL query instead of PHP loop
+            $profitRow = DB::selectOne("
+                SELECT
+                    SUM(CASE WHEN CAST(od.unitcost AS DECIMAL(15,4)) > CAST(p.buying_price AS DECIMAL(15,4))
+                        THEN (CAST(od.unitcost AS DECIMAL(15,4)) - CAST(p.buying_price AS DECIMAL(15,4)))
+                             * CAST(od.quantity AS DECIMAL(15,4))
+                        ELSE 0 END) AS profit,
+                    SUM(CASE WHEN CAST(od.unitcost AS DECIMAL(15,4)) <= CAST(p.buying_price AS DECIMAL(15,4))
+                        THEN (CAST(p.buying_price AS DECIMAL(15,4)) - CAST(od.unitcost AS DECIMAL(15,4)))
+                             * CAST(od.quantity AS DECIMAL(15,4))
+                        ELSE 0 END) AS loss
+                FROM orderdetails od
+                INNER JOIN orders o ON od.order_id = o.id
+                INNER JOIN products p ON od.product_id = p.id
+                WHERE o.created_at BETWEEN ? AND ?
+                  AND o.order_status != 'cancelled'
+            ", [$startDate, $endDate]);
+            $profit = floatval($profitRow->profit ?? 0);
+            $loss   = floatval($profitRow->loss   ?? 0);
 
             // ✅ TOTAL SUPPLIER PAYMENT
             $totalSupplierPayment = SupplierPayment::whereBetween('payment_date', [$startDate, $endDate])
@@ -158,13 +153,21 @@ class DashboardController extends Controller
                 ->values()
                 ->take(10);
 
-            // ✅ MONTHLY PAID DATA (for chart)
+           
+            // ✅ MONTHLY PAID DATA — single GROUP BY query instead of 12 separate queries
+            $monthlyRows = DB::select("
+                SELECT MONTH(created_at) AS month, SUM(CAST(pay AS DECIMAL(15,4))) AS amount
+                FROM orders
+                WHERE YEAR(created_at) = ?
+                GROUP BY MONTH(created_at)
+            ", [Carbon::now()->year]);
+            $monthlyPaidMap = [];
+            foreach ($monthlyRows as $row) {
+                $monthlyPaidMap[(int)$row->month] = floatval($row->amount);
+            }
             $monthlyPaid = [];
-            for ($month = 1; $month <= 12; $month++) {
-                $amount = Order::whereMonth('created_at', $month)
-                    ->whereYear('created_at', Carbon::now()->year)
-                    ->sum('pay') ?? 0;
-                $monthlyPaid[] = floatval($amount);
+             for ($m = 1; $m <= 12; $m++) {
+                $monthlyPaid[] = $monthlyPaidMap[$m] ?? 0.0;
             }
 
             return view('index', [

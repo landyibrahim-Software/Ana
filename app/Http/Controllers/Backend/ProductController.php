@@ -19,7 +19,11 @@ class ProductController extends Controller
 {
    public function AllProduct(){
 
-    $product = Product::latest()->get();
+     $product = Product::with(['category:id,category_name', 'supplier:id,name'])
+        ->select(['id','product_name','product_code','product_garage','product_store',
+                  'buying_price','selling_price','product_image','category_id','supplier_id','created_at'])
+        ->latest()
+        ->get();
     return view('backend.product.all_product',compact('product'));
 
    } // End Method 

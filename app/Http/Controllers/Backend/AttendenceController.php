@@ -25,17 +25,22 @@ class AttendenceController extends Controller
 
     public function EmployeeAttendenceStore(Request $request){
 
-    Attendence::where('date',date('Y-m-d',strtotime($request->date)))->delete();
+       $date = date('Y-m-d', strtotime($request->date));
 
-        $countemployee = count($request->employee_id);
-
-        for ($i=0; $i < $countemployee ; $i++) { 
-           $attend_status = 'attend_status'.$i;
-           $attend = new Attendence();
-           $attend->date = date('Y-m-d',strtotime($request->date));
-           $attend->employee_id = $request->employee_id[$i];
-           $attend->attend_status  = $request->$attend_status;
-           $attend->save();
+       Attendence::where('date', $date)->delete();
+  $records = [];
+        $now     = now();
+        foreach ($request->employee_id as $index => $employeeId) {
+            $statusKey = 'attend_status' . $index;
+            $records[] = [
+                'date'           => $date,
+                'employee_id'    => $employeeId,
+                'attend_status'  => $request->$statusKey,
+                'created_at'     => $now,
+                'updated_at'     => $now,
+            ];
+             if (!empty($records)) {
+            Attendence::insert($records);
         }
 
          $notification = array(
@@ -44,9 +49,7 @@ class AttendenceController extends Controller
         );
 
         return redirect()->route('employee.attend.list')->with($notification); 
-
-
-    }// End Method 
+        }}
 
 
     public function EditEmployeeAttendence($date){

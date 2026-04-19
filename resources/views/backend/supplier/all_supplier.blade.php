@@ -45,7 +45,7 @@
         	@foreach($supplier as $key=> $item)
             <tr>
                 <td>{{ $key+1 }}</td>
-                <td> <img src="{{ asset($item->image) }}" style="width:50px; height: 40px;"> </td>
+                 <td> <img src="{{ asset($item->image) }}" loading="lazy" style="width:50px; height: 40px;"> </td>
                 <td>{{ $item->name }}</td>
                 <td>{{ $item->email }}</td>
                 <td>{{ $item->phone }}</td>
@@ -61,7 +61,12 @@
             @endforeach
         </tbody>
                     </table>
-
+<!-- Add this before closing </div> -->
+<div class="row mt-4">
+    <div class="col-12">
+        {{ $supplier->links() }}
+    </div>
+</div>
                 </div> <!-- end card body-->
             </div> <!-- end card -->
         </div><!-- end col-->

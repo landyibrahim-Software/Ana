@@ -10,10 +10,19 @@ use Carbon\Carbon;
 
 class SupplierController extends Controller
 {
-    public function AllSupplier(){
-
-        $supplier = Supplier::latest()->get();
-        return view('backend.supplier.all_supplier',compact('supplier'));
+        public function AllSupplier(Request $request){
+        $search = $request->input('search');
+        
+        $query = Supplier::latest();
+        
+        if ($search) {
+            $query->where('name', 'LIKE', "%{$search}%")
+                  ->orWhere('phone', 'LIKE', "%{$search}%")
+                  ->orWhere('shopname', 'LIKE', "%{$search}%");
+        }
+        
+        $supplier = $query->paginate(20);
+        return view('backend.supplier.all_supplier', compact('supplier'));
 
     } // End Method 
 

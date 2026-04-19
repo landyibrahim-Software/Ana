@@ -13,7 +13,9 @@ class CustomerController extends Controller
 {
      public function AllCustomer(){
 
-        $customer = Customer::latest()->get();
+        $customer = Customer::select(['id','name','phone','city','shopname','image','created_at'])
+            ->latest()
+            ->get();
         return view('backend.customer.all_customer',compact('customer'));
     } // End Method 
     
