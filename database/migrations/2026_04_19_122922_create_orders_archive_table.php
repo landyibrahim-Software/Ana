@@ -5,16 +5,23 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-class CreateOrdersArchiveTable extends Migration
+return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     *
-     * @return void
-     */
-    public function up()
+    // Columns shared between `orders` and `orders_archive` used for archival INSERT.
+    private const SHARED_COLUMNS = [
+        'id', 'customer_id', 'order_date', 'order_status', 'total_products',
+        'sub_total', 'invoice_no', 'total', 'payment_status', 'pay', 'due',
+        'created_at', 'updated_at',
+    ];
+
+    public function up(): void
     {
-        // ✅ Create archive table with EXACT same columns as orders
+        // Guard: if the table already exists the migration ran (or partially ran)
+        // previously — skip creation to keep `php artisan migrate` from failing.
+        if (Schema::hasTable('orders_archive')) {
+            return;
+        }
+
         Schema::create('orders_archive', function (Blueprint $table) {
             $table->unsignedBigInteger('id')->primary();
             $table->unsignedInteger('customer_id');
@@ -33,50 +40,41 @@ class CreateOrdersArchiveTable extends Migration
             $table->decimal('total_returned', 15, 2)->nullable()->default(0);
             $table->string('refund_status')->nullable()->default('none');
 
-            // Add indexes for faster queries
             $table->index('customer_id');
             $table->index('order_date');
             $table->index('order_status');
             $table->index('payment_status');
         });
 
-        // ✅ Check if there are old records to archive
-        $oldOrdersCount = DB::table('orders')
-            ->whereRaw("STR_TO_DATE(order_date, '%Y-%m-%d') < DATE_SUB(NOW(), INTERVAL 2 YEAR)")
-            ->count();
+        // Archive orders older than 2 years.  Wrapped in try/catch so that a
+        // data error never prevents the schema migration from completing.
+        try {
+            // Use PHP Carbon for the cutoff date — avoids MySQL-only STR_TO_DATE().
+            $cutoff = \Carbon\Carbon::now()->subYears(2)->format('Y-m-d');
 
-        if ($oldOrdersCount > 0) {
-            // ✅ Move old orders to archive
-            DB::statement("
-                INSERT INTO orders_archive 
-                SELECT * FROM orders 
-                WHERE STR_TO_DATE(order_date, '%Y-%m-%d') < DATE_SUB(NOW(), INTERVAL 2 YEAR)
-            ");
+            $count = DB::table('orders')->where('order_date', '<', $cutoff)->count();
 
-            // ✅ Delete old orders from main table
-            DB::statement("
-                DELETE FROM orders 
-                WHERE STR_TO_DATE(order_date, '%Y-%m-%d') < DATE_SUB(NOW(), INTERVAL 2 YEAR)
-            ");
+            if ($count > 0) {
+                $cols = implode(', ', self::SHARED_COLUMNS);
 
-            \Log::info('Archived ' . $oldOrdersCount . ' old orders to orders_archive table');
+                // Explicit column list prevents failures when orders has extra
+                // columns (grain, grain_price, metter_price) not in orders_archive.
+                DB::statement(
+                    "INSERT INTO orders_archive ({$cols}) SELECT {$cols} FROM orders WHERE order_date < ?",
+                    [$cutoff]
+                );
+
+                DB::statement('DELETE FROM orders WHERE order_date < ?', [$cutoff]);
+
+                \Log::info("Archived {$count} old orders to orders_archive.");
+            }
+        } catch (\Exception $e) {
+            \Log::warning('orders_archive: data archival skipped — ' . $e->getMessage());
         }
     }
 
-    /**
-     * Reverse the migrations.
-     *
-     * @return void
-     */
-    public function down()
+    public function down(): void
     {
-        // ✅ Restore data if rollback
-        DB::statement("
-            INSERT INTO orders 
-            SELECT * FROM orders_archive
-        ");
-
-        // Drop archive table
         Schema::dropIfExists('orders_archive');
     }
-}
+};
