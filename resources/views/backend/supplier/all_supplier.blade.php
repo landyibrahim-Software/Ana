@@ -33,35 +33,37 @@
                                 <th>Sl</th>
                                 <th>وێنە</th>
                                 <th>ناو</th>
-                                <th>ئیمەیڵ</th>
                                 <th>ژمارەی مۆبایل</th>
                                 <th>جۆر</th>
                                 <th>کردار</th>
                             </tr>
                         </thead>
                     
-    
-        <tbody>
-        	@foreach($supplier as $key=> $item)
-            <tr>
-                <td>{{ $key+1 }}</td>
-                 <td> <img src="{{ asset($item->image) }}" loading="lazy" style="width:50px; height: 40px;"> </td>
-                <td>{{ $item->name }}</td>
-                <td>{{ $item->email }}</td>
-                <td>{{ $item->phone }}</td>
-                <td>{{ $item->type }}</td>
-                <td>
+        
+            <tbody>
+            	@forelse($supplier as $key=> $item)
+                <tr>
+                    <td>{{ $key+1 }}</td>
+                     <td> <img src="{{ asset($item->image) }}" loading="lazy" style="width:50px; height: 40px;"> </td>
+                    <td>{{ $item->name }}</td>
+                    <td>{{ $item->phone }}</td>
+                    <td>{{ $item->type }}</td>
+                    <td>
 <a href="{{ route('edit.supplier',$item->id) }}" class="btn btn-blue rounded-pill waves-effect waves-light" title="Edit"><i class="fa fa-pencil" aria-hidden="true"></i></a>
 <a href="{{ route('delete.supplier',$item->id) }}" class="btn btn-danger rounded-pill waves-effect waves-light" id="delete" title="Delete"><i class="fa fa-trash" aria-hidden="true"></i></a>
 
 <a href="{{ route('details.supplier',$item->id) }}" class="btn btn-info rounded-pill waves-effect waves-light" title="Details"><i class="fa fa-eye" aria-hidden="true"></i></a>
 
-                </td>
-            </tr>
-            @endforeach
-        </tbody>
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="6" class="text-center text-muted">دابینکەر نیە</td>
+                </tr>
+                @endforelse
+            </tbody>
                     </table>
-<!-- Add this before closing </div> -->
+<!-- Pagination -->
 <div class="row mt-4">
     <div class="col-12">
         {{ $supplier->links() }}
@@ -73,7 +75,6 @@
     </div>
     <!-- end row-->
 
-
                       
                         
                     </div> <!-- container -->
@@ -81,4 +82,4 @@
                 </div> <!-- content -->
 
 
-@endsection 
+@endsection
