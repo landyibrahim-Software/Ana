@@ -56,7 +56,7 @@
         	@foreach($product as $key=> $item)
             <tr>
                 <td>{{ $key+1 }}</td>
-                <td> <img src="{{ asset($item->product_image) }}" style="width:50px; height: 40px;"> </td>
+                <td> <img src="{{ asset($item->product_image) }}" loading="lazy" style="width:50px; height: 40px;"> </td>
                 <td>{{ $item->product_name }}</td>
                 <td>{{ optional($item->category)->category_name }}</td>
                 <td>{{ optional($item->supplier)->name }}</td>

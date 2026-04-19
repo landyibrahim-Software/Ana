@@ -46,41 +46,35 @@ class DashboardController extends Controller
             // ✅ TOTAL DUE
             $totalDue = Order::whereBetween('created_at', [$startDate, $endDate])->sum('due') ?? 0;
 
-            // ✅ PROFIT CALCULATION
-            $profit = 0;
-            $loss = 0;
-            
-            $ordersForProfit = Order::whereBetween('created_at', [$startDate, $endDate])
-                ->with('orderDetails.product')
-                ->get();
-            
-            foreach ($ordersForProfit as $order) {
-                if ($order->orderDetails) {
-                    foreach ($order->orderDetails as $item) {
-                        $sellingPrice = floatval($item->unitcost ?? 0);
-                        $buyingPrice = floatval($item->product->buying_price ?? 0);
-                        $quantity = floatval($item->quantity ?? 0);
-                        $itemProfit = ($sellingPrice - $buyingPrice) * $quantity;
-                        
-                        if ($itemProfit > 0) {
-                            $profit += $itemProfit;
-                        } else {
-                            $loss += abs($itemProfit);
-                        }
-                    }
-                }
-            }
+            // ✅ PROFIT CALCULATION — single SQL query instead of PHP loop
+            $profitRow = DB::selectOne("
+                SELECT
+                    SUM(CASE WHEN CAST(od.unitcost AS DECIMAL(15,4)) > CAST(p.buying_price AS DECIMAL(15,4))
+                        THEN (CAST(od.unitcost AS DECIMAL(15,4)) - CAST(p.buying_price AS DECIMAL(15,4)))
+                             * CAST(od.quantity AS DECIMAL(15,4))
+                        ELSE 0 END) AS profit,
+                    SUM(CASE WHEN CAST(od.unitcost AS DECIMAL(15,4)) <= CAST(p.buying_price AS DECIMAL(15,4))
+                        THEN (CAST(p.buying_price AS DECIMAL(15,4)) - CAST(od.unitcost AS DECIMAL(15,4)))
+                             * CAST(od.quantity AS DECIMAL(15,4))
+                        ELSE 0 END) AS loss
+                FROM orderdetails od
+                INNER JOIN orders o ON od.order_id = o.id
+                INNER JOIN products p ON od.product_id = p.id
+                WHERE o.created_at BETWEEN ? AND ?
+                  AND o.order_status != 'cancelled'
+            ", [$startDate, $endDate]);
+
+            $profit = floatval($profitRow->profit ?? 0);
+            $loss   = floatval($profitRow->loss   ?? 0);
 
             // ✅ TOTAL SUPPLIER PAYMENT
             $totalSupplierPayment = SupplierPayment::whereBetween('payment_date', [$startDate, $endDate])
                 ->sum('payment_amount') ?? 0;
 
-            // ✅ TOTAL STOCK VALUE
-            $totalStockValue = Product::all()->sum(function ($product) {
-                $buyingPrice = floatval($product->buying_price ?? 0);
-                $store = floatval($product->product_store ?? 0);
-                return $buyingPrice * $store;
-            });
+            // ✅ TOTAL STOCK VALUE — single SQL aggregation instead of Product::all() in PHP
+            $totalStockValue = floatval(
+                DB::selectOne("SELECT SUM(CAST(buying_price AS DECIMAL(15,4)) * CAST(product_store AS DECIMAL(15,4))) AS total FROM products")->total ?? 0
+            );
 
             // ✅ TODAY'S SALES
             $todaySales = Order::whereDate('created_at', Carbon::today())
@@ -129,42 +123,42 @@ class DashboardController extends Controller
                 ->limit(10)
                 ->get();
 
-            // ✅ BEST SELLING PRODUCTS - SAFE
-            $bestSellingProducts = Order::whereMonth('created_at', Carbon::now()->month)
-                ->whereYear('created_at', Carbon::now()->year)
-                ->with('orderDetails.product.category')
-                ->get()
-                ->flatMap(function ($order) {
-                    return $order->orderDetails ?? [];
-                })
-                ->groupBy('product_id')
-                ->map(function ($items) {
-                    $first = $items->first();
-                    if (!$first || !$first->product) {
-                        return null;
-                    }
-                    return (object) [
-                        'product_id' => $first->product_id,
-                        'product_name' => $first->product->product_name ?? 'N/A',
-                        'product_code' => $first->product->product_code ?? 'N/A',
-                        'product_image' => $first->product->product_image ?? null,
-                        'category_name' => $first->product->category->category_name ?? 'N/A',
-                        'total_sold' => $items->sum('quantity'),
-                        'product_store' => $first->product->product_store ?? 0,
-                    ];
-                })
-                ->filter()
-                ->sortByDesc('total_sold')
-                ->values()
-                ->take(10);
+            // ✅ BEST SELLING PRODUCTS — single SQL query instead of loading all orders in PHP
+            $bestSellingProducts = DB::select("
+                SELECT
+                    od.product_id,
+                    p.product_name,
+                    p.product_code,
+                    p.product_image,
+                    p.product_store,
+                    c.category_name,
+                    SUM(CAST(od.quantity AS DECIMAL(15,4))) AS total_sold
+                FROM orderdetails od
+                INNER JOIN orders o   ON od.order_id   = o.id
+                INNER JOIN products p ON od.product_id = p.id
+                LEFT  JOIN categories c ON p.category_id = c.id
+                WHERE MONTH(o.created_at) = ? AND YEAR(o.created_at) = ?
+                  AND o.order_status != 'cancelled'
+                GROUP BY od.product_id, p.product_name, p.product_code, p.product_image, p.product_store, c.category_name
+                ORDER BY total_sold DESC
+                LIMIT 10
+            ", [Carbon::now()->month, Carbon::now()->year]);
 
-            // ✅ MONTHLY PAID DATA (for chart)
+            // ✅ MONTHLY PAID DATA — single GROUP BY query instead of 12 separate queries
+            $monthlyRows = DB::select("
+                SELECT MONTH(created_at) AS month, SUM(CAST(pay AS DECIMAL(15,4))) AS amount
+                FROM orders
+                WHERE YEAR(created_at) = ?
+                GROUP BY MONTH(created_at)
+            ", [Carbon::now()->year]);
+
+            $monthlyPaidMap = [];
+            foreach ($monthlyRows as $row) {
+                $monthlyPaidMap[(int)$row->month] = floatval($row->amount);
+            }
             $monthlyPaid = [];
-            for ($month = 1; $month <= 12; $month++) {
-                $amount = Order::whereMonth('created_at', $month)
-                    ->whereYear('created_at', Carbon::now()->year)
-                    ->sum('pay') ?? 0;
-                $monthlyPaid[] = floatval($amount);
+            for ($m = 1; $m <= 12; $m++) {
+                $monthlyPaid[] = $monthlyPaidMap[$m] ?? 0.0;
             }
 
             return view('index', [

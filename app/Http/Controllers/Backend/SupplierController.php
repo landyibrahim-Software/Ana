@@ -12,7 +12,9 @@ class SupplierController extends Controller
 {
     public function AllSupplier(){
 
-        $supplier = Supplier::latest()->get();
+        $supplier = Supplier::select(['id','name','email','phone','type','image','city','created_at'])
+            ->latest()
+            ->get();
         return view('backend.supplier.all_supplier',compact('supplier'));
 
     } // End Method 
