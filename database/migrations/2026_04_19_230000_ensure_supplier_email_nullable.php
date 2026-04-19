@@ -25,13 +25,10 @@ return new class extends Migration
 
     public function down(): void
     {
-        // Only drop the column if it is nullable (i.e. added by this migration).
-        // Columns that were already NOT NULL pre-date this migration and should
-        // not be removed on rollback.
-        if (Schema::hasColumn('suppliers', 'email')) {
-            Schema::table('suppliers', function (Blueprint $table) {
-                $table->dropColumn('email');
-            });
-        }
+        // Do not drop the column on rollback: we cannot reliably distinguish
+        // whether `email` was added by this migration or was already present in
+        // the database before this migration ran.  Leaving the nullable column
+        // in place is harmless and avoids accidentally removing a pre-existing
+        // NOT NULL column that belongs to the original schema.
     }
 };
