@@ -40,6 +40,7 @@ return [
                     base_path('.env'),
                     base_path('.git'),
                     base_path('.github'),
+                    base_path('storage/app/db_backups'), // ✅ ADDED: Exclude backup folder
                 ],
 
                 /*
@@ -94,7 +95,7 @@ return [
         /*
          * The directory where the temporary files will be stored.
          */
-        'temporary_directory' => storage_path('app/backups/temp'),
+        'temporary_directory' => storage_path('backups/temp'), // ✅ FIXED: Correct path
 
         /*
          * The password to be used for archive encryption.
