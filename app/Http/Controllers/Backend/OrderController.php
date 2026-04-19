@@ -104,62 +104,67 @@ public function PrintInvoice($id)
 }
 
 
-
-    public function PendingOrder(){
-
-        $orders = Order::where('order_status','pending')->get();
-        return view('backend.order.pending_order',compact('orders'));
-
-    }// End Method 
-
-     public function CompleteOrder(){
-
-        $orders = Order::where('order_status','complete')->get();
-        return view('backend.order.complete_order',compact('orders'));
-
-    }// End Method 
-
-
-    public function OrderDetails($order_id){
-
-        $order = Order::where('id',$order_id)->first();
-
-        $orderItem = Orderdetails::with('product')->where('order_id',$order_id)->orderBy('id','DESC')->get();
-        return view('backend.order.order_details',compact('order','orderItem'));
-
-    }// End Method 
-
-
-    public function OrderStatusUpdate(Request $request){
-
-        $order_id = $request->id;
-
-
-    $product = Orderdetails::where('order_id',$order_id)->get();
-        foreach($product as $item){
-           Product::where('id',$item->product_id)
-                ->update(['product_store' => DB::raw('product_store-'.$item->quantity) ]);
-        }
-
-     Order::findOrFail($order_id)->update(['order_status' => 'complete']);
-
-          $notification = array(
-            'message' => 'Order Done Successfully',
-            'alert-type' => 'success'
-        ); 
-
-        return redirect()->route('pending.order')->with($notification);
+public function PendingOrder(){
+    // ✅ FIX: Paginate orders (20 per page)
+    $orders = Order::where('order_status','pending')
+        ->with('customer:id,name,phone,due') // Eager load customer
+        ->orderBy('created_at', 'desc')
+        ->paginate(20);
+    
+    return view('backend.order.pending_order',compact('orders'));
+}
+public function CompleteOrder(){
+    // ✅ FIX: Paginate orders (20 per page)
+    $orders = Order::where('order_status','complete')
+        ->with('customer:id,name,phone,due')
+        ->orderBy('created_at', 'desc')
+        ->paginate(20);
+    
+    return view('backend.order.complete_order',compact('orders'));
+}
+public function OrderDetails($order_id){
+    // ✅ FIX: Use findOrFail and eager load
+    $order = Order::with([
+        'customer:id,name,phone,due',
+        'orderDetails.product:id,product_name,product_code,selling_price,buying_price'
+    ])->findOrFail($order_id);
+    
+    $orderItem = $order->orderDetails()->orderBy('id','DESC')->get();
+    
+    return view('backend.order.order_details',compact('order','orderItem'));
+}
 
 
-    }// End Method 
+   public function OrderStatusUpdate(Request $request){
+    $order_id = $request->id;
+    
+    // ✅ FIX: Use single query with join instead of loop
+    DB::statement('
+        UPDATE products p
+        JOIN orderdetails od ON p.id = od.product_id
+        SET p.product_store = p.product_store - od.quantity
+        WHERE od.order_id = ?
+    ', [$order_id]);
+    
+    Order::findOrFail($order_id)->update(['order_status' => 'complete']);
+    
+    $notification = array(
+        'message' => 'Order Done Successfully',
+        'alert-type' => 'success'
+    ); 
+    
+    return redirect()->route('pending.order')->with($notification);
+}
 
-
-    public function StockManage(){
-
-    $product = Product::latest()->get();
+public function StockManage(){
+    // ✅ FIX: Paginate products (50 per page) and add category
+    $product = Product::with('category:id,category_name')
+        ->select(['id', 'product_name', 'product_code', 'product_store', 'buying_price', 'selling_price', 'category_id', 'created_at'])
+        ->latest()
+        ->paginate(50);
+    
     return view('backend.stock.all_stock',compact('product'));
-
-    }// End Method 
+}
 
 
     public function GenerateInvoicePDF($order_id)

@@ -11,37 +11,21 @@ use Gloudemans\Shoppingcart\Facades\Cart;
 class PosController extends Controller
 {
     public function Pos()
-    {
-        try {
-            // ✅ Load products with category
-            $product = Product::with('category:id,category_name')
-                ->where('product_store', '>', 0)
-                ->select([
-                    'id', 
-                    'product_name', 
-                    'product_code', 
-                    'product_store', 
-                    'selling_price', 
-                    'buying_price',
-                    'category_id',
-                    'product_image'
-                ])
-                ->latest()
-                ->get();
-            
-            $customer = Customer::select(['id', 'name', 'phone', 'previous_due'])
-                ->latest()
-                ->get();
+{
+    // ✅ FIX: Paginate products (20 per page)
+    $product = Product::with('category:id,category_name')
+        ->where('product_store', '>', 0)
+        ->select(['id', 'product_name', 'product_code', 'product_store', 'selling_price', 'buying_price', 'category_id', 'product_image'])
+        ->latest()
+        ->paginate(20);
+    
+    // ✅ FIX: Paginate customers (50 per page)
+    $customer = Customer::select(['id', 'name', 'phone', 'previous_due', 'due'])
+        ->latest()
+        ->paginate(50);
 
-            return view('backend.pos.pos_page', compact('product', 'customer'));
-
-        } catch (\Exception $e) {
-            return redirect()->back()->with([
-                'message' => 'Error: ' . $e->getMessage(),
-                'alert-type' => 'error'
-            ]);
-        }
-    }
+    return view('backend.pos.pos_page', compact('product', 'customer'));
+}
 
     public function AddCart(Request $request)
     {
@@ -145,39 +129,28 @@ class PosController extends Controller
         }
     }
 
-    public function CreateInvoice(Request $request)
-    {
-        try {
-            $contents = Cart::content();
+   public function CreateInvoice(Request $request)
+{
+    $contents = Cart::content();
 
-            if ($contents->count() == 0) {
-                return redirect()->back()->with([
-                    'message' => 'Cart is empty',
-                    'alert-type' => 'error'
-                ]);
-            }
-
-            $customer = Customer::find($request->customer_id);
-
-            $subTotal = 0;
-            foreach ($contents as $item) {
-                $subTotal += floatval($item->qty) * floatval($item->price);
-            }
-
-            return view('backend.invoice.product_invoice', [
-                'contents' => $contents,
-                'customer' => $customer,
-                'previousDue' => floatval($customer->previous_due ?? 0),
-                'subTotal' => $subTotal
-            ]);
-
-        } catch (\Exception $e) {
-            return redirect()->back()->with([
-                'message' => 'Error: ' . $e->getMessage(),
-                'alert-type' => 'error'
-            ]);
-        }
+    if ($contents->count() == 0) {
+        return redirect()->back()->with(['message' => 'Cart is empty', 'alert-type' => 'error']);
     }
+
+    $customer = Customer::find($request->customer_id);
+
+    // ✅ FIX: Calculate total in view, not controller
+    $subTotal = collect($contents)->sum(function($item) {
+        return floatval($item->qty) * floatval($item->price);
+    });
+
+    return view('backend.invoice.product_invoice', [
+        'contents' => $contents,
+        'customer' => $customer,
+        'previousDue' => floatval($customer->previous_due ?? 0),
+        'subTotal' => $subTotal
+    ]);
+}
 
     public function AllItem(Request $request)
     {

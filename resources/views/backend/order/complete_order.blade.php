@@ -1,80 +1,145 @@
 @extends('admin_dashboard')
 @section('admin')
 
- <div class="content">
+<div class="content">
 
-                    <!-- Start Content-->
-                    <div class="container-fluid">
-                        
-                        <!-- start page title -->
-                        <div class="row">
-                            <div class="col-12">
-                                <div class="page-title-box">
-                                    <div class="page-title-right">
-                                        <ol class="breadcrumb m-0">
-      
-                                        </ol>
+    <!-- Start Content-->
+    <div class="container-fluid">
+        
+        <!-- start page title -->
+        <div class="row">
+            <div class="col-12">
+                <div class="page-title-box">
+                    <div class="page-title-right">
+                        <ol class="breadcrumb m-0">
+                        </ol>
+                    </div>
+                    <h4 class="page-title">داواکاری تەواوبوو</h4>
+                </div>
+            </div>
+        </div>     
+        <!-- end page title --> 
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                         
+                        <table id="basic-datatable" class="table dt-responsive nowrap w-100">
+                            <thead>
+                                <tr>
+                                    <th>ژمارە</th>
+                                    <th>وێنە</th>
+                                    <th>ناو</th>
+                                    <th>ڕۆژی داواکاری</th>
+                                    <th>شێوازی پارەدان</th>
+                                    <th>پسوڵە</th>
+                                    <th>پارەی دراو</th>
+                                    <th>دۆخ</th>
+                                    <th>کردار</th>
+                                </tr>
+                            </thead>
+                      
+                            <tbody>
+                                @forelse($orders as $key => $item)
+                                    <tr>
+                                        <td>{{ ($orders->currentPage() - 1) * $orders->perPage() + $key + 1 }}</td>
+                                        <td>
+                                            @if($item->customer && $item->customer->image)
+                                                <img src="{{ asset($item->customer->image) }}" 
+                                                     style="width:50px; height: 40px; border-radius: 4px;"
+                                                     alt="Customer Image">
+                                            @else
+                                                <img src="https://via.placeholder.com/50?text=No+Image" 
+                                                     style="width:50px; height: 40px; border-radius: 4px;"
+                                                     alt="No Image">
+                                            @endif
+                                        </td>
+                                        <td>
+                                            <strong>{{ $item->customer->name ?? 'نەناسراو' }}</strong>
+                                        </td>
+                                        <td>
+                                            {{ \Carbon\Carbon::parse($item->order_date)->format('Y-m-d H:i') }}
+                                        </td>
+                                        <td>
+                                            @if($item->payment_status == 'HandCash')
+                                                <span class="badge bg-info">دەستی</span>
+                                            @elseif($item->payment_status == 'Cheque')
+                                                <span class="badge bg-warning">چەک</span>
+                                            @elseif($item->payment_status == 'Bank')
+                                                <span class="badge bg-success">بانک</span>
+                                            @else
+                                                <span class="badge bg-secondary">{{ $item->payment_status }}</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            <strong>#{{ $item->id }}</strong>
+                                        </td>
+                                        <td>
+                                            <strong class="text-success">${{ number_format($item->pay, 2) }}</strong>
+                                        </td>
+                                        <td>
+                                            @if($item->order_status == 'complete')
+                                                <span class="badge bg-success">تەواو</span>
+                                            @elseif($item->order_status == 'pending')
+                                                <span class="badge bg-danger">چاوەروانی</span>
+                                            @elseif($item->order_status == 'cancelled')
+                                                <span class="badge bg-dark">لابرا</span>
+                                            @else
+                                                <span class="badge bg-secondary">{{ $item->order_status }}</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            <a href="{{ url('order/invoice-download/'.$item->id) }}" 
+                                               class="btn btn-primary btn-sm rounded-pill"
+                                               title="داگرتنی پسوڵەی PDF">
+                                                <i class="mdi mdi-download me-1"></i> PDF
+                                            </a>
+                                            <a href="{{ route('order.details', $item->id) }}" 
+                                               class="btn btn-info btn-sm rounded-pill"
+                                               title="وردەکاری">
+                                                <i class="mdi mdi-eye me-1"></i> وردەکاری
+                                            </a>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="9" class="text-center text-muted py-4">
+                                            <i class="mdi mdi-inbox" style="font-size: 2rem; opacity: 0.5;"></i>
+                                            <p class="mt-2">داواکاری تەواوکراو نیە</p>
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+
+                        <!-- ✅ PAGINATION LINKS -->
+                        @if($orders->count() > 0)
+                            <div class="row mt-4">
+                                <div class="col-md-6">
+                                    <small class="text-muted">
+                                        <i class="mdi mdi-information"></i>
+                                        نیشاندان {{ $orders->firstItem() }} تا {{ $orders->lastItem() }} 
+                                        (ژمارە کۆ: {{ $orders->total() }})
+                                    </small>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="d-flex justify-content-end">
+                                        {{ $orders->links('pagination::bootstrap-4') }}
                                     </div>
-                                    <h4 class="page-title">داواکاری تەواوبوو</h4>
                                 </div>
                             </div>
-                        </div>     
-                        <!-- end page title --> 
+                        @endif
 
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body">
-                     
-                    
-                    <table id="basic-datatable" class="table dt-responsive nowrap w-100">
-                        <thead>
-                            <tr>
-                                <th>Sl</th>
-                                <th>وێنە</th>
-                                <th>ناو</th>
-                                <th>ڕۆژی داواکاری</th>
-                                <th>پارەدان</th>
-                                <th>پسوڵە</th>
-                                <th>پارەدان</th>
-                                <th>دۆخ</th>
-                                <th>کردار</th>
-                            </tr>
-                        </thead>
-                    
-    
-        <tbody>
-        	@foreach($orders as $key=> $item)
-            <tr>
-                <td>{{ $key+1 }}</td>
-                <td> <img src="{{ asset($item->customer->image) }}" style="width:50px; height: 40px;"> </td>
-                <td>{{ $item['customer']['name'] }}</td>
-                <td>{{ $item->order_date }}</td>
-                <td>{{ $item->payment_status }}</td>
-                <td>{{ $item->id }}</td>
-                <td>{{ $item->pay }}</td>
-                <td> <span class="badge bg-success">{{ $item->order_status }}</span> </td>
-                <td>
-<a href="{{ url('order/invoice-download/'.$item->id) }}" class="btn btn-blue rounded-pill waves-effect waves-light"> پسوڵەی PDF </a> 
+                    </div> <!-- end card body-->
+                </div> <!-- end card -->
+            </div><!-- end col-->
+        </div>
+        <!-- end row-->
 
-                </td>
-            </tr>
-            @endforeach
-        </tbody>
-                    </table>
+    </div> <!-- container -->
 
-                </div> <!-- end card body-->
-            </div> <!-- end card -->
-        </div><!-- end col-->
-    </div>
-    <!-- end row-->
+</div> <!-- content -->
 
-
-                      
-                        
-                    </div> <!-- container -->
-
-                </div> <!-- content -->
-
-
-@endsection 
+@endsection
