@@ -23,19 +23,19 @@ class DashboardController extends Controller
         $customEndDate = $request->input('end_date');
         $cacheKey = 'dashboard_' . $filterType . '_' . md5($customStartDate . $customEndDate) . '_' . auth()->id();
 
-        if (Cache::has($cacheKey)) {
-            $cachedData = Cache::get($cacheKey);
-            $cachedData['cached'] = true;
-            return view('index', $cachedData);
-        }
+        // ✅ Don't use cache for now - let's see correct values
+        // if (Cache::has($cacheKey)) {
+        //     $cachedData = Cache::get($cacheKey);
+        //     $cachedData['cached'] = true;
+        //     return view('index', $cachedData);
+        // }
 
         $startDate = null;
-        $endDate = Carbon::now();
+        $endDate = Carbon::now()->endOfDay();
 
         switch($filterType) {
             case 'today':
                 $startDate = Carbon::now()->startOfDay();
-                $endDate = Carbon::now()->endOfDay();
                 break;
             case 'yesterday':
                 $startDate = Carbon::yesterday()->startOfDay();
@@ -63,87 +63,91 @@ class DashboardController extends Controller
         }
 
         try {
-            // ✅ TOTAL PAID (Orders within date range + Customer Payments)
-            $orderPayments = Order::where('order_status', '!=', 'cancelled')
-                ->whereBetween(DB::raw("STR_TO_DATE(order_date, '%Y-%m-%d')"), [$startDate, $endDate])
-                ->sum('pay');
+            // ========== CALCULATION 1: TOTAL PAID ==========
+            // Total paid from orders in date range + customer payments
+            $orderPayments = floatval(
+                Order::where('order_status', '!=', 'cancelled')
+                    ->whereBetween(DB::raw("STR_TO_DATE(order_date, '%Y-%m-%d')"), [$startDate, $endDate])
+                    ->sum('pay') ?? 0
+            );
 
-            $customerPayments = Payment::whereBetween('payment_date', [$startDate, $endDate])
-                ->sum('payment_amount');
+            $customerPayments = floatval(
+                Payment::whereBetween('payment_date', [$startDate, $endDate])
+                    ->sum('payment_amount') ?? 0
+            );
 
-            $totalPaid = floatval($orderPayments ?? 0) + floatval($customerPayments ?? 0);
+            $totalPaid = $orderPayments + $customerPayments;
 
-            // ✅ TOTAL DUE IN DATE RANGE (sub_total - pay from orders)
-            $totalDueInRange = Order::where('order_status', '!=', 'cancelled')
-                ->whereBetween(DB::raw("STR_TO_DATE(order_date, '%Y-%m-%d')"), [$startDate, $endDate])
-                ->selectRaw('SUM(CAST(sub_total AS DECIMAL(10,2)) - CAST(pay AS DECIMAL(10,2))) as total_due')
-                ->value('total_due');
+            // ========== CALCULATION 2: TOTAL DUE ==========
+            // Due from orders in date range: (sub_total - pay)
+            $totalOrderDue = floatval(
+                Order::where('order_status', '!=', 'cancelled')
+                    ->whereBetween(DB::raw("STR_TO_DATE(order_date, '%Y-%m-%d')"), [$startDate, $endDate])
+                    ->selectRaw('SUM(CAST(sub_total AS DECIMAL(10,2)) - CAST(pay AS DECIMAL(10,2))) as due_amount')
+                    ->value('due_amount') ?? 0
+            );
 
-            $totalDue = floatval($totalDueInRange ?? 0);
+            // Outstanding customer dues (previous_due)
+            $totalCustomerDue = floatval(
+                Customer::where('previous_due', '>', 0)
+                    ->sum('previous_due') ?? 0
+            );
 
-            // ✅ TOTAL CUSTOMER DUE (Outstanding dues from previous_due field)
-            $totalCustomerDue = Customer::where('previous_due', '>', 0)
-                ->sum('previous_due');
-            $totalCustomerDue = floatval($totalCustomerDue ?? 0);
+            // Combined total due
+            $totalDue = $totalOrderDue + $totalCustomerDue;
 
-            // ✅ COMBINED TOTAL DUE
-            $combinedTotalDue = $totalDue + $totalCustomerDue;
-
-            // ✅ PROFIT & LOSS
+            // ========== CALCULATION 3: PROFIT & LOSS ==========
             $profitLoss = $this->calculateProfitAndLoss($startDate, $endDate);
             $profit = $profitLoss['profit'];
             $loss = $profitLoss['loss'];
 
-            // ✅ SUPPLIER PAYMENTS
-            $totalSupplierPayment = SupplierPayment::whereBetween('payment_date', [$startDate, $endDate])
-                ->sum('payment_amount');
-            $totalSupplierPayment = floatval($totalSupplierPayment ?? 0);
+            // ========== CALCULATION 4: SUPPLIER PAYMENTS ==========
+            $totalSupplierPayment = floatval(
+                SupplierPayment::whereBetween('payment_date', [$startDate, $endDate])
+                    ->sum('payment_amount') ?? 0
+            );
 
-            // ✅ STOCK VALUE
+            // ========== CALCULATION 5: STOCK VALUE ==========
             $totalStockValue = $this->calculateStockValue();
 
-            // ✅ TODAY'S DATA
+            // ========== CALCULATION 6: TODAY'S DATA ==========
             $today = date('Y-m-d');
             
-            $todaySales = Order::where('order_status', '!=', 'cancelled')
-                ->whereDate('order_date', $today)
-                ->sum('sub_total');
-            $todaySales = floatval($todaySales ?? 0);
+            $todaySales = floatval(
+                Order::where('order_status', '!=', 'cancelled')
+                    ->whereDate('order_date', $today)
+                    ->sum('sub_total') ?? 0
+            );
             
             $todayOrders = Order::where('order_status', '!=', 'cancelled')
                 ->whereDate('order_date', $today)
                 ->count();
             
-            $todayExpenses = Expense::whereDate('date', $today)
-                ->sum('amount');
-            $todayExpenses = floatval($todayExpenses ?? 0);
+            $todayExpenses = floatval(
+                Expense::whereDate('date', $today)
+                    ->sum('amount') ?? 0
+            );
 
-            // ✅ TOTAL EXPENSES (All time)
-            $totalExpenses = Expense::sum('amount');
-            $totalExpenses = floatval($totalExpenses ?? 0);
+            // ========== CALCULATION 7: TOTAL EXPENSES ==========
+            $totalExpenses = floatval(
+                Expense::sum('amount') ?? 0
+            );
 
-            // ✅ EXPENSES IN DATE RANGE
-            $rangeExpenses = Expense::whereBetween('date', [$startDate, $endDate])
-                ->sum('amount');
-            $rangeExpenses = floatval($rangeExpenses ?? 0);
-
-            // ✅ MONTHLY PAID
+            // ========== CALCULATION 8: MONTHLY PAID DATA ==========
             $monthlyPaid = $this->getMonthlyPaidData();
 
-            // ✅ RECENT EXPENSES
+            // ========== RECENT DATA ==========
             $recentExpenses = Expense::select(['id', 'amount', 'date', 'created_at'])
                 ->orderBy('created_at', 'desc')
                 ->limit(5)
                 ->get();
 
-            // ✅ LOW STOCK PRODUCTS
             $lowStockProducts = Product::where('product_store', '<=', 10)
                 ->select(['id', 'product_name', 'product_code', 'product_store', 'selling_price', 'buying_price'])
                 ->orderBy('product_store', 'asc')
                 ->limit(5)
                 ->get();
 
-            // ✅ TOP CUSTOMERS
             $topCustomers = Order::where('order_status', '!=', 'cancelled')
                 ->select('customer_id', DB::raw('SUM(pay) as total_spent'))
                 ->groupBy('customer_id')
@@ -152,10 +156,8 @@ class DashboardController extends Controller
                 ->limit(5)
                 ->get();
 
-            // ✅ BEST SELLING PRODUCTS
             $bestSellingProducts = $this->getBestSellingProducts();
 
-            // ✅ RECENT SUPPLIER PAYMENTS
             $recentSupplierPayments = SupplierPayment::whereBetween('payment_date', [$startDate, $endDate])
                 ->with('supplier:id,supplier_name')
                 ->select(['id', 'supplier_id', 'payment_amount', 'payment_date', 'created_at'])
@@ -163,11 +165,10 @@ class DashboardController extends Controller
                 ->limit(5)
                 ->get();
 
-            // ✅ RECENT ORDERS
             $orders = Order::where('order_status', '!=', 'cancelled')
                 ->with([
                     'orderItems:id,order_id,product_id,quantity,unitcost',
-                    'orderItems.product:id,product_name,product_code',
+                    'orderItems.product:id,product_name,product_code,buying_price',
                     'customer:id,name,phone'
                 ])
                 ->select(['id', 'customer_id', 'order_date', 'sub_total', 'pay', 'due', 'order_status', 'payment_status'])
@@ -175,12 +176,12 @@ class DashboardController extends Controller
                 ->limit(50)
                 ->get();
 
-            // ✅ Prepare data array
+            // ========== PREPARE DATA ==========
             $data = [
                 'totalPaid' => $totalPaid,
                 'totalDue' => $totalDue,
+                'totalOrderDue' => $totalOrderDue,
                 'totalCustomerDue' => $totalCustomerDue,
-                'combinedTotalDue' => $combinedTotalDue,
                 'profit' => $profit,
                 'loss' => $loss,
                 'totalStockValue' => $totalStockValue,
@@ -195,7 +196,6 @@ class DashboardController extends Controller
                 'filterType' => $filterType,
                 'orders' => $orders,
                 'totalExpenses' => $totalExpenses,
-                'rangeExpenses' => $rangeExpenses,
                 'startDate' => $startDate,
                 'endDate' => $endDate,
                 'totalSupplierPayment' => $totalSupplierPayment,
@@ -203,17 +203,19 @@ class DashboardController extends Controller
                 'cached' => false
             ];
 
-            // ✅ Cache for 1 hour
-            Cache::put($cacheKey, $data, 3600);
+            // Cache disabled for now
+            // Cache::put($cacheKey, $data, 3600);
 
             return view('index', $data);
 
         } catch (\Exception $e) {
+            \Log::error('Dashboard Error: ' . $e->getMessage());
+            
             return view('index', [
                 'totalPaid' => 0,
                 'totalDue' => 0,
+                'totalOrderDue' => 0,
                 'totalCustomerDue' => 0,
-                'combinedTotalDue' => 0,
                 'profit' => 0,
                 'loss' => 0,
                 'totalStockValue' => 0,
@@ -228,7 +230,6 @@ class DashboardController extends Controller
                 'filterType' => $filterType,
                 'orders' => collect(),
                 'totalExpenses' => 0,
-                'rangeExpenses' => 0,
                 'startDate' => $startDate,
                 'endDate' => $endDate,
                 'totalSupplierPayment' => 0,
@@ -277,6 +278,7 @@ class DashboardController extends Controller
             ];
 
         } catch (\Exception $e) {
+            \Log::error('Profit/Loss Calculation Error: ' . $e->getMessage());
             return ['profit' => 0, 'loss' => 0];
         }
     }
@@ -291,6 +293,7 @@ class DashboardController extends Controller
             return floatval($stockValue ?? 0);
 
         } catch (\Exception $e) {
+            \Log::error('Stock Value Calculation Error: ' . $e->getMessage());
             return 0;
         }
     }
@@ -299,9 +302,9 @@ class DashboardController extends Controller
     {
         try {
             $monthlyData = Order::where('order_status', '!=', 'cancelled')
-                ->whereYear('order_date', date('Y'))
-                ->selectRaw('MONTH(order_date) as month, SUM(pay) as total')
-                ->groupBy(DB::raw('MONTH(order_date)'))
+                ->whereYear(DB::raw("STR_TO_DATE(order_date, '%Y-%m-%d')"), date('Y'))
+                ->selectRaw("MONTH(STR_TO_DATE(order_date, '%Y-%m-%d')) as month, SUM(pay) as total")
+                ->groupBy(DB::raw("MONTH(STR_TO_DATE(order_date, '%Y-%m-%d'))"))
                 ->pluck('total', 'month')
                 ->toArray();
 
@@ -313,6 +316,7 @@ class DashboardController extends Controller
             return $monthlyPaid;
 
         } catch (\Exception $e) {
+            \Log::error('Monthly Paid Data Error: ' . $e->getMessage());
             return array_fill(0, 12, 0);
         }
     }
@@ -345,6 +349,7 @@ class DashboardController extends Controller
             return $bestSellingProducts;
 
         } catch (\Exception $e) {
+            \Log::error('Best Selling Products Error: ' . $e->getMessage());
             return collect();
         }
     }
