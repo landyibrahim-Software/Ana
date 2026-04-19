@@ -178,15 +178,16 @@ public function ShowCustomer($id)
 public function PaymentCustomer(Request $request){
     
     $customer_id = $request->customer_id;
-    $payment_amount = $request->payment_amount;
+    $payment_amount = floatval($request->payment_amount);
     
     $customer = Customer::findOrFail($customer_id);
     
-    // Create payment record ONLY
+    // ✅ Create payment record with EXACT payment amount
     Payment::create([
         'customer_id' => $customer_id,
         'payment_amount' => $payment_amount,
         'payment_date' => now(),
+        'payment_status' => 'completed',
     ]);
 
     $notification = array(
