@@ -176,39 +176,34 @@
                                         });
                                     @endphp
                                     
-                                  @forelse($all_records as $record)
-    @if($record['type'] == 'order')
-        <tr>
-            <td><span class="badge bg-info text-white">داواکاری #{{ $record['id'] }}</span></td>
-            <td><strong>${{ number_format($record['pay'], 2) }}</strong></td>
-            <td>
-                @if($record['order_status'] == 'cancelled')
-                    <span class="badge bg-dark text-white">✗ لابردراو</span>
-                @else
-                    <span class="badge bg-success text-white">✓ پارە دراو</span>
-                @endif
-            </td>
-            <td>{{ \Carbon\Carbon::parse($record['date'])->format('Y-m-d H:i') }}</td>
-        </tr>
-    @else
-        <tr class="table-success">
-            <td><span class="badge bg-success text-white">پارەدان</span></td>
-            <td><strong class="text-success">${{ number_format($record['amount'], 2) }}</strong></td>
-            <td>
-                @if($record['payment_status'] == 'cancelled')
-                    <span class="badge bg-dark text-white">✗ لابردراو</span>
-                @else
-                    <span class="badge bg-success text-white">✓ قبوڵ کرا</span>
-                @endif
-            </td>
-            <td>{{ \Carbon\Carbon::parse($record['date'])->format('Y-m-d H:i') }}</td>
-        </tr>
-    @endif
-@empty
-    <tr>
-        <td colspan="4" class="text-center text-muted py-4">هیچ داواکاری یان پارەدانێک نەدۆزرایەوە</td>
-    </tr>
-@endforelse
+                                    @forelse($all_records as $record)
+                                        @if($record['type'] == 'order')
+                                            <tr>
+                                                <td><span class="badge bg-info text-white">داواکاری #{{ $record['id'] }}</span></td>
+                                                <td><strong>${{ number_format($record['pay'], 2) }}</strong></td>
+                                                <td>
+                                                    @if($record['order_status'] == 'cancelled')
+                                                        <span class="badge bg-dark text-white">✗ لابردراو</span>
+                                                    @else
+                                                        <span class="badge bg-success text-white">✓ پارە دراو</span>
+                                                    @endif
+                                                </td>
+                                                <td>{{ \Carbon\Carbon::parse($record['date'])->format('Y-m-d H:i') }}</td>
+                                            </tr>
+                                        @else
+                                            <tr class="table-success">
+                                                <td><span class="badge bg-success text-white">پارەدان</span></td>
+                                                <td><strong class="text-success">${{ number_format($record['amount'], 2) }}</strong></td>
+                                                <td>
+                                                    @if($record['payment_status'] == 'cancelled')
+                                                        <span class="badge bg-dark text-white">✗ لابردراو</span>
+                                                    @else
+                                                        <span class="badge bg-success text-white">✓ قبوڵ کرا</span>
+                                                    @endif
+                                                </td>
+                                                <td>{{ \Carbon\Carbon::parse($record['date'])->format('Y-m-d H:i') }}</td>
+                                            </tr>
+                                        @endif
                                     @empty
                                         <tr>
                                             <td colspan="4" class="text-center text-muted py-4">هیچ داواکاری یان پارەدانێک نەدۆزرایەوە</td>
