@@ -283,29 +283,29 @@
                                     <i class="mdi mdi-filter"></i> فیلتەر
                                 </label>
                                 <select name="filter" id="filterType" class="form-control filter-select" onchange="handleFilterChange()">
-                                    <option value="today" {{ $filterType == 'today' ? 'selected' : '' }}>📅 ئەمڕۆ</option>
-                                    <option value="yesterday" {{ $filterType == 'yesterday' ? 'selected' : '' }}>📆 دوێنێ</option>
-                                    <option value="last_week" {{ $filterType == 'last_week' ? 'selected' : '' }}>📊 هەفتەی پێشوو</option>
-                                    <option value="last_month" {{ $filterType == 'last_month' ? 'selected' : '' }}>📈 مانگی پێشوو</option>
-                                    <option value="last_year" {{ $filterType == 'last_year' ? 'selected' : '' }}>📉 ساڵی پێشوو</option>
-                                    <option value="custom" {{ $filterType == 'custom' ? 'selected' : '' }}>📋 دیاریکردن</option>
+                                    <option value="today" {{ request('filter') == 'today' ? 'selected' : '' }}>📅 ئەمڕۆ</option>
+                                    <option value="yesterday" {{ request('filter') == 'yesterday' ? 'selected' : '' }}>📆 دوێنێ</option>
+                                    <option value="last_week" {{ request('filter') == 'last_week' ? 'selected' : '' }}>📊 هەفتەی پێشوو</option>
+                                    <option value="last_month" {{ request('filter') == 'last_month' ? 'selected' : '' }}>📈 مانگی پێشوو</option>
+                                    <option value="last_year" {{ request('filter') == 'last_year' ? 'selected' : '' }}>📉 ساڵی پێشوو</option>
+                                    <option value="custom" {{ request('filter') == 'custom' ? 'selected' : '' }}>📋 دیاریکردن</option>
                                 </select>
                             </div>
 
                             <!-- Custom Date Range -->
-                            <div class="col-md-6" id="customDateRange" style="display: {{ $filterType == 'custom' ? 'block' : 'none' }};">
+                            <div class="col-md-6" id="customDateRange" style="display: {{ request('filter') == 'custom' ? 'block' : 'none' }};">
                                 <div class="filter-inputs">
                                     <div style="flex: 1;">
                                         <label style="color: white; font-weight: 500; display: block; margin-bottom: 8px; font-size: 0.9rem;">
                                             <i class="mdi mdi-calendar-start"></i> سەرەتا
                                         </label>
-                                        <input type="date" name="start_date" class="form-control" value="{{ request('start_date') }}" required>
+                                        <input type="date" name="start_date" class="form-control" value="{{ request('start_date') }}">
                                     </div>
                                     <div style="flex: 1;">
                                         <label style="color: white; font-weight: 500; display: block; margin-bottom: 8px; font-size: 0.9rem;">
                                             <i class="mdi mdi-calendar-end"></i> کۆتایی
                                         </label>
-                                        <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}" required>
+                                        <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}">
                                     </div>
                                     <button type="submit" class="filter-btn">✓ گەڕان</button>
                                 </div>
@@ -315,18 +315,20 @@
                         <!-- Date Range Display -->
                         <div class="date-range-display" id="dateRangeDisplay">
                             <i class="mdi mdi-information"></i>
-                            @if($filterType == 'today')
+                            @if(request('filter') == 'today')
                                 ئەمڕۆ: {{ \Carbon\Carbon::now()->format('Y-m-d') }}
-                            @elseif($filterType == 'yesterday')
+                            @elseif(request('filter') == 'yesterday')
                                 دوێنێ: {{ \Carbon\Carbon::yesterday()->format('Y-m-d') }}
-                            @elseif($filterType == 'last_week')
+                            @elseif(request('filter') == 'last_week')
                                 ئەم هێمێی ({{ \Carbon\Carbon::now()->subWeek()->startOfWeek()->format('Y-m-d') }} بۆ {{ \Carbon\Carbon::now()->endOfWeek()->format('Y-m-d') }})
-                            @elseif($filterType == 'last_month')
+                            @elseif(request('filter') == 'last_month')
                                 مانگی دواتر ({{ \Carbon\Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d') }} بۆ {{ \Carbon\Carbon::now()->endOfMonth()->format('Y-m-d') }})
-                            @elseif($filterType == 'last_year')
+                            @elseif(request('filter') == 'last_year')
                                 ساڵی دواتر ({{ \Carbon\Carbon::now()->subYear()->startOfYear()->format('Y-m-d') }} بۆ {{ \Carbon\Carbon::now()->endOfYear()->format('Y-m-d') }})
-                            @elseif($filterType == 'custom')
+                            @elseif(request('filter') == 'custom')
                                 دیاریکراو ({{ request('start_date') }} بۆ {{ request('end_date') }})
+                            @else
+                                ئەمڕۆ: {{ \Carbon\Carbon::now()->format('Y-m-d') }}
                             @endif
                         </div>
                     </form>
@@ -349,23 +351,23 @@
         <!-- ========== ROW 1: COLORFUL KPI CARDS ========== -->
         <div class="row g-3 mb-4">
 
-            <!-- Total Paid (FROM ORDERS + CUSTOMER PAYMENTS) -->
+            <!-- Total Paid -->
             <div class="col-md-6 col-lg-4">
                 <div class="card kpi-card kpi-gradient-1 position-relative">
                     <i class="mdi mdi-cash-multiple kpi-icon"></i>
                     <div class="card-body">
-                        <h4>{{ number_format($totalPaid, 2) }}</h4>
+                        <h4>${{ number_format($totalPaid ?? 0, 2) }}</h4>
                         <p>کۆی گشتی پارەی دراو<br><small style="opacity: 0.7; font-size: 0.8rem;">(داواکاری + پارەدانی کڕیار)</small></p>
                     </div>
                 </div>
             </div>
 
-            <!-- Total Due (FROM ORDERS + CUSTOMER) -->
+            <!-- Total Due -->
             <div class="col-md-6 col-lg-4">
                 <div class="card kpi-card kpi-gradient-2 position-relative">
                     <i class="mdi mdi-alert-circle kpi-icon"></i>
                     <div class="card-body">
-                        <h4>{{ number_format($totalDue, 2) }}</h4>
+                        <h4>${{ number_format($totalDue ?? 0, 2) }}</h4>
                         <p>کۆی گشتی قەرز<br><small style="opacity: 0.7; font-size: 0.8rem;">(داواکاری + کڕیار)</small></p>
                     </div>
                 </div>
@@ -376,7 +378,7 @@
                 <div class="card kpi-card kpi-gradient-3 position-relative">
                     <i class="mdi mdi-trending-up kpi-icon"></i>
                     <div class="card-body">
-                        <h4>{{ number_format($profit, 2) }}</h4>
+                        <h4>${{ number_format($profit ?? 0, 2) }}</h4>
                         <p>قازانج</p>
                     </div>
                 </div>
@@ -387,7 +389,7 @@
                 <div class="card kpi-card kpi-gradient-4 position-relative">
                     <i class="mdi mdi-trending-down kpi-icon"></i>
                     <div class="card-body">
-                        <h4>{{ number_format($loss, 2) }}</h4>
+                        <h4>${{ number_format($loss ?? 0, 2) }}</h4>
                         <p>زەرەر</p>
                     </div>
                 </div>
@@ -398,7 +400,7 @@
                 <div class="card kpi-card kpi-gradient-5 position-relative">
                     <i class="mdi mdi-bank-transfer kpi-icon"></i>
                     <div class="card-body">
-                        <h4>{{ number_format($totalSupplierPayment, 2) }}</h4>
+                        <h4>${{ number_format($totalSupplierPayment ?? 0, 2) }}</h4>
                         <p>پارەدانی دابینکەر</p>
                     </div>
                 </div>
@@ -409,7 +411,7 @@
                 <div class="card kpi-card kpi-gradient-6 position-relative">
                     <i class="mdi mdi-warehouse kpi-icon"></i>
                     <div class="card-body">
-                        <h4>{{ number_format($totalStockValue, 2) }}</h4>
+                        <h4>${{ number_format($totalStockValue ?? 0, 2) }}</h4>
                         <p>بەهای کاڵای ناو مەخزەن</p>
                     </div>
                 </div>
@@ -425,7 +427,7 @@
                 <div class="card kpi-card kpi-gradient-1 position-relative">
                     <i class="mdi mdi-cart kpi-icon"></i>
                     <div class="card-body">
-                        <h4>{{ number_format($todaySales,2) }}</h4>
+                        <h4>${{ number_format($todaySales ?? 0, 2) }}</h4>
                         <p>فرۆشتنی ئەمڕۆ</p>
                     </div>
                 </div>
@@ -436,7 +438,7 @@
                 <div class="card kpi-card kpi-gradient-3 position-relative">
                     <i class="mdi mdi-receipt kpi-icon"></i>
                     <div class="card-body">
-                        <h4>{{ $todayOrders }}</h4>
+                        <h4>{{ $todayOrders ?? 0 }}</h4>
                         <p>داواکاری ئەمڕۆ</p>
                     </div>
                 </div>
@@ -447,7 +449,7 @@
                 <div class="card kpi-card kpi-gradient-5 position-relative">
                     <i class="mdi mdi-cash-remove kpi-icon"></i>
                     <div class="card-body">
-                        <h4>{{ number_format($totalExpenses,2) }}</h4>
+                        <h4>${{ number_format($totalExpenses ?? 0, 2) }}</h4>
                         <p>کۆی گشتی خەرجی</p>
                     </div>
                 </div>
@@ -458,7 +460,7 @@
                 <div class="card kpi-card kpi-gradient-2 position-relative">
                     <i class="mdi mdi-chart-line kpi-icon"></i>
                     <div class="card-body">
-                        <h4>{{ number_format($profit - $totalExpenses,2) }}</h4>
+                        <h4>${{ number_format(($profit ?? 0) - ($totalExpenses ?? 0), 2) }}</h4>
                         <p>خێر-مەسروفات</p>
                     </div>
                 </div>
@@ -494,23 +496,23 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @forelse($topCustomers as $customerData)
+                                    @forelse($topCustomers ?? [] as $customerData)
                                         @if($customerData->customer)
                                         <tr>
                                             <td>
                                                 <div class="d-flex align-items-center">
                                                     <div class="customer-avatar me-2">
-                                                        {{ substr($customerData->customer->name, 0, 1) }}
+                                                        {{ substr($customerData->customer->name ?? 'U', 0, 1) }}
                                                     </div>
                                                     <div>
-                                                        <strong>{{ $customerData->customer->name }}</strong>
+                                                        <strong>{{ $customerData->customer->name ?? '-' }}</strong>
                                                         <br>
                                                         <small class="text-muted">{{ $customerData->customer->phone ?? 'No Phone' }}</small>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td class="text-end">
-                                                <strong class="text-success">${{ number_format($customerData->total_spent,2) }}</strong>
+                                                <strong class="text-success">${{ number_format($customerData->total_spent ?? 0, 2) }}</strong>
                                             </td>
                                         </tr>
                                         @endif
@@ -544,16 +546,16 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @forelse($recentExpenses as $expense)
+                                    @forelse($recentExpenses ?? [] as $expense)
                                     <tr>
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 <i class="mdi mdi-cash-remove text-danger me-2"></i>
-                                                <span>Expense</span>
+                                                <span>خەرجی</span>
                                             </div>
                                         </td>
                                         <td class="text-end text-danger">
-                                            <strong>-${{ number_format($expense->amount,2) }}</strong>
+                                            <strong>-${{ number_format($expense->amount ?? 0, 2) }}</strong>
                                         </td>
                                         <td>
                                             <small>{{ \Carbon\Carbon::parse($expense->created_at)->format('d M Y') }}</small>
@@ -586,7 +588,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @forelse($recentSupplierPayments as $payment)
+                                    @forelse($recentSupplierPayments ?? [] as $payment)
                                     <tr>
                                         <td>
                                             <div class="d-flex align-items-center">
@@ -595,7 +597,7 @@
                                             </div>
                                         </td>
                                         <td class="text-end text-success">
-                                            <strong>+${{ number_format($payment->payment_amount,2) }}</strong>
+                                            <strong>+${{ number_format($payment->payment_amount ?? 0, 2) }}</strong>
                                         </td>
                                         <td>
                                             <small>{{ \Carbon\Carbon::parse($payment->payment_date)->format('d M Y') }}</small>
@@ -630,7 +632,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @forelse($lowStockProducts as $product)
+                                    @forelse($lowStockProducts ?? [] as $product)
                                     @php
                                         $stockPercentage = ($product->product_store / 10) * 100;
                                         $statusColor = $product->product_store <= 3 ? 'danger' : ($product->product_store <= 5 ? 'warning' : 'info');
@@ -646,12 +648,12 @@
                                                 <img src="https://via.placeholder.com/40?text=No" class="product-img-sm me-2" alt="No Image">
                                                 @endif
                                                 <span class="text-truncate" style="max-width: 150px;">
-                                                    {{ $product->product_name }}
+                                                    {{ $product->product_name ?? '-' }}
                                                 </span>
                                             </div>
                                         </td>
                                         <td>
-                                            <strong class="text-{{ $statusColor }}">{{ number_format($product->product_store, 2) }}</strong>
+                                            <strong class="text-{{ $statusColor }}">{{ number_format($product->product_store ?? 0, 2) }}</strong>
                                         </td>
                                         <td>
                                             <div class="d-flex align-items-center">
@@ -704,19 +706,19 @@
                                         <th class="text-center">ماوە</th>
                                     </tr>
                                 </thead>
-                               <tbody>
-                                    @forelse($bestSellingProducts as $item)
+                                <tbody>
+                                    @forelse($bestSellingProducts ?? [] as $item)
                                     <tr>
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 @if($item->product_image && file_exists(public_path($item->product_image)))
                                                 <img src="{{ asset($item->product_image) }}" 
                                                      class="product-img-sm me-2" 
-                                                     alt="{{ $item->product_name }}">
+                                                     alt="{{ $item->product_name ?? '-' }}">
                                                 @else
                                                 <img src="https://via.placeholder.com/40?text=No" class="product-img-sm me-2" alt="No Image">
                                                 @endif
-                                                <span>{{ $item->product_name }}</span>
+                                                <span>{{ $item->product_name ?? '-' }}</span>
                                             </div>
                                         </td>
                                         <td>
@@ -726,11 +728,11 @@
                                             {{ $item->category_name ?? 'N/A' }}
                                         </td>
                                         <td class="text-center">
-                                            <span class="badge bg-primary">{{ number_format($item->total_sold, 2) }}</span>
+                                            <span class="badge bg-primary">{{ number_format($item->total_sold ?? 0, 2) }}</span>
                                         </td>
                                         <td class="text-center">
-                                            <span class="badge bg-{{ $item->product_store > 50 ? 'success' : 'warning' }}">
-                                                {{ number_format($item->product_store, 2) }}
+                                            <span class="badge bg-{{ ($item->product_store ?? 0) > 50 ? 'success' : 'warning' }}">
+                                                {{ number_format($item->product_store ?? 0, 2) }}
                                             </span>
                                         </td>
                                     </tr>
@@ -770,32 +772,34 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @forelse($orders->paginate(10) as $order)
+                                    @forelse($orders ?? [] as $order)
                                     @php
-                                        $itemCount = $order->orderItems->sum('quantity');
+                                        $itemCount = $order->orderDetails ? $order->orderDetails->sum('quantity') : 0;
                                         $orderProfit = 0;
                                         
-                                        foreach($order->orderItems as $item) {
-                                            $buyingPrice = floatval($item->product->buying_price ?? 0);
-                                            $sellingPrice = floatval($item->unitcost ?? 0);
-                                            $quantity = floatval($item->quantity ?? 0);
-                                            
-                                            // Profit/Loss = (sellingPrice - buyingPrice) × quantity
-                                            $orderProfit += ($sellingPrice - $buyingPrice) * $quantity;
+                                        if($order->orderDetails) {
+                                            foreach($order->orderDetails as $item) {
+                                                $buyingPrice = floatval($item->product->buying_price ?? 0);
+                                                $sellingPrice = floatval($item->unitcost ?? 0);
+                                                $quantity = floatval($item->quantity ?? 0);
+                                                
+                                                // Profit/Loss = (sellingPrice - buyingPrice) × quantity
+                                                $orderProfit += ($sellingPrice - $buyingPrice) * $quantity;
+                                            }
                                         }
                                     @endphp
                                     <tr>
                                         <td><strong>#{{ $order->id }}</strong></td>
                                         <td>{{ $order->customer->name ?? 'N/A' }}</td>
                                         <td>{{ $itemCount }}</td>
-                                        <td><strong>${{ number_format($order->sub_total,2) }}</strong></td>
-                                        <td class="text-success"><strong>${{ number_format($order->pay,2) }}</strong></td>
-                                        <td class="text-danger"><strong>${{ number_format($order->due,2) }}</strong></td>
+                                        <td><strong>${{ number_format($order->sub_total ?? 0, 2) }}</strong></td>
+                                        <td class="text-success"><strong>${{ number_format($order->pay ?? 0, 2) }}</strong></td>
+                                        <td class="text-danger"><strong>${{ number_format($order->due ?? 0, 2) }}</strong></td>
                                         <td>
                                             @if($orderProfit >= 0)
-                                                <span class="badge bg-success">+${{ number_format($orderProfit,2) }}</span>
+                                                <span class="badge bg-success">+${{ number_format($orderProfit, 2) }}</span>
                                             @else
-                                                <span class="badge bg-danger">-${{ number_format(abs($orderProfit),2) }}</span>
+                                                <span class="badge bg-danger">-${{ number_format(abs($orderProfit), 2) }}</span>
                                             @endif
                                         </td>
                                         <td>{{ $order->payment_status ?? 'N/A' }}</td>
@@ -813,11 +817,6 @@
                                         <td colspan="10" class="text-center text-muted">داواکاری نیە</td>
                                     </tr>
                                     @endforelse
-                                    <tr>
-    <td colspan="10">
-        {{ $orders->links() }}
-    </td>
-</tr>
                                 </tbody>
                             </table>
                         </div>
@@ -839,7 +838,7 @@ const monthlyPaidChart = new Chart(ctx, {
         labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
         datasets: [{
             label: 'Paid Amount ($)',
-            data: @json($monthlyPaid),
+            data: @json($monthlyPaid ?? [0,0,0,0,0,0,0,0,0,0,0,0]),
             backgroundColor: '#4a81d4',
             borderRadius: 6,
             borderSkipped: false,
