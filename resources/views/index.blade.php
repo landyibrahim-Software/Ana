@@ -770,7 +770,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @forelse($orders->sortByDesc('created_at')->take(10) as $order)
+                                    @forelse($orders->paginate(10) as $order)
                                     @php
                                         $itemCount = $order->orderItems->sum('quantity');
                                         $orderProfit = 0;
@@ -813,6 +813,11 @@
                                         <td colspan="10" class="text-center text-muted">داواکاری نیە</td>
                                     </tr>
                                     @endforelse
+                                    <tr>
+    <td colspan="10">
+        {{ $orders->links() }}
+    </td>
+</tr>
                                 </tbody>
                             </table>
                         </div>
