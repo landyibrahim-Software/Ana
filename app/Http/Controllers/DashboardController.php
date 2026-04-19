@@ -43,8 +43,13 @@ class DashboardController extends Controller
             // ✅ TOTAL PAID
             $totalPaid = Order::whereBetween('created_at', [$startDate, $endDate])->sum('pay') ?? 0;
 
-            // ✅ TOTAL DUE
-            $totalDue = Order::whereBetween('created_at', [$startDate, $endDate])->sum('due') ?? 0;
+            
+           // ✅ TOTAL DUE (Orders + Customer Previous Due)
+$orderDue = Order::whereBetween('created_at', [$startDate, $endDate])->sum('due') ?? 0;
+
+$customerPreviousDue = Customer::sum('previous_due') ?? 0;
+
+$totalDue = floatval($orderDue) + floatval($customerPreviousDue);
 
            // ✅ PROFIT CALCULATION — single SQL query instead of PHP loop
             $profitRow = DB::selectOne("
