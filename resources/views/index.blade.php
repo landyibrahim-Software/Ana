@@ -783,7 +783,6 @@
                                                 $sellingPrice = floatval($item->unitcost ?? 0);
                                                 $quantity = floatval($item->quantity ?? 0);
                                                 
-                                                // Profit/Loss = (sellingPrice - buyingPrice) × quantity
                                                 $orderProfit += ($sellingPrice - $buyingPrice) * $quantity;
                                             }
                                         }
@@ -831,47 +830,54 @@
 <!-- Chart.js Script -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-const ctx = document.getElementById('monthly-paid-chart').getContext('2d');
-const monthlyPaidChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-        labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
-        datasets: [{
-            label: 'Paid Amount ($)',
-            data: @json($monthlyPaid ?? [0,0,0,0,0,0,0,0,0,0,0,0]),
-            backgroundColor: '#4a81d4',
-            borderRadius: 6,
-            borderSkipped: false,
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: { display: false },
-            tooltip: { 
-                mode: 'index', 
-                intersect: false,
-                backgroundColor: 'rgba(0,0,0,0.7)',
-                padding: 12,
-                cornerRadius: 6,
-            }
-        },
-        scales: {
-            y: { 
-                beginAtZero: true,
-                grid: {
-                    drawBorder: false,
+    document.addEventListener('DOMContentLoaded', function() {
+        const chartData = {!! json_encode($monthlyPaid ?? [0,0,0,0,0,0,0,0,0,0,0,0]) !!};
+        
+        const ctx = document.getElementById('monthly-paid-chart');
+        if (ctx) {
+            const monthlyPaidChart = new Chart(ctx.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+                    datasets: [{
+                        label: 'Paid Amount ($)',
+                        data: chartData,
+                        backgroundColor: '#4a81d4',
+                        borderRadius: 6,
+                        borderSkipped: false,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { 
+                            mode: 'index', 
+                            intersect: false,
+                            backgroundColor: 'rgba(0,0,0,0.7)',
+                            padding: 12,
+                            cornerRadius: 6,
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true,
+                            grid: {
+                                drawBorder: false,
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
                 }
-            },
-            x: {
-                grid: {
-                    display: false
-                }
-            }
+            });
         }
-    }
-});
+    });
 </script>
 
 @endsection
+
