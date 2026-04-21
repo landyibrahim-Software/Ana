@@ -1,5 +1,5 @@
 <img
-    src="{{ asset('backend/assets/images/nza.png') }}"
+    src="{{ asset('backend/assets/images/Anna.png') }}"
     {{ $attributes }}
-    alt="NZA Logo"
+    alt="Anna Logo"
 />

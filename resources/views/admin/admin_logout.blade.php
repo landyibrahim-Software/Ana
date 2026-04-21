@@ -9,7 +9,7 @@
         <meta content="Coderthemes" name="author" />
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <!-- App favicon -->
-         <link rel="shortcut icon" href="{{ asset('backend/assets/images/nza.png') }}">
+         <link rel="shortcut icon" href="{{ asset('backend/assets/images/Anna.png') }}">
 
         <!-- Bootstrap css -->
         <link href="{{ asset('backend/assets/css/bootstrap.min.css') }}" rel="stylesheet" type="text/css" />
@@ -39,13 +39,13 @@
             <div class="auth-logo">
                 <a href="index.html" class="logo logo-dark text-center">
                     <span class="logo-lg">
-                        <img src="{{ asset('backend/assets/images/nza.png') }}" alt="" height="100">
+                        <img src="{{ asset('backend/assets/images/Anna.png') }}" alt="" height="100">
                     </span>
                 </a>
 
                 <a href="index.html" class="logo logo-light text-center">
                     <span class="logo-lg">
-                        <img src="{{ asset('backend/assets/images/nza.png') }}" alt="" height="100">
+                        <img src="{{ asset('backend/assets/images/Anna.png') }}" alt="" height="100">
                     </span>
                 </a>
             </div>

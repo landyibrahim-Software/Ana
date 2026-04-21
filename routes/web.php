@@ -7,7 +7,6 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Backend\EmployeeController;
 use App\Http\Controllers\Backend\CustomerController;
 use App\Http\Controllers\Backend\SupplierController;
-use App\Http\Controllers\Backend\SalaryController;
 use App\Http\Controllers\Backend\AttendenceController;
 use App\Http\Controllers\Backend\CategoryController;
 use App\Http\Controllers\Backend\ProductController;
@@ -202,7 +201,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/print-invoice/{id}', 'PrintInvoice')->name('print.invoice');
         Route::post('/final-invoice', 'FinalInvoice')->name('final.invoice');
         Route::get('/invoice/pdf/{order_id}', 'GenerateInvoicePDF')->name('invoice.pdf');
-        Route::get('/invoice/payment/{cartTotal}/{customer_id}', 'ShowInvoicePayment')->name('invoice.payment');
+               Route::get('/invoice/payment/{cartTotal}/{customer_id}', 'ShowInvoicePayment')->name('invoice.payment');
 
         // Order Status Routes
         Route::get('/pending/order', 'PendingOrder')->name('pending.order');

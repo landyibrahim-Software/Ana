@@ -87,21 +87,21 @@
                     <div class="logo-box">
                         <a href="index.html" class="logo logo-dark text-center">
                             <span class="logo-sm">
-                                <img src="{{ asset('backend/assets/images/nza.png') }}" alt="" height="32">
+                                <img src="{{ asset('backend/assets/images/Anna.png') }}" alt="" height="32">
                                 <!-- <span class="logo-lg-text-light">UBold</span> -->
                             </span>
                             <span class="logo-lg">
-                                <img src="{{ asset('backend/assets/images/nza.png') }}" alt="" height="52">
+                                <img src="{{ asset('backend/assets/images/Anna.png') }}" alt="" height="52">
                                 <!-- <span class="logo-lg-text-light">U</span> -->
                             </span>
                         </a>
     
                         <a href="index.html" class="logo logo-light text-center">
                             <span class="logo-sm">
-                                <img src="{{ asset('backend/assets/images/nza.png') }}" alt="" height="32">
+                                <img src="{{ asset('backend/assets/images/Anna.png') }}" alt="" height="32">
                             </span>
                             <span class="logo-lg">
-                                <img src="{{ asset('backend/assets/images/nza.png') }}" alt="" height="32">
+                                <img src="{{ asset('backend/assets/images/Anna.png') }}" alt="" height="32">
                             </span>
                         </a>
                     </div>

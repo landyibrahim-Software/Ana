@@ -90,7 +90,7 @@ class OrderController extends Controller
             // ✅ OPTIMIZATION: Update stock using raw SQL (single query)
             foreach ($productUpdates as $productId => $totalQty) {
                 Product::where('id', $productId)
-                    ->update(['product_store' => DB::raw("product_store - {$totalQty}")]);
+                    ->update(['product_store' => DB::raw("product_store - " . (int) $totalQty)]);
             }
 
             // ✅ CORRECT: Only add the ORDER DUE to customer due
@@ -392,7 +392,7 @@ class OrderController extends Controller
 
             foreach ($quantities as $item) {
                 Product::where('id', $item->product_id)
-                    ->update(['product_store' => DB::raw("product_store + {$item->total_qty}")]);
+                    ->update(['product_store' => DB::raw("product_store + " . (int) $item->total_qty)]);
                 
                 $totalQuantityRestored += $item->total_qty;
             }
@@ -442,5 +442,6 @@ class OrderController extends Controller
             ]);
         }
     }
+ 
 
 }

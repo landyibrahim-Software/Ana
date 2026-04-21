@@ -80,16 +80,13 @@
     </div>
 
     <div class="brand-area">
-        <img src="{{ asset('backend/assets/images/nza.png') }}" height="90" alt="کوتاڵی نزا">
+        <img src="{{ asset('backend/assets/images/Anna.png') }}" height="90" alt=" Anna Group">
         <div class="brand-text">
-            <h2>کوتاڵی نزا</h2>
+            <h2>Anna Group </h2>
             <div class="phone-list">
                 <small>
-                    <i class="fas fa-phone"></i> 07708130060
-                    &nbsp;&nbsp;
-                    <i class="fas fa-phone"></i> 07501561887
-                    &nbsp;&nbsp;
-                    <i class="fas fa-phone"></i> 07701561887
+                    <i class="fas fa-phone"></i> 07728603402
+                    
                 </small>
             </div>
         </div>
