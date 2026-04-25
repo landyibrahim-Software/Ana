@@ -17,4 +17,5 @@ class Customer extends Model
 {
     return $this->hasMany(Payment::class, 'customer_id', 'id');
 }
+
 }
