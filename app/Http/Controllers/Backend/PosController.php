@@ -36,16 +36,15 @@ class PosController extends Controller
             
             // ✅ OPTIMIZATION: Paginate customers (50 per page) with select only needed fields
             $customer = Customer::select([
-                'id', 
-                'name', 
-                'phone', 
-                'previous_due',
-                'due',
-                'image',
-                'created_at'
-            ])
-                ->latest()
-                ->paginate(50);
+    'id', 
+    'name', 
+    'phone', 
+    'due',
+    'image',
+    'created_at'
+])
+    ->latest()
+    ->paginate(50);
 
             return view('backend.pos.pos_page', compact('product', 'customer'));
 
@@ -108,19 +107,18 @@ class PosController extends Controller
             
             // ✅ OPTIMIZATION: Search with specific columns only
             $customers = Customer::where(function($query) use ($search) {
-                    $query->where('name', 'LIKE', "%{$search}%")
-                          ->orWhere('phone', 'LIKE', "%{$search}%");
-                })
-                ->select([
-                    'id',
-                    'name',
-                    'phone',
-                    'previous_due',
-                    'due',
-                    'image'
-                ])
-                ->limit(20)
-                ->get();
+        $query->where('name', 'LIKE', "%{$search}%")
+              ->orWhere('phone', 'LIKE', "%{$search}%");
+    })
+    ->select([
+        'id',
+        'name',
+        'phone',
+        'due',
+        'image'
+    ])
+    ->limit(20)
+    ->get();
 
             return response()->json([
                 'status' => 'success',
@@ -320,34 +318,33 @@ class PosController extends Controller
             }
 
             // ✅ OPTIMIZATION: Load only needed customer fields
-            $customer = Customer::select([
-                'id',
-                'name',
-                'phone',
-                'previous_due',
-                'due',
-                'address',
-                'shopname'
-            ])->find($request->customer_id);
+          $customer = Customer::select([
+    'id',
+    'name',
+    'phone',
+    'due',
+    'address',
+    'shopname'
+])->find($request->customer_id);
 
-            if (!$customer) {
-                return redirect()->back()->with([
-                    'message' => 'کڕیار نەدۆزرایەوە',
-                    'alert-type' => 'error'
-                ]);
-            }
+if (!$customer) {
+    return redirect()->back()->with([
+        'message' => 'کڕیار نەدۆزرایەوە',
+        'alert-type' => 'error'
+    ]);
+}
 
-            // ✅ OPTIMIZATION: Calculate total in view, not controller
-            $subTotal = collect($contents)->sum(function($item) {
-                return floatval($item->qty) * floatval($item->price);
-            });
+// ✅ OPTIMIZATION: Calculate total in view, not controller
+$subTotal = collect($contents)->sum(function($item) {
+    return floatval($item->qty) * floatval($item->price);
+});
 
-            return view('backend.invoice.product_invoice', [
-                'contents' => $contents,
-                'customer' => $customer,
-                'previousDue' => floatval($customer->previous_due ?? 0),
-                'subTotal' => $subTotal
-            ]);
+return view('backend.invoice.product_invoice', [
+    'contents' => $contents,
+    'customer' => $customer,
+    'customerDue' => floatval($customer->due ?? 0),
+    'subTotal' => $subTotal
+]);
 
         } catch (\Exception $e) {
             return redirect()->back()->with([
@@ -397,14 +394,13 @@ class PosController extends Controller
     {
         try {
             $customer = Customer::select([
-                'id',
-                'name',
-                'phone',
-                'previous_due',
-                'due',
-                'address',
-                'shopname'
-            ])->findOrFail($id);
+    'id',
+    'name',
+    'phone',
+    'due',
+    'address',
+    'shopname'
+])->findOrFail($id);
 
             return response()->json([
                 'status' => 'success',

@@ -22,28 +22,34 @@ class CustomerController extends Controller
 public function ShowCustomer($id)
 {
     $customer = Customer::findOrFail($id);
-    $customer->load('orders', 'payments');
 
-    // CARD 1: Count ACTIVE orders only (exclude cancelled)
-    $order_count = $customer->orders->where('order_status', '!=', 'cancelled')->count();
-    
-    // CARD 2: Total owed = previous_due + active order sub_totals
-    $total_spent = floatval($customer->previous_due ?? 0);
-    foreach ($customer->orders as $order) {
-        if ($order->order_status != 'cancelled') {
-            $total_spent += floatval($order->sub_total ?? 0);
-        }
-    }
-    
-    // CARD 3: Total paid = all payments + active order pays
-    $total_paid_all = floatval(Payment::where('customer_id', $customer->id)->sum('payment_amount') ?? 0);
-    foreach ($customer->orders as $order) {
-        if ($order->order_status != 'cancelled') {
-            $total_paid_all += floatval($order->pay ?? 0);
-        }
-    }
-    
-    // CARD 4: Remaining due
+    // ✅ Card 1: Active orders count (exclude cancelled)
+    $order_count = $customer->orders()
+        ->where('order_status', '!=', 'cancelled')
+        ->count();
+
+    // ✅ Card 2 part: Total purchases after system (sum sub_total of active orders)
+    $orders_total = $customer->orders()
+        ->where('order_status', '!=', 'cancelled')
+        ->sum('sub_total') ?? 0;
+
+    // ✅ Card 3 part (A): Paid at invoice time (sum orders.pay)
+    $orders_paid = $customer->orders()
+        ->where('order_status', '!=', 'cancelled')
+        ->sum('pay') ?? 0;
+
+    // ✅ Card 3 part (B): Paid later from Show Customer page (payments table)
+    $payments_paid = Payment::where('customer_id', $customer->id)
+        ->where('payment_status', 'completed')
+        ->sum('payment_amount') ?? 0;
+
+    // ✅ Card 2: total spent/owed = previous_due + purchases after system
+    $total_spent = floatval($customer->previous_due ?? 0) + floatval($orders_total);
+
+    // ✅ Card 3: total paid = orders.pay + payments.payment_amount
+    $total_paid_all = floatval($orders_paid) + floatval($payments_paid);
+
+    // ✅ Card 4: remaining due
     $total_due = max($total_spent - $total_paid_all, 0);
 
     return view('backend.customer.show_customer', compact(
@@ -61,12 +67,13 @@ public function ShowCustomer($id)
 
      public function StoreCustomer(Request $request){
 
-       $validateData = $request->validate([
+     $validateData = $request->validate([
     'name' => 'required|max:200',
     'phone' => 'required|max:200',
     'address' => 'required|max:400',
     'shopname' => 'required|max:200',
-    'image' => 'required',  
+    'image' => 'required',
+    'due' => 'nullable|numeric|min:0',
 ]);
  
         $image = $request->file('image');
@@ -74,16 +81,17 @@ public function ShowCustomer($id)
         Image::make($image)->resize(300,300)->save('upload/customer/'.$name_gen);
         $save_url = 'upload/customer/'.$name_gen;
 
-        Customer::insert([
+       Customer::insert([
     'name' => $request->name,
     'phone' => $request->phone,
     'address' => $request->address,
     'shopname' => $request->shopname,
     'city' => $request->city,
     'image' => $save_url,
-    'previous_due' => $request->previous_due ?? 0,
+    'due' => $request->due ?? 0,
     'created_at' => Carbon::now(), 
 ]);
+
 
          $notification = array(
             'message' => 'Customer Inserted Successfully',
@@ -113,17 +121,18 @@ public function ShowCustomer($id)
         Image::make($image)->resize(300,300)->save('upload/customer/'.$name_gen);
         $save_url = 'upload/customer/'.$name_gen;
 
-        Customer::findOrFail($customer_id)->update([
 
-            'name' => $request->name,
-            'phone' => $request->phone,
-            'address' => $request->address,
-            'shopname' => $request->shopname,
-            'city' => $request->city,
-            'image' => $save_url,
-            'created_at' => Carbon::now(), 
+       Customer::findOrFail($customer_id)->update([
+    'name' => $request->name,
+    'phone' => $request->phone,
+    'address' => $request->address,
+    'shopname' => $request->shopname,
+    'city' => $request->city,
+    'due' => $request->due ?? 0,
+    'created_at' => Carbon::now(), 
+]);
 
-        ]);
+       
 
          $notification = array(
             'message' => 'Customer Updated Successfully',
@@ -175,14 +184,19 @@ public function ShowCustomer($id)
 
     } // End Method 
 
-public function PaymentCustomer(Request $request){
-    
-    $customer_id = $request->customer_id;
+public function PaymentCustomer(Request $request)
+{
+    $request->validate([
+        'customer_id' => 'required|exists:customers,id',
+        'payment_amount' => 'required|numeric|min:0.01',
+    ]);
+
+    $customer_id = (int) $request->customer_id;
     $payment_amount = floatval($request->payment_amount);
-    
+
     $customer = Customer::findOrFail($customer_id);
-    
-    // ✅ Create payment record with EXACT payment amount
+
+    // 1) Save payment record (pay later)
     Payment::create([
         'customer_id' => $customer_id,
         'payment_amount' => $payment_amount,
@@ -190,12 +204,38 @@ public function PaymentCustomer(Request $request){
         'payment_status' => 'completed',
     ]);
 
-    $notification = array(
+    // 2) Recalculate Cards logic (the SAME rule you want)
+    // Card2 = previous_due + sum(active orders sub_total)
+    $orders_total = $customer->orders()
+        ->where('order_status', '!=', 'cancelled')
+        ->sum('sub_total') ?? 0;
+
+    // Card3 includes:
+    // - invoice pay (orders.pay)
+    // - pay later (payments table)
+    $orders_paid = $customer->orders()
+        ->where('order_status', '!=', 'cancelled')
+        ->sum('pay') ?? 0;
+
+    $payments_paid = Payment::where('customer_id', $customer_id)
+        ->where('payment_status', 'completed')
+        ->sum('payment_amount') ?? 0;
+
+    $total_spent = floatval($customer->previous_due ?? 0) + floatval($orders_total); // Card2
+    $total_paid_all = floatval($orders_paid) + floatval($payments_paid);            // Card3
+    $total_due = max($total_spent - $total_paid_all, 0);                            // Card4
+
+    // 3) Update cached fields (so other pages show correct values)
+    $customer->update([
+        'due' => $total_due,
+        'total_paid' => $total_paid_all,
+        'total_spent' => $total_spent,
+    ]);
+
+    return redirect()->route('customer.show', $customer_id)->with([
         'message' => 'Payment of $' . number_format($payment_amount, 2) . ' Recorded Successfully',
         'alert-type' => 'success'
-    );
-
-    return redirect()->route('customer.show', $customer_id)->with($notification);
+    ]);
 }
 
 }

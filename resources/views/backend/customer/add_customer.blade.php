@@ -107,9 +107,9 @@
     </div>
      <div class="col-md-6">
     <div class="mb-3">
-        <label for="previous_due" class="form-label">قەرزی پێشتر (دۆلار)</label>
-        <input type="text" id="previous_due" name="previous_due" class="form-control @error('previous_due') is-invalid @enderror" value="0" pattern="[0-9]*\.?[0-9]*" placeholder="0.00">
-        @error('previous_due')
+        <label for="due" class="form-label">قەرزی کڕیار (دۆلار)</label>
+        <input type="text" id="due" name="due" class="form-control @error('due') is-invalid @enderror" value="0" pattern="[0-9]*\.?[0-9]*" placeholder="0.00">
+        @error('due')
         <span class="text-danger">{{ $message }}</span>
         @enderror
     </div>

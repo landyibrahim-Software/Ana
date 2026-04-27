@@ -79,7 +79,7 @@
                             <div class="card-body">
                                 <h6 class="card-title text-danger mb-3">کۆی قەرز</h6>
                                 <h3 class="text-danger mb-0">${{ number_format($total_due, 2) }}</h3>
-                                <small class="text-muted">چقدر قەرز مابوو</small>
+                                <small class="text-muted">چەند قەرز مابوو</small>
                             </div>
                         </div>
                     </div>

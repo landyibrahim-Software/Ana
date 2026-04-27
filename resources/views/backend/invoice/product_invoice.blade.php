@@ -160,17 +160,18 @@
 </table>
 </div>
 
-<!-- Previous Due calculated in controller - use it directly -->
+
+<!-- Customer Due calculated in controller - use it directly -->
 @php
-    $grandTotal = $subTotal + $previousDue;
+    $grandTotal = $subTotal + $customerDue;
 @endphp
 
 <!-- TOTAL -->
 <div class="row mt-3" style="direction: rtl;">
     <div class="col-12 text-end">
         <p style="font-size: 16px; margin: 10px 0;">
-            <strong>قەرزی پێشوو:</strong> 
-            <b style="color: #f5576c;">{{ number_format($previousDue, 2) }}</b>
+            <strong>قەرزی کڕیار:</strong> 
+            <b style="color: #f5576c;">{{ number_format($customerDue, 2) }}</b>
         </p>
         <hr>
         <h3 style="margin: 10px 0; color: #667eea;">
@@ -225,7 +226,7 @@
 <input type="hidden" name="sub_total" value="{{ $subTotal }}">
 <input type="hidden" name="total" value="{{ $grandTotal }}">
 <input type="hidden" name="payment_status" value="pending">
-<input type="hidden" name="previous_due" value="{{ $previousDue }}">
+<input type="hidden" name="due" value="0">
 
 <!-- SEND ITEMS WITH SIMPLE QUANTITY (NO COLORS/METERS) -->
 @foreach($contents as $index => $item)

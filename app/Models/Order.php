@@ -9,29 +9,27 @@ class Order extends Model
     protected $table = 'orders';
 
     protected $fillable = [
-        'customer_id',
-        'order_date',
-        'order_status',
-        'total_products',
-        'sub_total',
-        'invoice_no',
-        'total',
-        'payment_status',
-        'pay',
-        'due',
-        'previous_due',
-        'metter_price',
-        'grain',
-        'grain_price',
-    ];
+    'customer_id',
+    'order_date',
+    'order_status',
+    'total_products',
+    'sub_total',
+    'invoice_no',
+    'total',
+    'payment_status',
+    'pay',
+    'due',
+    'metter_price',
+    'grain',
+    'grain_price',
+];
 
-    protected $casts = [
-        'due' => 'decimal:2',
-        'pay' => 'decimal:2',
-        'sub_total' => 'decimal:2',
-        'total' => 'decimal:2',
-        'previous_due' => 'decimal:2',
-    ];
+protected $casts = [
+    'due' => 'decimal:2',
+    'pay' => 'decimal:2',
+    'sub_total' => 'decimal:2',
+    'total' => 'decimal:2',
+];
 
     // 🔗 Order → Customer
     public function customer()

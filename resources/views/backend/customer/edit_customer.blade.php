@@ -107,7 +107,15 @@
             @enderror
         </div>
     </div>
-
+<div class="col-md-6">
+    <div class="mb-3">
+        <label for="due" class="form-label">قەرزی کڕیار (دۆلار)</label>
+        <input type="text" id="due" name="due" class="form-control @error('due') is-invalid @enderror" value="{{ $customer->due ?? 0 }}" pattern="[0-9]*\.?[0-9]*" placeholder="0.00">
+        @error('due')
+        <span class="text-danger">{{ $message }}</span>
+        @enderror
+    </div>
+</div>
 
 
 

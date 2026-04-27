@@ -41,7 +41,7 @@ class OrderController extends Controller
         $currentOrderDue = $currentOrderTotal - $pay;
 
         // ✅ CORRECT: Use the previousDue passed from product_invoice
-        $previousDue = floatval($request->previous_due ?? 0);
+        $customerDue = floatval($request->due ?? 0);
 
         DB::beginTransaction();
         try {
@@ -57,7 +57,6 @@ class OrderController extends Controller
                 'payment_status' => $request->payment_status,
                 'pay'            => $pay,
                 'due'            => $currentOrderDue,
-                'previous_due'   => $previousDue,
             ]);
 
             // ✅ OPTIMIZATION: Use batch insert instead of loop
@@ -124,23 +123,23 @@ class OrderController extends Controller
     /**
      * Print invoice view
      */
-    public function PrintInvoice($id)
-    {
-        // ✅ Load order with customer and order details (eager load)
-        $order = Order::with([
-            'customer:id,name,phone,due,address',
-            'orderDetails.product:id,product_name,product_code,selling_price'
-        ])->findOrFail($id);
+public function PrintInvoice($id)
+{
+    // ✅ Load order with customer and order details (eager load)
+    $order = Order::with([
+        'customer:id,name,phone,due,address',
+        'orderDetails.product:id,product_name,product_code,selling_price'
+    ])->findOrFail($id);
 
-        // Use the previous_due stored in this order
-        $previousDue = floatval($order->previous_due ?? 0);
-        
-        // Calculate totals
-        $subTotal = floatval($order->sub_total ?? 0);
-        $grandTotal = $subTotal + $previousDue;
+    // Calculate only current order totals
+    $subTotal = floatval($order->sub_total ?? 0);
+    $orderDue = floatval($order->due ?? 0);
 
-        return view('backend.invoice.print_invoice', compact('order', 'previousDue', 'grandTotal', 'subTotal'));
-    }
+    // ✅ ADD THIS — customer's total due after this order
+    $customerDue = floatval($order->customer->due ?? 0);
+
+    return view('backend.invoice.print_invoice', compact('order', 'subTotal', 'orderDue', 'customerDue'));
+}
 
     /**
      * ISSUE #1: Show pending orders with pagination
@@ -261,10 +260,10 @@ class OrderController extends Controller
             'orderDetails.product:id,product_name,product_code,selling_price'
         ])->findOrFail($order_id);
         
-        $previousDue = $order->previous_due;
-        $grandTotal = $order->sub_total + $previousDue;
-        
-        $pdf = PDF::loadView('backend.invoice.print_invoice', compact('order', 'previousDue', 'grandTotal'))
+        $subTotal = floatval($order->sub_total ?? 0);
+$orderDue = floatval($order->due ?? 0);
+
+$pdf = PDF::loadView('backend.invoice.print_invoice', compact('order', 'subTotal', 'orderDue'))
             ->setPaper('a4', 'portrait')
             ->setOptions([
                 'defaultFont' => 'DejaVu Sans',
