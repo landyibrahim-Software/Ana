@@ -80,16 +80,17 @@ public function ShowCustomer($id)
         $name_gen = hexdec(uniqid()).'.'.$image->getClientOriginalExtension();
         Image::make($image)->resize(300,300)->save('upload/customer/'.$name_gen);
         $save_url = 'upload/customer/'.$name_gen;
-
-       Customer::insert([
-    'name' => $request->name,
-    'phone' => $request->phone,
-    'address' => $request->address,
-    'shopname' => $request->shopname,
-    'city' => $request->city,
-    'image' => $save_url,
-    'due' => $request->due ?? 0,
-    'created_at' => Carbon::now(), 
+$openingBalance = floatval($request->due ?? 0);
+Customer::insert([
+    'name'         => $request->name,
+    'phone'        => $request->phone,
+    'address'      => $request->address,
+    'shopname'     => $request->shopname,
+    'city'         => $request->city,
+    'image'        => $save_url,
+    'previous_due' => $openingBalance,
+    'due'          => $openingBalance,
+    'created_at'   => Carbon::now(),
 ]);
 
 
@@ -121,15 +122,23 @@ public function ShowCustomer($id)
         Image::make($image)->resize(300,300)->save('upload/customer/'.$name_gen);
         $save_url = 'upload/customer/'.$name_gen;
 
+$newPreviousDue = floatval($request->due ?? 0);
+$editCustomer   = Customer::findOrFail($customer_id);
+$ordersTotal    = $editCustomer->orders()->where('order_status', '!=', 'cancelled')->sum('sub_total') ?? 0;
+$ordersPaid     = $editCustomer->orders()->where('order_status', '!=', 'cancelled')->sum('pay') ?? 0;
+$paymentsPaid   = Payment::where('customer_id', $customer_id)->where('payment_status', 'completed')->sum('payment_amount') ?? 0;
+$newDue         = max(0, $newPreviousDue + floatval($ordersTotal) - floatval($ordersPaid) - floatval($paymentsPaid));
 
-       Customer::findOrFail($customer_id)->update([
-    'name' => $request->name,
-    'phone' => $request->phone,
-    'address' => $request->address,
-    'shopname' => $request->shopname,
-    'city' => $request->city,
-    'due' => $request->due ?? 0,
-    'created_at' => Carbon::now(), 
+$editCustomer->update([
+    'name'         => $request->name,
+    'phone'        => $request->phone,
+    'address'      => $request->address,
+    'shopname'     => $request->shopname,
+    'city'         => $request->city,
+    'image'        => $save_url,
+    'previous_due' => $newPreviousDue,
+    'due'          => $newDue,
+    'updated_at'   => Carbon::now(),
 ]);
 
        

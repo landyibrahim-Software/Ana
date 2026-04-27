@@ -323,13 +323,32 @@ $pdf = PDF::loadView('backend.invoice.print_invoice', compact('order', 'subTotal
      
             $paid_due = max(0, $maindue - $due_amount);
             $paid_pay = $maindpay + $due_amount;
+$updatedOrder = Order::findOrFail($order_id);
+$updatedOrder->update([
+    'due'        => $paid_due,
+    'pay'        => $paid_pay,
+    'updated_at' => now()
+]);
 
-            Order::findOrFail($order_id)->update([
-                'due' => $paid_due,
-                'pay' => $paid_pay,
-                'updated_at' => now()
-            ]);
+// Recalculate the customer's total running due
+$affectedCustomer = $updatedOrder->customer;
+if ($affectedCustomer) {
+    $ordersTotal  = $affectedCustomer->orders()->where('order_status', '!=', 'cancelled')->sum('sub_total') ?? 0;
+    $ordersPaid   = $affectedCustomer->orders()->where('order_status', '!=', 'cancelled')->sum('pay') ?? 0;
+    $paymentsPaid = \App\Models\Payment::where('customer_id', $affectedCustomer->id)
+                        ->where('payment_status', 'completed')
+                        ->sum('payment_amount') ?? 0;
+    $newCustomerDue = max(0,
+        floatval($affectedCustomer->previous_due ?? 0)
+        + floatval($ordersTotal)
+        - floatval($ordersPaid)
+        - floatval($paymentsPaid)
+    );
+    $affectedCustomer->update(['due' => $newCustomerDue, 'updated_at' => now()]);
+}
 
+DB::commit();
+DB::commit();
             DB::commit();
 
             $notification = [
@@ -406,17 +425,15 @@ $pdf = PDF::loadView('backend.invoice.print_invoice', compact('order', 'subTotal
             if ($refundFrom === 'due') {
                 // Refund from DUE: Reduce customer's due
                 $customer->update([
-                    'due' => max(0, ($customer->due ?? 0) - $refundAmount),
-                    'total_orders' => max(0, ($customer->total_orders ?? 0) - 1),
-                    'updated_at' => now()
-                ]);
+    'due'        => max(0, ($customer->due ?? 0) - $refundAmount),
+    'updated_at' => now()
+]);
             } else if ($refundFrom === 'paid') {
                 // Refund from PAID: Only reduce total_paid
                 $customer->update([
-                    'total_paid' => max(0, ($customer->total_paid ?? 0) - $refundAmount),
-                    'total_orders' => max(0, ($customer->total_orders ?? 0) - 1),
-                    'updated_at' => now()
-                ]);
+    'total_paid' => max(0, ($customer->total_paid ?? 0) - $refundAmount),
+    'updated_at' => now()
+]);
             }
 
             // Mark order as cancelled

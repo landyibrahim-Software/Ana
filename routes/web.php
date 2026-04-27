@@ -101,7 +101,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/delete/customer/{id}', 'DeleteCustomer')->name('delete.customer');
         Route::get('/customer/show/{id}', 'ShowCustomer')->name('customer.show');
         Route::post('/customer/payment', 'PaymentCustomer')->name('payment.customer');
-        Route::post('/customer/payment/store', 'StoreCustomerPayment')->name('customer.payment.store');
     });
 
     // ============================================================
