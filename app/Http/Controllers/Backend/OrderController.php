@@ -427,22 +427,17 @@ $pdf = PDF::loadView('backend.invoice.print_invoice', compact('order', 'subTotal
                 'updated_at'     => now()
             ]);
 
-            // Recalculate customer due from scratch, including opening_balance so that
-            // any initial balance set at customer creation is not lost on cancellation.
-            $ordersTotal  = $customer->orders()->where('order_status', '!=', 'cancelled')->sum('sub_total') ?? 0;
-            $ordersPaid   = $customer->orders()->where('order_status', '!=', 'cancelled')->sum('pay') ?? 0;
-            $paymentsPaid = Payment::where('customer_id', $customer->id)
-                                ->where('payment_status', 'completed')
-                                ->sum('payment_amount') ?? 0;
-            $totalPaidAll = floatval($ordersPaid) + floatval($paymentsPaid);
-            $totalDue     = max(
-                floatval($customer->opening_balance ?? 0) + floatval($ordersTotal) - $totalPaidAll,
-                0
-            );
+            // Reverse only this order's contribution to customer.due using the delta approach.
+            // FinalInvoice added (sub_total - pay) to customer.due when the order was created.
+            // Cancellation simply subtracts that same amount back, preserving any opening
+            // balance or payments that are unrelated to this order.
+            $orderNetImpact = floatval($order->sub_total) - floatval($order->pay);
+            $newDue         = max(0, floatval($customer->due) - $orderNetImpact);
+            $newTotalPaid   = max(0, floatval($customer->total_paid) - floatval($order->pay));
 
             $customer->update([
-                'due'        => $totalDue,
-                'total_paid' => $totalPaidAll,
+                'due'        => $newDue,
+                'total_paid' => $newTotalPaid,
                 'updated_at' => now(),
             ]);
 
