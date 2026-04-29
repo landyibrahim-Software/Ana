@@ -41,8 +41,10 @@ class DashboardController extends Controller
                 $endDate = $request->get('end_date') ? Carbon::parse($request->get('end_date'))->endOfDay() : $endDate;
             }
 
-            // ✅ TOTAL PAID — invoice payments (orders.pay) + show-customer payments (payments table)
-            $totalPaidOrders   = Order::whereBetween('created_at', [$startDate, $endDate])->sum('pay') ?? 0;
+            // ✅ TOTAL PAID — invoice payments (orders.pay, non-cancelled) + show-customer payments (payments table)
+            $totalPaidOrders   = Order::whereBetween('created_at', [$startDate, $endDate])
+                ->where('order_status', '!=', 'cancelled')
+                ->sum('pay') ?? 0;
             $totalPaidCustomer = Payment::whereBetween('payment_date', [$startDate, $endDate])
                 ->where('payment_status', 'completed')
                 ->sum('payment_amount') ?? 0;
@@ -84,12 +86,15 @@ class DashboardController extends Controller
                 return $buyingPrice * $store;
             });
 
-            // ✅ TODAY'S SALES
+            // ✅ TODAY'S SALES (exclude cancelled)
             $todaySales = Order::whereDate('created_at', Carbon::today())
+                ->where('order_status', '!=', 'cancelled')
                 ->sum('sub_total') ?? 0;
 
-            // ✅ TODAY'S ORDERS COUNT
-            $todayOrders = Order::whereDate('created_at', Carbon::today())->count() ?? 0;
+            // ✅ TODAY'S ORDERS COUNT (exclude cancelled)
+            $todayOrders = Order::whereDate('created_at', Carbon::today())
+                ->where('order_status', '!=', 'cancelled')
+                ->count() ?? 0;
 
             // ✅ TOTAL EXPENSES
             $totalExpenses = Expense::whereBetween('created_at', [$startDate, $endDate])
@@ -161,13 +166,14 @@ class DashboardController extends Controller
                 ->take(10);
 
            
-            // ✅ MONTHLY PAID DATA — UNION both orders.pay and payments.payment_amount
+            // ✅ MONTHLY PAID DATA — UNION both orders.pay and payments.payment_amount (exclude cancelled)
             $monthlyRows = DB::select("
                 SELECT month, SUM(amount) AS amount FROM (
                     SELECT MONTH(created_at) AS month,
                            SUM(CAST(pay AS DECIMAL(15,4))) AS amount
                     FROM orders
                     WHERE YEAR(created_at) = ?
+                      AND order_status != 'cancelled'
                     GROUP BY MONTH(created_at)
                     UNION ALL
                     SELECT MONTH(payment_date) AS month,
