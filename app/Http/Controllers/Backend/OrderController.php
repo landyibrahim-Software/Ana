@@ -9,6 +9,7 @@ use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Orderdetails;
 use Carbon\Carbon; 
+use App\Models\Payment;
 use Gloudemans\Shoppingcart\Facades\Cart;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -324,11 +325,29 @@ $pdf = PDF::loadView('backend.invoice.print_invoice', compact('order', 'subTotal
             $paid_due = max(0, $maindue - $due_amount);
             $paid_pay = $maindpay + $due_amount;
 
-            Order::findOrFail($order_id)->update([
-                'due' => $paid_due,
-                'pay' => $paid_pay,
+            $updatedOrder = Order::findOrFail($order_id);
+            $updatedOrder->update([
+                'due'        => $paid_due,
+                'pay'        => $paid_pay,
                 'updated_at' => now()
             ]);
+
+            // Recalculate the customer's total running due from scratch
+            $affectedCustomer = $updatedOrder->customer;
+            if ($affectedCustomer) {
+                $ordersTotal  = $affectedCustomer->orders()->where('order_status', '!=', 'cancelled')->sum('sub_total') ?? 0;
+                $ordersPaid   = $affectedCustomer->orders()->where('order_status', '!=', 'cancelled')->sum('pay') ?? 0;
+                $paymentsPaid = Payment::where('customer_id', $affectedCustomer->id)
+                                    ->where('payment_status', 'completed')
+                                    ->sum('payment_amount') ?? 0;
+                $newCustomerDue = max(0,
+                    floatval($affectedCustomer->previous_due ?? 0)
+                    + floatval($ordersTotal)
+                    - floatval($ordersPaid)
+                    - floatval($paymentsPaid)
+                );
+                $affectedCustomer->update(['due' => $newCustomerDue, 'updated_at' => now()]);
+            }
 
             DB::commit();
 
@@ -400,30 +419,29 @@ $pdf = PDF::loadView('backend.invoice.print_invoice', compact('order', 'subTotal
             Orderdetails::whereIn('id', $rejectedItemIds)
                 ->update(['quantity' => 0, 'updated_at' => now()]);
 
-            // ✅ Handle refund from DUE or PAID
-            $refundFrom = $request->refund_from;
-            
-            if ($refundFrom === 'due') {
-                // Refund from DUE: Reduce customer's due
-                $customer->update([
-                    'due' => max(0, ($customer->due ?? 0) - $refundAmount),
-                    'total_orders' => max(0, ($customer->total_orders ?? 0) - 1),
-                    'updated_at' => now()
-                ]);
-            } else if ($refundFrom === 'paid') {
-                // Refund from PAID: Only reduce total_paid
-                $customer->update([
-                    'total_paid' => max(0, ($customer->total_paid ?? 0) - $refundAmount),
-                    'total_orders' => max(0, ($customer->total_orders ?? 0) - 1),
-                    'updated_at' => now()
-                ]);
-            }
-
-            // Mark order as cancelled
+            // Mark order as cancelled FIRST so recalculation excludes it
             $order->update([
-                'order_status' => 'cancelled',
+                'order_status'   => 'cancelled',
                 'payment_status' => 'cancelled',
-                'updated_at' => now()
+                'updated_at'     => now()
+            ]);
+
+            // Recalculate customer fields from scratch (same logic as PaymentCustomer)
+            $ordersTotal  = $customer->orders()->where('order_status', '!=', 'cancelled')->sum('sub_total') ?? 0;
+            $ordersPaid   = $customer->orders()->where('order_status', '!=', 'cancelled')->sum('pay') ?? 0;
+            $paymentsPaid = Payment::where('customer_id', $customer->id)
+                                ->where('payment_status', 'completed')
+                                ->sum('payment_amount') ?? 0;
+            $totalSpent    = floatval($customer->previous_due ?? 0) + floatval($ordersTotal);
+            $totalPaidAll  = floatval($ordersPaid) + floatval($paymentsPaid);
+            $totalDue      = max($totalSpent - $totalPaidAll, 0);
+
+            $customer->update([
+                'due'          => $totalDue,
+                'total_paid'   => $totalPaidAll,
+                'total_spent'  => $totalSpent,
+                'total_orders' => $customer->orders()->where('order_status', '!=', 'cancelled')->count(),
+                'updated_at'   => now(),
             ]);
 
             DB::commit();
