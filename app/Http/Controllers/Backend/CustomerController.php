@@ -43,8 +43,8 @@ public function ShowCustomer($id)
         ->where('payment_status', 'completed')
         ->sum('payment_amount') ?? 0;
 
-    // ✅ Card 2: total spent/owed = previous_due + purchases after system
-    $total_spent = floatval($customer->previous_due ?? 0) + floatval($orders_total);
+    // ✅ Card 2: total spent/owed = opening_balance + purchases after system
+    $total_spent = floatval($customer->opening_balance ?? 0) + floatval($orders_total);
 
     // ✅ Card 3: total paid = orders.pay + payments.payment_amount
     $total_paid_all = floatval($orders_paid) + floatval($payments_paid);
@@ -89,6 +89,7 @@ public function ShowCustomer($id)
     'city' => $request->city,
     'image' => $save_url,
     'due' => $request->due ?? 0,
+    'opening_balance' => $request->due ?? 0,
     'created_at' => Carbon::now(), 
 ]);
 
@@ -221,7 +222,7 @@ public function PaymentCustomer(Request $request)
         ->where('payment_status', 'completed')
         ->sum('payment_amount') ?? 0;
 
-    $total_spent = floatval($customer->previous_due ?? 0) + floatval($orders_total); // Card2
+    $total_spent = floatval($customer->opening_balance ?? 0) + floatval($orders_total); // Card2
     $total_paid_all = floatval($orders_paid) + floatval($payments_paid);            // Card3
     $total_due = max($total_spent - $total_paid_all, 0);                            // Card4
 
