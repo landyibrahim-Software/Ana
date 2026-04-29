@@ -42,9 +42,7 @@ class DashboardController extends Controller
             }
 
              // ✅ TOTAL PAID — invoice payments (orders.pay) + show-customer payments (payments table)
-            $totalPaidOrders = Order::whereBetween('created_at', [$startDate, $endDate])
-    ->where('order_status', '!=', 'cancelled')
-    ->sum('pay') ?? 0;
+            $totalPaidOrders   = Order::whereBetween('created_at', [$startDate, $endDate])->sum('pay') ?? 0;
             $totalPaidCustomer = Payment::whereBetween('payment_date', [$startDate, $endDate])
                 ->where('payment_status', 'completed')
                 ->sum('payment_amount') ?? 0;
@@ -87,13 +85,10 @@ class DashboardController extends Controller
 
             // ✅ TODAY'S SALES
             $todaySales = Order::whereDate('created_at', Carbon::today())
-    ->where('order_status', '!=', 'cancelled')
-    ->sum('sub_total') ?? 0;
+                ->sum('sub_total') ?? 0;
 
             // ✅ TODAY'S ORDERS COUNT
-            $todayOrders = Order::whereDate('created_at', Carbon::today())
-    ->where('order_status', '!=', 'cancelled')
-    ->count() ?? 0;
+            $todayOrders = Order::whereDate('created_at', Carbon::today())->count() ?? 0;
 
             // ✅ TOTAL EXPENSES
             $totalExpenses = Expense::whereBetween('created_at', [$startDate, $endDate])
@@ -167,22 +162,11 @@ class DashboardController extends Controller
            
             // ✅ MONTHLY PAID DATA — single GROUP BY query instead of 12 separate queries
             $monthlyRows = DB::select("
-                               SELECT MONTH(created_at) AS month,
-       SUM(CAST(pay AS DECIMAL(15,4))) AS amount
-FROM orders
-WHERE YEAR(created_at) = ?
-  AND order_status != 'cancelled'
-GROUP BY MONTH(created_at)
-                    UNION ALL
-                    SELECT MONTH(payment_date) AS month,
-                           SUM(CAST(payment_amount AS DECIMAL(15,4))) AS amount
-                    FROM payments
-                    WHERE YEAR(payment_date) = ?
-                      AND payment_status = 'completed'
-                    GROUP BY MONTH(payment_date)
-                ) AS combined
-                GROUP BY month
-            ", [Carbon::now()->year, Carbon::now()->year]);
+                SELECT MONTH(created_at) AS month, SUM(CAST(pay AS DECIMAL(15,4))) AS amount
+                FROM orders
+                WHERE YEAR(created_at) = ?
+                GROUP BY MONTH(created_at)
+            ", [Carbon::now()->year]);
             $monthlyPaidMap = [];
             foreach ($monthlyRows as $row) {
                 $monthlyPaidMap[(int)$row->month] = floatval($row->amount);
