@@ -426,20 +426,18 @@ $pdf = PDF::loadView('backend.invoice.print_invoice', compact('order', 'subTotal
                 'updated_at'     => now()
             ]);
 
-            // Recalculate customer fields from scratch — same pattern as PaymentCustomer
+            // Recalculate customer due from scratch (same columns used by FinalInvoice)
             $ordersTotal  = $customer->orders()->where('order_status', '!=', 'cancelled')->sum('sub_total') ?? 0;
             $ordersPaid   = $customer->orders()->where('order_status', '!=', 'cancelled')->sum('pay') ?? 0;
             $paymentsPaid = Payment::where('customer_id', $customer->id)
                                 ->where('payment_status', 'completed')
                                 ->sum('payment_amount') ?? 0;
-            $totalSpent   = floatval($ordersTotal);
             $totalPaidAll = floatval($ordersPaid) + floatval($paymentsPaid);
-            $totalDue     = max($totalSpent - $totalPaidAll, 0);
+            $totalDue     = max(floatval($ordersTotal) - $totalPaidAll, 0);
 
             $customer->update([
                 'due'        => $totalDue,
                 'total_paid' => $totalPaidAll,
-                'total_spent' => $totalSpent,
                 'updated_at' => now(),
             ]);
 
