@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\Customer;
 use App\Models\Expense;
+use App\Models\Payment;
 use App\Models\SupplierPayment;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -40,12 +41,17 @@ class DashboardController extends Controller
                 $endDate = $request->get('end_date') ? Carbon::parse($request->get('end_date'))->endOfDay() : $endDate;
             }
 
-            // ✅ TOTAL PAID
-            $totalPaid = Order::whereBetween('created_at', [$startDate, $endDate])->sum('pay') ?? 0;
+             // ✅ TOTAL PAID — invoice payments (orders.pay) + show-customer payments (payments table)
+            $totalPaidOrders   = Order::whereBetween('created_at', [$startDate, $endDate])->sum('pay') ?? 0;
+            $totalPaidCustomer = Payment::whereBetween('payment_date', [$startDate, $endDate])
+                ->where('payment_status', 'completed')
+                ->sum('payment_amount') ?? 0;
+            $totalPaid = floatval($totalPaidOrders) + floatval($totalPaidCustomer);
 
-// ✅ TOTAL DUE — sum of all customers' remaining balances (not date-bounded)
-$totalDue = Customer::where('due', '>', 0)->sum('due') ?? 0;
-
+// ✅ TOTAL DUE — real-time outstanding balance across all customers (customers.due is
+            //    always kept up-to-date by both FinalInvoice and PaymentCustomer, while orders.due
+            //    is never reduced after a show-customer payment, so it must NOT be used here)
+            $totalDue = Customer::where('due', '>', 0)->sum('due') ?? 0;
            // ✅ PROFIT CALCULATION — single SQL query instead of PHP loop
             $profitRow = DB::selectOne("
                 SELECT
@@ -156,11 +162,22 @@ $totalDue = Customer::where('due', '>', 0)->sum('due') ?? 0;
            
             // ✅ MONTHLY PAID DATA — single GROUP BY query instead of 12 separate queries
             $monthlyRows = DB::select("
-                SELECT MONTH(created_at) AS month, SUM(CAST(pay AS DECIMAL(15,4))) AS amount
-                FROM orders
-                WHERE YEAR(created_at) = ?
-                GROUP BY MONTH(created_at)
-            ", [Carbon::now()->year]);
+                                SELECT month, SUM(amount) AS amount FROM (
+                    SELECT MONTH(created_at) AS month,
+                           SUM(CAST(pay AS DECIMAL(15,4))) AS amount
+                    FROM orders
+                    WHERE YEAR(created_at) = ?
+                    GROUP BY MONTH(created_at)
+                    UNION ALL
+                    SELECT MONTH(payment_date) AS month,
+                           SUM(CAST(payment_amount AS DECIMAL(15,4))) AS amount
+                    FROM payments
+                    WHERE YEAR(payment_date) = ?
+                      AND payment_status = 'completed'
+                    GROUP BY MONTH(payment_date)
+                ) AS combined
+                GROUP BY month
+            ", [Carbon::now()->year, Carbon::now()->year]);
             $monthlyPaidMap = [];
             foreach ($monthlyRows as $row) {
                 $monthlyPaidMap[(int)$row->month] = floatval($row->amount);
