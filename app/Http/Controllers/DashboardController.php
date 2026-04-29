@@ -42,7 +42,9 @@ class DashboardController extends Controller
             }
 
              // ✅ TOTAL PAID — invoice payments (orders.pay) + show-customer payments (payments table)
-            $totalPaidOrders   = Order::whereBetween('created_at', [$startDate, $endDate])->sum('pay') ?? 0;
+            $totalPaidOrders = Order::whereBetween('created_at', [$startDate, $endDate])
+    ->where('order_status', '!=', 'cancelled')
+    ->sum('pay') ?? 0;
             $totalPaidCustomer = Payment::whereBetween('payment_date', [$startDate, $endDate])
                 ->where('payment_status', 'completed')
                 ->sum('payment_amount') ?? 0;
@@ -85,10 +87,13 @@ class DashboardController extends Controller
 
             // ✅ TODAY'S SALES
             $todaySales = Order::whereDate('created_at', Carbon::today())
-                ->sum('sub_total') ?? 0;
+    ->where('order_status', '!=', 'cancelled')
+    ->sum('sub_total') ?? 0;
 
             // ✅ TODAY'S ORDERS COUNT
-            $todayOrders = Order::whereDate('created_at', Carbon::today())->count() ?? 0;
+            $todayOrders = Order::whereDate('created_at', Carbon::today())
+    ->where('order_status', '!=', 'cancelled')
+    ->count() ?? 0;
 
             // ✅ TOTAL EXPENSES
             $totalExpenses = Expense::whereBetween('created_at', [$startDate, $endDate])
@@ -162,12 +167,12 @@ class DashboardController extends Controller
            
             // ✅ MONTHLY PAID DATA — single GROUP BY query instead of 12 separate queries
             $monthlyRows = DB::select("
-                                SELECT month, SUM(amount) AS amount FROM (
-                    SELECT MONTH(created_at) AS month,
-                           SUM(CAST(pay AS DECIMAL(15,4))) AS amount
-                    FROM orders
-                    WHERE YEAR(created_at) = ?
-                    GROUP BY MONTH(created_at)
+                               SELECT MONTH(created_at) AS month,
+       SUM(CAST(pay AS DECIMAL(15,4))) AS amount
+FROM orders
+WHERE YEAR(created_at) = ?
+  AND order_status != 'cancelled'
+GROUP BY MONTH(created_at)
                     UNION ALL
                     SELECT MONTH(payment_date) AS month,
                            SUM(CAST(payment_amount AS DECIMAL(15,4))) AS amount
