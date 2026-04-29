@@ -41,18 +41,19 @@ class DashboardController extends Controller
                 $endDate = $request->get('end_date') ? Carbon::parse($request->get('end_date'))->endOfDay() : $endDate;
             }
 
-             // ✅ TOTAL PAID — invoice payments (orders.pay) + show-customer payments (payments table)
-            $totalPaidOrders   = Order::whereBetween('created_at', [$startDate, $endDate])->sum('pay') ?? 0;
+            // ✅ TOTAL PAID — exclude cancelled orders
+            $totalPaidOrders   = Order::whereBetween('created_at', [$startDate, $endDate])
+                ->where('order_status', '!=', 'cancelled')
+                ->sum('pay') ?? 0;
             $totalPaidCustomer = Payment::whereBetween('payment_date', [$startDate, $endDate])
                 ->where('payment_status', 'completed')
                 ->sum('payment_amount') ?? 0;
             $totalPaid = floatval($totalPaidOrders) + floatval($totalPaidCustomer);
 
-// ✅ TOTAL DUE — real-time outstanding balance across all customers (customers.due is
-            //    always kept up-to-date by both FinalInvoice and PaymentCustomer, while orders.due
-            //    is never reduced after a show-customer payment, so it must NOT be used here)
+            // ✅ TOTAL DUE — real-time from customers.due (always kept up-to-date)
             $totalDue = Customer::where('due', '>', 0)->sum('due') ?? 0;
-           // ✅ PROFIT CALCULATION — single SQL query instead of PHP loop
+
+            // ✅ PROFIT CALCULATION — single SQL query, excludes cancelled
             $profitRow = DB::selectOne("
                 SELECT
                     SUM(CASE WHEN CAST(od.unitcost AS DECIMAL(15,4)) > CAST(p.buying_price AS DECIMAL(15,4))
@@ -83,18 +84,21 @@ class DashboardController extends Controller
                 return $buyingPrice * $store;
             });
 
-            // ✅ TODAY'S SALES
+            // ✅ TODAY'S SALES — exclude cancelled
             $todaySales = Order::whereDate('created_at', Carbon::today())
+                ->where('order_status', '!=', 'cancelled')
                 ->sum('sub_total') ?? 0;
 
-            // ✅ TODAY'S ORDERS COUNT
-            $todayOrders = Order::whereDate('created_at', Carbon::today())->count() ?? 0;
+            // ✅ TODAY'S ORDERS COUNT — exclude cancelled
+            $todayOrders = Order::whereDate('created_at', Carbon::today())
+                ->where('order_status', '!=', 'cancelled')
+                ->count() ?? 0;
 
             // ✅ TOTAL EXPENSES
             $totalExpenses = Expense::whereBetween('created_at', [$startDate, $endDate])
                 ->sum('amount') ?? 0;
 
-            // ✅ RECENT ORDERS (Last 10) - SAFE LOAD
+            // ✅ RECENT ORDERS (Last 10)
             $orders = Order::whereBetween('created_at', [$startDate, $endDate])
                 ->with('customer')
                 ->with('orderDetails.product')
@@ -102,7 +106,7 @@ class DashboardController extends Controller
                 ->limit(10)
                 ->get();
 
-            // ✅ TOP CUSTOMERS - SAFE LOAD
+            // ✅ TOP CUSTOMERS
             $topCustomers = Order::whereBetween('created_at', [$startDate, $endDate])
                 ->select('customer_id', DB::raw('SUM(sub_total) as total_spent'))
                 ->with('customer')
@@ -111,13 +115,13 @@ class DashboardController extends Controller
                 ->limit(5)
                 ->get();
 
-            // ✅ RECENT EXPENSES - SAFE
+            // ✅ RECENT EXPENSES
             $recentExpenses = Expense::whereBetween('created_at', [$startDate, $endDate])
                 ->latest()
                 ->limit(5)
                 ->get();
 
-            // ✅ RECENT SUPPLIER PAYMENTS - SAFE
+            // ✅ RECENT SUPPLIER PAYMENTS
             $recentSupplierPayments = SupplierPayment::whereBetween('payment_date', [$startDate, $endDate])
                 ->with('supplier')
                 ->latest()
@@ -130,7 +134,7 @@ class DashboardController extends Controller
                 ->limit(10)
                 ->get();
 
-            // ✅ BEST SELLING PRODUCTS - SAFE
+            // ✅ BEST SELLING PRODUCTS
             $bestSellingProducts = Order::whereMonth('created_at', Carbon::now()->month)
                 ->whereYear('created_at', Carbon::now()->year)
                 ->with('orderDetails.product.category')
@@ -145,12 +149,12 @@ class DashboardController extends Controller
                         return null;
                     }
                     return (object) [
-                        'product_id' => $first->product_id,
-                        'product_name' => $first->product->product_name ?? 'N/A',
-                        'product_code' => $first->product->product_code ?? 'N/A',
+                        'product_id'    => $first->product_id,
+                        'product_name'  => $first->product->product_name ?? 'N/A',
+                        'product_code'  => $first->product->product_code ?? 'N/A',
                         'product_image' => $first->product->product_image ?? null,
                         'category_name' => $first->product->category->category_name ?? 'N/A',
-                        'total_sold' => $items->sum('quantity'),
+                        'total_sold'    => $items->sum('quantity'),
                         'product_store' => $first->product->product_store ?? 0,
                     ];
                 })
@@ -159,64 +163,75 @@ class DashboardController extends Controller
                 ->values()
                 ->take(10);
 
-           
-            // ✅ MONTHLY PAID DATA — single GROUP BY query instead of 12 separate queries
+            // ✅ MONTHLY PAID DATA — UNION orders.pay + payments, both exclude cancelled
             $monthlyRows = DB::select("
-                SELECT MONTH(created_at) AS month, SUM(CAST(pay AS DECIMAL(15,4))) AS amount
-                FROM orders
-                WHERE YEAR(created_at) = ?
-                GROUP BY MONTH(created_at)
-            ", [Carbon::now()->year]);
+                SELECT month, SUM(amount) AS amount FROM (
+                    SELECT MONTH(created_at) AS month,
+                           SUM(CAST(pay AS DECIMAL(15,4))) AS amount
+                    FROM orders
+                    WHERE YEAR(created_at) = ?
+                      AND order_status != 'cancelled'
+                    GROUP BY MONTH(created_at)
+                    UNION ALL
+                    SELECT MONTH(payment_date) AS month,
+                           SUM(CAST(payment_amount AS DECIMAL(15,4))) AS amount
+                    FROM payments
+                    WHERE YEAR(payment_date) = ?
+                      AND payment_status = 'completed'
+                    GROUP BY MONTH(payment_date)
+                ) AS combined
+                GROUP BY month
+            ", [Carbon::now()->year, Carbon::now()->year]);
             $monthlyPaidMap = [];
             foreach ($monthlyRows as $row) {
                 $monthlyPaidMap[(int)$row->month] = floatval($row->amount);
             }
             $monthlyPaid = [];
-             for ($m = 1; $m <= 12; $m++) {
+            for ($m = 1; $m <= 12; $m++) {
                 $monthlyPaid[] = $monthlyPaidMap[$m] ?? 0.0;
             }
 
             return view('index', [
-                'filterType' => $filterType,
-                'orders' => $orders,
-                'totalPaid' => floatval($totalPaid),
-                'totalDue' => floatval($totalDue),
-                'profit' => floatval($profit),
-                'loss' => floatval($loss),
-                'totalSupplierPayment' => floatval($totalSupplierPayment),
-                'totalStockValue' => floatval($totalStockValue),
-                'todaySales' => floatval($todaySales),
-                'todayOrders' => intval($todayOrders),
-                'totalExpenses' => floatval($totalExpenses),
-                'topCustomers' => $topCustomers,
-                'recentExpenses' => $recentExpenses,
+                'filterType'             => $filterType,
+                'orders'                 => $orders,
+                'totalPaid'              => floatval($totalPaid),
+                'totalDue'               => floatval($totalDue),
+                'profit'                 => floatval($profit),
+                'loss'                   => floatval($loss),
+                'totalSupplierPayment'   => floatval($totalSupplierPayment),
+                'totalStockValue'        => floatval($totalStockValue),
+                'todaySales'             => floatval($todaySales),
+                'todayOrders'            => intval($todayOrders),
+                'totalExpenses'          => floatval($totalExpenses),
+                'topCustomers'           => $topCustomers,
+                'recentExpenses'         => $recentExpenses,
                 'recentSupplierPayments' => $recentSupplierPayments,
-                'lowStockProducts' => $lowStockProducts,
-                'bestSellingProducts' => $bestSellingProducts,
-                'monthlyPaid' => $monthlyPaid,
+                'lowStockProducts'       => $lowStockProducts,
+                'bestSellingProducts'    => $bestSellingProducts,
+                'monthlyPaid'            => $monthlyPaid,
             ]);
 
         } catch (\Exception $e) {
             \Log::error('Dashboard Error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
             
             return view('index', [
-                'filterType' => 'today',
-                'orders' => collect(),
-                'totalPaid' => 0,
-                'totalDue' => 0,
-                'profit' => 0,
-                'loss' => 0,
-                'totalSupplierPayment' => 0,
-                'totalStockValue' => 0,
-                'todaySales' => 0,
-                'todayOrders' => 0,
-                'totalExpenses' => 0,
-                'topCustomers' => collect(),
-                'recentExpenses' => collect(),
+                'filterType'             => 'today',
+                'orders'                 => collect(),
+                'totalPaid'              => 0,
+                'totalDue'               => 0,
+                'profit'                 => 0,
+                'loss'                   => 0,
+                'totalSupplierPayment'   => 0,
+                'totalStockValue'        => 0,
+                'todaySales'             => 0,
+                'todayOrders'            => 0,
+                'totalExpenses'          => 0,
+                'topCustomers'           => collect(),
+                'recentExpenses'         => collect(),
                 'recentSupplierPayments' => collect(),
-                'lowStockProducts' => collect(),
-                'bestSellingProducts' => collect(),
-                'monthlyPaid' => [0,0,0,0,0,0,0,0,0,0,0,0],
+                'lowStockProducts'       => collect(),
+                'bestSellingProducts'    => collect(),
+                'monthlyPaid'            => [0,0,0,0,0,0,0,0,0,0,0,0],
             ]);
         }
     }
