@@ -95,15 +95,6 @@
                     <button onclick="window.print()" class="btn btn-outline-primary btn-lg">
                         <i class="mdi mdi-printer me-2"></i> چاپکردن
                     </button>
-                    @if($order->order_status !== 'cancelled')
-                        <form method="post" action="{{ route('order.status.update') }}" style="display:inline;">
-                            @csrf
-                            <input type="hidden" name="id" value="{{ $order->id }}">
-                            <button type="submit" class="btn btn-success btn-lg">
-                                <i class="mdi mdi-check-circle me-2"></i> تەواوبوو نیشان بدە
-                            </button>
-                        </form>
-                    @endif
                 </div>
             </div>
         </div>
@@ -319,7 +310,7 @@
                         <i class="mdi mdi-information me-2"></i>ئەگەر دەتەوێ داواکاری لابدە
                     </h5>
                     <p class="mb-0">
-                        لە خوار بکلیێ دواتر دەتوانی ئایتمەکان هەڵبژێریت و بڕی کەمکردن تێبکەیت
+                        لە خوار کلیک دواتر دەتوانی ئایتمەکان هەڵبژێریت و بڕی کەمکردن بنوسیت
                     </p>
                     <button type="button" class="btn btn-warning btn-lg mt-3" data-bs-toggle="modal" data-bs-target="#cancelOrderModal">
                         <i class="mdi mdi-delete-alert me-2"></i>داواکاری لابردن

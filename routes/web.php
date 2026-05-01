@@ -205,7 +205,6 @@ Route::middleware('auth')->group(function () {
 
         // Order Status Routes
         Route::get('/pending/order', 'PendingOrder')->name('pending.order');
-        Route::get('/complete/order', 'CompleteOrder')->name('complete.order');
         Route::get('/order/details/{order_id}', 'OrderDetails')->name('order.details');
         Route::post('/order/status/update', 'OrderStatusUpdate')->name('order.status.update');
         Route::post('/order/cancel', 'cancelOrder')->name('order.cancel');
@@ -214,7 +213,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/stock', 'StockManage')->name('stock.manage');
 
         // Due Routes
-        Route::get('/pending/due', 'PendingDue')->name('pending.due');
         Route::get('/order/due/{id}', 'OrderDueAjax')->name('order.due.ajax');
         Route::post('/update/due', 'UpdateDue')->name('update.due');
     });

@@ -237,12 +237,10 @@
 
 <div class="mb-3">
     <label class="form-label"><strong>جۆری پارەدان</strong></label>
-    <select name="payment_method" class="form-select" required>
-        <option value="">-- هەڵبژێرە --</option>
-        <option value="HandCash">دەستی</option>
-        <option value="Cheque">چەک</option>
-        <option value="Bank">بانک</option>
-    </select>
+
+    <!-- Always HandCash (دەستی) - no choices -->
+    <input type="hidden" name="payment_method" value="HandCash">
+    <input type="text" class="form-control" value="دەستی" readonly>
 </div>
 
 <div class="mb-3">

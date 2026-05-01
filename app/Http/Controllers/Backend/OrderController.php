@@ -157,18 +157,7 @@ class OrderController extends Controller
 
     /**
      * Show complete orders with pagination
-     */
-    public function CompleteOrder(){
-        $orders = Order::where('order_status', 'complete')
-            ->with('customer:id,name,phone,due,image')
-            ->select(['id', 'customer_id', 'order_date', 'order_status', 'payment_status', 'pay', 'due', 'invoice_no', 'created_at'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
-        
-        return view('backend.order.complete_order', compact('orders'));
-    }
 
-    /**
      * Show order details
      */
     public function OrderDetails($order_id){
@@ -271,15 +260,7 @@ class OrderController extends Controller
     /**
      * Show pending dues with pagination
      */
-    public function PendingDue(){
-        $alldue = Order::where('due', '>', 0)
-            ->with('customer:id,name,phone,due,address')
-            ->select(['id', 'customer_id', 'order_date', 'invoice_no', 'sub_total', 'pay', 'due', 'created_at'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
-        
-        return view('backend.order.pending_due', compact('alldue'));
-    }
+ 
 
     /**
      * Get order details via AJAX

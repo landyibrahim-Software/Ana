@@ -237,7 +237,7 @@
                 <!-- FIRST TIME SETUP -->
                 <div class="card bank-card">
                     <div class="card-body">
-                        <h5 class="mb-3"><i class="mdi mdi-alert-circle me-2"></i>سەتوپکردنی بانک (دۆلار)</h5>
+                        <h5 class="mb-3"><i class="mdi mdi-alert-circle me-2"></i>  داخڵکردنی دۆلار</h5>
                         <p class="text-muted">تکایە ابتدائی سەرمایە دۆلار داخڵ بکە:</p>
                         
                         <form action="{{ route('bank.receive') }}" method="POST" class="d-flex gap-2">
@@ -246,7 +246,7 @@
                                    placeholder="سەرمایە سەرەتایی (دۆلار)..." style="max-width: 300px;" required>
                             <input type="hidden" name="description" value="سەرمایە سەرەتایی دۆلار">
                             <button type="submit" class="btn btn-receive">
-                                <i class="mdi mdi-check me-1"></i>کۆنفرم کردن
+                                <i class="mdi mdi-check me-1"></i>قبوڵ کردن
                             </button>
                         </form>
                     </div>
@@ -266,11 +266,11 @@
             <div class="col-12">
                 <div class="summary-box">
                     <div class="summary-card spend-card">
-                        <h6>دۆلار کەم کراو ئەمڕۆ</h6>
+                        <h6>دۆلار سەرف کراو ئەمڕۆ</h6>
                         <div class="amount">${{ number_format($todaySpend, 2) }}</div>
                     </div>
                     <div class="summary-card receive-card">
-                        <h6>دۆلار دەست کەوتۆو ئەمڕۆ</h6>
+                        <h6>دۆلار دەست کەوتوو ئەمڕۆ</h6>
                         <div class="amount">${{ number_format($todayReceive, 2) }}</div>
                     </div>
                     <div class="summary-card balance-card">
@@ -302,7 +302,7 @@
                 <div class="card bank-card">
                     <div class="card-body">
                         <div class="form-section spend-section">
-                            <h5><i class="mdi mdi-cash-remove me-2"></i>دۆلار بەرداشت کردن</h5>
+                            <h5><i class="mdi mdi-cash-remove me-2"></i>دۆلار سەرف کردن</h5>
                             <form action="{{ route('bank.spend') }}" method="POST">
                                 @csrf
                                 <div class="mb-3">
@@ -324,7 +324,7 @@
                                 </div>
 
                                 <button type="submit" class="btn btn-spend w-100">
-                                    <i class="mdi mdi-check-circle me-1"></i> دۆلار بەرداشت بکە
+                                    <i class="mdi mdi-check-circle me-1"></i> دۆلار سەرف بکە
                                 </button>
                             </form>
                         </div>
@@ -398,7 +398,7 @@
                                         <td>{{ $sl++ }}</td>
                                         <td>
                                             @if($transaction->transaction_type == 'spend')
-                                                <span class="badge-spend">بەرداشت</span>
+                                                <span class="badge-spend">سەرفکردن</span>
                                             @else
                                                 <span class="badge-receive">دەست کەوتن</span>
                                             @endif
@@ -447,7 +447,7 @@
                 <!-- IQD FIRST TIME SETUP -->
                 <div class="card bank-card">
                     <div class="card-body">
-                        <h5 class="mb-3"><i class="mdi mdi-alert-circle me-2"></i>سەتوپکردنی بانکی دینار</h5>
+                        <h5 class="mb-3"><i class="mdi mdi-alert-circle me-2"></i> داخڵکردنی دینار </h5>
                         <p class="text-muted">تکایە ابتدائی سەرمایەی دینار داخڵ بکە:</p>
                         
                         <form action="{{ route('bank.receive.iqd') }}" method="POST" class="d-flex gap-2">
@@ -456,7 +456,7 @@
                                    placeholder="سەرمایە سەرەتایی (دینار)..." style="max-width: 300px;" required>
                             <input type="hidden" name="description" value="سەرمایە سەرەتایی دینار">
                             <button type="submit" class="btn btn-receive">
-                                <i class="mdi mdi-check me-1"></i>کۆنفرم کردن
+                                <i class="mdi mdi-check me-1"></i>قبوڵ کردن
                             </button>
                         </form>
                     </div>
@@ -476,11 +476,11 @@
             <div class="col-12">
                 <div class="summary-box">
                     <div class="summary-card" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);">
-                        <h6>دینار کەم کراو ئەمڕۆ</h6>
+                        <h6>دینار سەرف کراو ئەمڕۆ</h6>
                         <div class="amount">{{ number_format($todaySpendIQD, 0) }} IQD</div>
                     </div>
                     <div class="summary-card" style="background: linear-gradient(135deg, #28a745 0%, #218838 100%);">
-                        <h6>دینار دەست کەوتۆو ئەمڕۆ</h6>
+                        <h6>دینار دەست کەوتوو ئەمڕۆ</h6>
                         <div class="amount">{{ number_format($todayReceiveIQD, 0) }} IQD</div>
                     </div>
                     <div class="summary-card balance-card-iqd">
@@ -498,7 +498,7 @@
                 <div class="card bank-card">
                     <div class="card-body">
                         <div class="form-section spend-section">
-                            <h5><i class="mdi mdi-cash-remove me-2"></i>دینار بەرداشت کردن</h5>
+                            <h5><i class="mdi mdi-cash-remove me-2"></i>دینار سەرف کردن</h5>
                             <form action="{{ route('bank.spend.iqd') }}" method="POST">
                                 @csrf
                                 <div class="mb-3">
@@ -520,7 +520,7 @@
                                 </div>
 
                                 <button type="submit" class="btn btn-spend w-100">
-                                    <i class="mdi mdi-check-circle me-1"></i> دینار بەرداشت بکە
+                                    <i class="mdi mdi-check-circle me-1"></i> دینار سەرف بکە
                                 </button>
                             </form>
                         </div>
@@ -594,7 +594,7 @@
                                         <td>{{ $sl++ }}</td>
                                         <td>
                                             @if($transaction->transaction_type == 'spend')
-                                                <span class="badge-spend">بەرداشت</span>
+                                                <span class="badge-spend">سەرفکردن</span>
                                             @else
                                                 <span class="badge-receive">دەست کەوتن</span>
                                             @endif

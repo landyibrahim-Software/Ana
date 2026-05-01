@@ -48,7 +48,7 @@
                                         <input type="text" 
                                                name="search" 
                                                class="form-control" 
-                                               placeholder="جووتی بەرهەم یان کۆد..."
+                                               placeholder="جوری بەرهەم یان کۆد..."
                                                value="{{ request('search') }}">
                                         <button class="btn btn-primary" type="submit">
                                             <i class="mdi mdi-magnify"></i> گەڕان
@@ -69,7 +69,7 @@
                                     <th>دابینکەر</th>
                                     <th>کۆدی بەرهەم</th>
                                     <th>کۆگا</th>
-                                    <th>عدد</th>
+                                    <th>دەرزەن</th>
                                     <th>نرخی کڕین</th>
                                     <th>نرخی فرۆشتن</th>
                                     <th>کردار</th>

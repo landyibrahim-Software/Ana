@@ -182,15 +182,6 @@
             <li>
                 <a href="{{ route('pending.order') }}"> ئەرشیف ئۆردەر  </a>
             </li>
-
-             <li>
-                <a href="{{ route('complete.order') }}">  ئەرشیف تەواو بوو</a>
-            </li>
-
-            <li>
-                <a href="{{ route('pending.due') }}"> ئەرشیفی  قەرز </a>
-            </li>
-            
         
         </ul>
     </div>
