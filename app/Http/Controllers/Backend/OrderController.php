@@ -126,9 +126,8 @@ class OrderController extends Controller
      */
 public function PrintInvoice($id)
 {
-    // ✅ Load order with customer and order details (eager load)
     $order = Order::with([
-        'customer:id,name,phone,due,address',
+        'customer:id,name,phone,due,address,shopname',
         'orderDetails.product:id,product_name,product_code,selling_price'
     ])->findOrFail($id);
 
@@ -257,7 +256,7 @@ public function PrintInvoice($id)
     public function GenerateInvoicePDF($order_id)
     {
         $order = Order::with([
-            'customer:id,name,phone,due,address',
+            'customer:id,name,phone,due,address,shopname',
             'orderDetails.product:id,product_name,product_code,selling_price'
         ])->findOrFail($order_id);
         

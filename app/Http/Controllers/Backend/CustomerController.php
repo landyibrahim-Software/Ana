@@ -23,20 +23,15 @@ public function ShowCustomer($id)
 {
     $customer = Customer::findOrFail($id);
 
-    // ✅ Card 1: Active orders count (exclude cancelled)
-    $order_count = $customer->orders()
+    // ✅ OPTIMIZATION: Single aggregate query instead of 3 separate queries
+    $orderStats = $customer->orders()
         ->where('order_status', '!=', 'cancelled')
-        ->count();
+        ->selectRaw('COUNT(*) as order_count, COALESCE(SUM(sub_total), 0) as orders_total, COALESCE(SUM(pay), 0) as orders_paid')
+        ->first();
 
-    // ✅ Card 2 part: Total purchases after system (sum sub_total of active orders)
-    $orders_total = $customer->orders()
-        ->where('order_status', '!=', 'cancelled')
-        ->sum('sub_total') ?? 0;
-
-    // ✅ Card 3 part (A): Paid at invoice time (sum orders.pay)
-    $orders_paid = $customer->orders()
-        ->where('order_status', '!=', 'cancelled')
-        ->sum('pay') ?? 0;
+    $order_count  = intval($orderStats->order_count ?? 0);
+    $orders_total = floatval($orderStats->orders_total ?? 0);
+    $orders_paid  = floatval($orderStats->orders_paid ?? 0);
 
     // ✅ Card 3 part (B): Paid later from Show Customer page (payments table)
     $payments_paid = Payment::where('customer_id', $customer->id)
@@ -206,17 +201,14 @@ public function PaymentCustomer(Request $request)
     ]);
 
     // 2) Recalculate Cards logic (the SAME rule you want)
-    // Card2 = previous_due + sum(active orders sub_total)
-    $orders_total = $customer->orders()
+    // ✅ OPTIMIZATION: Single aggregate query instead of 3 separate queries
+    $orderStats = $customer->orders()
         ->where('order_status', '!=', 'cancelled')
-        ->sum('sub_total') ?? 0;
+        ->selectRaw('COALESCE(SUM(sub_total), 0) as orders_total, COALESCE(SUM(pay), 0) as orders_paid')
+        ->first();
 
-    // Card3 includes:
-    // - invoice pay (orders.pay)
-    // - pay later (payments table)
-    $orders_paid = $customer->orders()
-        ->where('order_status', '!=', 'cancelled')
-        ->sum('pay') ?? 0;
+    $orders_total = floatval($orderStats->orders_total ?? 0);
+    $orders_paid  = floatval($orderStats->orders_paid ?? 0);
 
     $payments_paid = Payment::where('customer_id', $customer_id)
         ->where('payment_status', 'completed')
