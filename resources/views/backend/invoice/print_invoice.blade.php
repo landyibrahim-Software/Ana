@@ -71,9 +71,11 @@
         <p class="mt-2">
             <strong>ناوی کڕیار:</strong> {{ $order->customer->name }}
         </p>
+        @if(!empty($order->customer->shopname))
         <p>
-            <strong>ناوی فرۆشگا:</strong> {{ $order->customer->shopname ?? '—' }}
+            <strong>ناوی فرۆشگا:</strong> {{ $order->customer->shopname }}
         </p>
+        @endif
         <p>
             <strong>ژمارەی مۆبایل:</strong> {{ $order->customer->phone ?? '—' }}
         </p>
