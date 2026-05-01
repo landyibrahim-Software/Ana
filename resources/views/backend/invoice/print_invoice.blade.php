@@ -71,9 +71,11 @@
         <p class="mt-2">
             <strong>ناوی کڕیار:</strong> {{ $order->customer->name }}
         </p>
+        @if(!empty($order->customer->shopname))
         <p>
-            <strong>ناوی فرۆشگا:</strong> {{ $order->customer->shopname ?? '—' }}
+            <strong>ناوی فرۆشگا:</strong> {{ $order->customer->shopname }}
         </p>
+        @endif
         <p>
             <strong>ژمارەی مۆبایل:</strong> {{ $order->customer->phone ?? '—' }}
         </p>
@@ -113,10 +115,7 @@
 
 @foreach($order->orderDetails as $item)
 @php
-    // FIXED: Use simple quantity instead of meters
     $quantity = floatval($item->quantity ?? 0);
-    
-    // Calculate row total: quantity × unitcost
     $rowTotal = $quantity * floatval($item->unitcost ?? 0);
     $calculatedSubTotal += $rowTotal;
 @endphp
@@ -141,29 +140,17 @@
 <div class="row mt-3" style="direction: rtl;">
     <div class="col-12 text-end">
 
-        {{-- ✅ ADD THIS — matches product invoice --}}
         <p style="font-size: 16px; margin: 10px 0;">
-            <strong>قەرزی کڕیار:</strong>
-            <b style="color: #f5576c;">{{ number_format($customerDue, 2) }}</b>
-        </p>
-        <hr>
-
-        <h3 style="margin: 10px 0; color: #667eea;">
-            <strong>کۆی کاڵا:</strong>
-            <b>{{ number_format($calculatedSubTotal, 2) }}</b>
-        </h3>
-        <h2 style="margin: 10px 0; color: #43e97b; font-weight: 700;">
             <strong>کۆی گشتی:</strong>
             <b>{{ number_format($calculatedSubTotal, 2) }}</b>
-        </h2>
-        <hr>
+        </p>
         <p style="font-size: 16px; margin: 10px 0;">
             <strong>پارەی دراو:</strong>
-            <b style="color: #4facfe;">{{ number_format($order->pay ?? 0, 2) }}</b>
+            <b>{{ number_format($order->pay ?? 0, 2) }}</b>
         </p>
         <p style="font-size: 16px; margin: 10px 0;">
             <strong>قەرزی ماوە:</strong>
-            <b style="color: #ff6b6b;">{{ number_format($customerDue, 2) }}</b>
+            <b>{{ number_format($customerDue, 2) }}</b>
         </p>
 
     </div>
@@ -200,11 +187,9 @@ function sendWhatsApp() {
         return;
     }
     
-    // Disable button
     btn.disabled = true;
     btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> لە درەنوویت...';
     
-    // Clean phone
     phone = phone.replace(/[\s-()]/g, '');
     if (phone.startsWith('0')) {
         phone = '964' + phone.substring(1);
@@ -213,10 +198,8 @@ function sendWhatsApp() {
         phone = '+' + phone;
     }
     
-    // Get invoice content
     var invoiceCard = document.getElementById('invoiceContent');
     
-    // Convert to image
     html2canvas(invoiceCard, {
         scale: 2,
         backgroundColor: '#ffffff',
@@ -224,7 +207,6 @@ function sendWhatsApp() {
         logging: false
     }).then(function(canvas) {
         try {
-            // Download image
             var link = document.createElement('a');
             link.href = canvas.toDataURL('image/png');
             link.download = 'invoice_' + orderId + '.png';
@@ -232,7 +214,6 @@ function sendWhatsApp() {
             link.click();
             document.body.removeChild(link);
             
-            // Message
             var msg = encodeURIComponent(
                 'سڵاو ' + name + '!\n\n' +
                 '📋 پسوڵەی دێ:\n' +
@@ -242,11 +223,9 @@ function sendWhatsApp() {
                 'سوپاس! 🙏'
             );
             
-            // Open WhatsApp after 500ms
             setTimeout(function() {
                 window.open('https://wa.me/' + phone + '?text=' + msg, '_blank');
                 
-                // Reset button after 2 seconds
                 setTimeout(function() {
                     btn.disabled = false;
                     btn.innerHTML = '<i class="fab fa-whatsapp"></i> واتساپ';

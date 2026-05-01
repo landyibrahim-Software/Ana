@@ -290,6 +290,17 @@ Last Scan: <span id="last-barcode">None</span>
 </span>
 </div>
 
+{{-- NEW: PRODUCT SEARCH (does not change anything else) --}}
+<div class="row mb-3">
+    <div class="col-md-6 mx-auto">
+        <input type="text"
+               id="product-search"
+               class="form-control"
+               placeholder="🔍 بەرهەم بدۆزەرەوە (ناو/جۆر/بارکۆد)..."
+               autocomplete="off">
+    </div>
+</div>
+
 @if($product && count($product) > 0)
 <div class="table-responsive">
 <table class="table table-hover">
@@ -519,6 +530,24 @@ function handleBarcode(code){
         alert('❌ بەرهەم نەدۆزرایەوە');
     }
 }
+
+/* NEW: PRODUCT SEARCH FILTER (does not change anything else) */
+(function () {
+    const searchInput = document.getElementById('product-search');
+    if (!searchInput) return;
+
+    searchInput.addEventListener('input', function () {
+        const q = (this.value || '').toLowerCase().trim();
+
+        document.querySelectorAll('tr[data-code]').forEach(row => {
+            const rowText = (row.innerText || '').toLowerCase();
+            const code = (row.dataset.code || '').toLowerCase();
+
+            const match = q === '' || rowText.includes(q) || code.includes(q);
+            row.style.display = match ? '' : 'none';
+        });
+    });
+})();
 
 /* Initialize on page load */
 document.addEventListener('DOMContentLoaded', function() {

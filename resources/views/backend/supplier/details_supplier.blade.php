@@ -55,14 +55,6 @@
     </div>
 
 
-              <div class="col-md-6">
-        <div class="mb-3">
-            <label for="firstname" class="form-label">ئیمەیڵی دابینکەر</label>
-               <p class="text-danger">{{ $supplier->email }}</p>
-            
-        </div>
-    </div>
-
 
 
 
