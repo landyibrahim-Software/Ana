@@ -93,7 +93,7 @@
 
               <div class="col-md-6">
         <div class="form-group mb-3">
-            <label for="firstname" class="form-label">تۆپ  </label>
+            <label for="firstname" class="form-label">دەرزەن  </label>
             <input type="text" name="product_store" class="form-control "   >
             
            </div>
