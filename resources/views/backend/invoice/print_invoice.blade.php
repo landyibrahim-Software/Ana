@@ -141,29 +141,17 @@
 <div class="row mt-3" style="direction: rtl;">
     <div class="col-12 text-end">
 
-        {{-- ✅ ADD THIS — matches product invoice --}}
         <p style="font-size: 16px; margin: 10px 0;">
-            <strong>قەرزی کڕیار:</strong>
-            <b style="color: #f5576c;">{{ number_format($customerDue, 2) }}</b>
-        </p>
-        <hr>
-
-        <h3 style="margin: 10px 0; color: #667eea;">
-            <strong>کۆی کاڵا:</strong>
-            <b>{{ number_format($calculatedSubTotal, 2) }}</b>
-        </h3>
-        <h2 style="margin: 10px 0; color: #43e97b; font-weight: 700;">
             <strong>کۆی گشتی:</strong>
             <b>{{ number_format($calculatedSubTotal, 2) }}</b>
-        </h2>
-        <hr>
+        </p>
         <p style="font-size: 16px; margin: 10px 0;">
             <strong>پارەی دراو:</strong>
-            <b style="color: #4facfe;">{{ number_format($order->pay ?? 0, 2) }}</b>
+            <b>{{ number_format($order->pay ?? 0, 2) }}</b>
         </p>
         <p style="font-size: 16px; margin: 10px 0;">
             <strong>قەرزی ماوە:</strong>
-            <b style="color: #ff6b6b;">{{ number_format($customerDue, 2) }}</b>
+            <b>{{ number_format($customerDue, 2) }}</b>
         </p>
 
     </div>
