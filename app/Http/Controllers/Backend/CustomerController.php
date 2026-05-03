@@ -15,7 +15,7 @@ class CustomerController extends Controller
 
         $customer = Customer::select(['id','name','phone','city','shopname','image','created_at'])
             ->latest()
-            ->get();
+            ->paginate(50);
         return view('backend.customer.all_customer',compact('customer'));
     } // End Method 
     
@@ -165,11 +165,11 @@ public function ShowCustomer($id)
 
  public function DeleteCustomer($id){
 
-        $customer_img = Customer::findOrFail($id);
-        $img = $customer_img->image;
+        $customer = Customer::findOrFail($id);
+        $img = $customer->image;
         unlink($img);
 
-        Customer::findOrFail($id)->delete();
+        $customer->delete();
 
         $notification = array(
             'message' => 'Customer Deleted Successfully',
