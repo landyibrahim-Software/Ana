@@ -128,7 +128,7 @@ class OrderController extends Controller
     {
         // ✅ Load order with customer and order details (eager load)
         $order = Order::with([
-            'customer:id,name,phone,due,address',
+            'customer:id,name,phone,due,address,shopname',
             'orderDetails.product:id,product_name,product_code,selling_price'
         ])->findOrFail($id);
 
@@ -289,15 +289,15 @@ class OrderController extends Controller
 
         DB::beginTransaction();
         try {
-            $allorder = Order::findOrFail($order_id);
-            $maindue = floatval($allorder->due);
-            $maindpay = floatval($allorder->pay);
+          // ✅ Single fetch — reused for both read and update
+            $order = Order::findOrFail($order_id);
+            $maindue  = floatval($order->due);
+            $maindpay = floatval($order->pay);
      
             $paid_due = max(0, $maindue - $due_amount);
             $paid_pay = $maindpay + $due_amount;
 
-            $updatedOrder = Order::findOrFail($order_id);
-            $updatedOrder->update([
+            $order->update([
                 'due'        => $paid_due,
                 'pay'        => $paid_pay,
                 'updated_at' => now()
@@ -305,10 +305,15 @@ class OrderController extends Controller
 
             // Recalculate the customer's total running due from scratch,
             // including opening_balance so the initial balance is preserved.
-            $affectedCustomer = $updatedOrder->customer;
+             $affectedCustomer = $order->customer;
             if ($affectedCustomer) {
-                $ordersTotal  = $affectedCustomer->orders()->where('order_status', '!=', 'cancelled')->sum('sub_total') ?? 0;
-                $ordersPaid   = $affectedCustomer->orders()->where('order_status', '!=', 'cancelled')->sum('pay') ?? 0;
+                // ✅ Single aggregate instead of two separate sum() calls
+                $orderAgg = $affectedCustomer->orders()
+                    ->where('order_status', '!=', 'cancelled')
+                    ->selectRaw('SUM(sub_total) as total, SUM(pay) as paid')
+                    ->first();
+                $ordersTotal = floatval($orderAgg->total ?? 0);
+                $ordersPaid  = floatval($orderAgg->paid  ?? 0);
                 $paymentsPaid = Payment::where('customer_id', $affectedCustomer->id)
                                     ->where('payment_status', 'completed')
                                     ->sum('payment_amount') ?? 0;
@@ -370,21 +375,16 @@ class OrderController extends Controller
                     ->value('total') ?? 0;
             }
 
-            $totalQuantityRestored = 0;
-
-            // ✅ Batch restore stock using raw SQL
-            $quantities = Orderdetails::whereIn('id', $rejectedItemIds)
-                ->select('product_id', DB::raw('SUM(quantity) as total_qty'))
-                ->groupBy('product_id')
-                ->get();
-
-            foreach ($quantities as $item) {
-                Product::where('id', $item->product_id)
-                    ->update(['product_store' => DB::raw("product_store + " . (int) $item->total_qty)]);
-                
-                $totalQuantityRestored += $item->total_qty;
-            }
-
+           // ✅ Single JOIN UPDATE restores all product stock in one query
+            DB::update('
+                UPDATE products p
+                INNER JOIN orderdetails od ON p.id = od.product_id
+                SET p.product_store = p.product_store + od.quantity
+                WHERE od.id IN (' . implode(',', array_map('intval', $rejectedItemIds)) . ')
+                  AND od.quantity > 0
+            ');
+  $totalQuantityRestored = Orderdetails::whereIn('id', $rejectedItemIds)
+                ->sum('quantity') ?? 0;
             // Mark items as cancelled
             Orderdetails::whereIn('id', $rejectedItemIds)
                 ->update(['quantity' => 0, 'updated_at' => now()]);

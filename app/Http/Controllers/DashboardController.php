@@ -77,31 +77,30 @@ class DashboardController extends Controller
             $totalSupplierPayment = SupplierPayment::whereBetween('payment_date', [$startDate, $endDate])
                 ->sum('payment_amount') ?? 0;
 
-            // ✅ TOTAL STOCK VALUE
-            $totalStockValue = Product::all()->sum(function ($product) {
-                $buyingPrice = floatval($product->buying_price ?? 0);
-                $store = floatval($product->product_store ?? 0);
-                return $buyingPrice * $store;
-            });
+            // ✅ TOTAL STOCK VALUE — single SQL aggregation, no PHP loop
+            $totalStockValue = Product::selectRaw(
+                'COALESCE(SUM(CAST(buying_price AS DECIMAL(15,4)) * CAST(product_store AS DECIMAL(15,4))), 0) as total'
+            )->value('total') ?? 0;
 
-            // ✅ TODAY'S SALES — exclude cancelled
-            $todaySales = Order::whereDate('created_at', Carbon::today())
+             // ✅ TODAY'S SALES + COUNT — single query instead of two
+            $todayRow = Order::whereDate('created_at', Carbon::today())
                 ->where('order_status', '!=', 'cancelled')
-                ->sum('sub_total') ?? 0;
-
-            // ✅ TODAY'S ORDERS COUNT — exclude cancelled
-            $todayOrders = Order::whereDate('created_at', Carbon::today())
-                ->where('order_status', '!=', 'cancelled')
-                ->count() ?? 0;
-
+                 ->selectRaw('COALESCE(SUM(sub_total), 0) as sales, COUNT(*) as cnt')
+                ->first();
+            $todaySales  = floatval($todayRow->sales ?? 0);
+            $todayOrders = intval($todayRow->cnt ?? 0);
             // ✅ TOTAL EXPENSES
             $totalExpenses = Expense::whereBetween('created_at', [$startDate, $endDate])
                 ->sum('amount') ?? 0;
 
             // ✅ RECENT ORDERS (Last 10)
             $orders = Order::whereBetween('created_at', [$startDate, $endDate])
-                ->with('customer')
-                ->with('orderDetails.product')
+                ->with([
+                    'customer:id,name,phone',
+                    'orderDetails:id,order_id,product_id,quantity,unitcost',
+                    'orderDetails.product:id,buying_price',
+                ])
+                ->select(['id', 'customer_id', 'invoice_no', 'order_date', 'order_status', 'payment_status', 'sub_total', 'pay', 'due', 'created_at'])
                 ->latest()
                 ->limit(10)
                 ->get();
@@ -109,7 +108,7 @@ class DashboardController extends Controller
             // ✅ TOP CUSTOMERS
             $topCustomers = Order::whereBetween('created_at', [$startDate, $endDate])
                 ->select('customer_id', DB::raw('SUM(sub_total) as total_spent'))
-                ->with('customer')
+                ->with('customer:id,name,phone')
                 ->groupBy('customer_id')
                 ->orderByDesc('total_spent')
                 ->limit(5)
@@ -117,51 +116,42 @@ class DashboardController extends Controller
 
             // ✅ RECENT EXPENSES
             $recentExpenses = Expense::whereBetween('created_at', [$startDate, $endDate])
+            ->select(['id', 'amount', 'created_at'])
                 ->latest()
                 ->limit(5)
                 ->get();
 
             // ✅ RECENT SUPPLIER PAYMENTS
             $recentSupplierPayments = SupplierPayment::whereBetween('payment_date', [$startDate, $endDate])
-                ->with('supplier')
+                ->select(['id', 'supplier_id', 'payment_amount', 'payment_date'])
+                ->with('supplier:id,name')
                 ->latest()
                 ->limit(5)
                 ->get();
 
             // ✅ LOW STOCK PRODUCTS
             $lowStockProducts = Product::where('product_store', '<', 10)
+                ->select(['id', 'product_name', 'product_code', 'product_image', 'product_store'])
                 ->latest()
                 ->limit(10)
                 ->get();
 
-            // ✅ BEST SELLING PRODUCTS
-            $bestSellingProducts = Order::whereMonth('created_at', Carbon::now()->month)
-                ->whereYear('created_at', Carbon::now()->year)
-                ->with('orderDetails.product.category')
-                ->get()
-                ->flatMap(function ($order) {
-                    return $order->orderDetails ?? [];
-                })
-                ->groupBy('product_id')
-                ->map(function ($items) {
-                    $first = $items->first();
-                    if (!$first || !$first->product) {
-                        return null;
-                    }
-                    return (object) [
-                        'product_id'    => $first->product_id,
-                        'product_name'  => $first->product->product_name ?? 'N/A',
-                        'product_code'  => $first->product->product_code ?? 'N/A',
-                        'product_image' => $first->product->product_image ?? null,
-                        'category_name' => $first->product->category->category_name ?? 'N/A',
-                        'total_sold'    => $items->sum('quantity'),
-                        'product_store' => $first->product->product_store ?? 0,
-                    ];
-                })
-                ->filter()
-                ->sortByDesc('total_sold')
-                ->values()
-                ->take(10);
+              // ✅ BEST SELLING PRODUCTS — direct SQL GROUP BY (avoids loading all orders into PHP)
+            $bestSellingProducts = collect(DB::select("
+                SELECT p.id as product_id, p.product_name, p.product_code, p.product_image,
+                       CAST(p.product_store AS DECIMAL(15,4)) as product_store,
+                       COALESCE(c.category_name, 'N/A') as category_name,
+                       SUM(CAST(od.quantity AS DECIMAL(15,4))) as total_sold
+                FROM orderdetails od
+                INNER JOIN orders o ON od.order_id = o.id
+                INNER JOIN products p ON od.product_id = p.id
+                LEFT JOIN categories c ON p.category_id = c.id
+                WHERE MONTH(o.created_at) = ? AND YEAR(o.created_at) = ?
+                  AND o.order_status != 'cancelled'
+                GROUP BY p.id, p.product_name, p.product_code, p.product_image, p.product_store, c.category_name
+                ORDER BY total_sold DESC
+                LIMIT 10
+            ", [Carbon::now()->month, Carbon::now()->year]));
 
             // ✅ MONTHLY PAID DATA — UNION orders.pay + payments, both exclude cancelled
             $monthlyRows = DB::select("

@@ -7,7 +7,6 @@ use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Customer;
 use Gloudemans\Shoppingcart\Facades\Cart;
-use Illuminate\Support\Facades\DB;
 
 class PosController extends Controller
 {
@@ -17,41 +16,39 @@ class PosController extends Controller
     public function Pos(Request $request)
     {
         try {
-            // ✅ OPTIMIZATION: Paginate products (20 per page) with eager loading
             $product = Product::with('category:id,category_name')
                 ->where('product_store', '>', 0)
                 ->select([
-                    'id', 
-                    'product_name', 
-                    'product_code', 
-                    'product_store', 
-                    'selling_price', 
+                    'id',
+                    'product_name',
+                    'product_code',
+                    'product_store',
+                    'selling_price',
                     'buying_price',
                     'category_id',
                     'product_image',
-                    'created_at'
+                    'created_at',
                 ])
                 ->latest()
                 ->paginate(20);
-            
-            // ✅ OPTIMIZATION: Paginate customers (50 per page) with select only needed fields
+
             $customer = Customer::select([
-    'id', 
-    'name', 
-    'phone', 
-    'due',
-    'image',
-    'created_at'
-])
-    ->latest()
-    ->paginate(50);
+                    'id',
+                    'name',
+                    'phone',
+                    'due',
+                    'image',
+                    'created_at',
+                ])
+                ->latest()
+                ->paginate(50);
 
             return view('backend.pos.pos_page', compact('product', 'customer'));
 
         } catch (\Exception $e) {
             return redirect()->back()->with([
-                'message' => 'خرابی: ' . $e->getMessage(),
-                'alert-type' => 'danger'
+                'message'    => 'خرابی: ' . $e->getMessage(),
+                'alert-type' => 'danger',
             ]);
         }
     }
@@ -63,10 +60,9 @@ class PosController extends Controller
     {
         try {
             $search = $request->get('search', '');
-            
-            // ✅ OPTIMIZATION: Search with specific columns only
+
             $products = Product::where('product_store', '>', 0)
-                ->where(function($query) use ($search) {
+                ->where(function ($query) use ($search) {
                     $query->where('product_name', 'LIKE', "%{$search}%")
                           ->orWhere('product_code', 'LIKE', "%{$search}%");
                 })
@@ -79,20 +75,20 @@ class PosController extends Controller
                     'selling_price',
                     'buying_price',
                     'category_id',
-                    'product_image'
+                    'product_image',
                 ])
                 ->limit(20)
                 ->get();
 
             return response()->json([
                 'status' => 'success',
-                'data' => $products
+                'data'   => $products,
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
-                'status' => 'error',
-                'message' => $e->getMessage()
+                'status'  => 'error',
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
@@ -104,31 +100,30 @@ class PosController extends Controller
     {
         try {
             $search = $request->get('search', '');
-            
-            // ✅ OPTIMIZATION: Search with specific columns only
-            $customers = Customer::where(function($query) use ($search) {
-        $query->where('name', 'LIKE', "%{$search}%")
-              ->orWhere('phone', 'LIKE', "%{$search}%");
-    })
-    ->select([
-        'id',
-        'name',
-        'phone',
-        'due',
-        'image'
-    ])
-    ->limit(20)
-    ->get();
+
+            $customers = Customer::where(function ($query) use ($search) {
+                    $query->where('name', 'LIKE', "%{$search}%")
+                          ->orWhere('phone', 'LIKE', "%{$search}%");
+                })
+                ->select([
+                    'id',
+                    'name',
+                    'phone',
+                    'due',
+                    'image',
+                ])
+                ->limit(20)
+                ->get();
 
             return response()->json([
                 'status' => 'success',
-                'data' => $customers
+                'data'   => $customers,
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
-                'status' => 'error',
-                'message' => $e->getMessage()
+                'status'  => 'error',
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
@@ -139,59 +134,55 @@ class PosController extends Controller
     public function AddCart(Request $request)
     {
         try {
-            // ✅ VALIDATION: Check input
             $request->validate([
-                'id' => 'required|exists:products,id',
-                'qty' => 'required|numeric|min:0.01'
+                'id'  => 'required|exists:products,id',
+                'qty' => 'required|numeric|min:0.01',
             ]);
 
-            // ✅ OPTIMIZATION: Load only needed columns
             $product = Product::select([
-                'id',
-                'product_name',
-                'product_code',
-                'product_store',
-                'selling_price',
-                'buying_price'
-            ])->find($request->id);
+                    'id',
+                    'product_name',
+                    'product_code',
+                    'product_store',
+                    'selling_price',
+                    'buying_price',
+                ])->find($request->id);
 
             if (!$product) {
                 return redirect()->back()->with([
-                    'message' => 'بەرهەم نەدۆزرایەوە',
-                    'alert-type' => 'error'
+                    'message'    => 'بەرهەم نەدۆزرایەوە',
+                    'alert-type' => 'error',
                 ]);
             }
 
-            // Check stock
             if ($request->qty > $product->product_store) {
                 return redirect()->back()->with([
-                    'message' => 'عدد کافی نیە - دەستکاری: ' . $product->product_store,
-                    'alert-type' => 'error'
+                    'message'    => 'عدد کافی نیە - دەستکاری: ' . $product->product_store,
+                    'alert-type' => 'error',
                 ]);
             }
 
-            // ✅ Add to cart
             Cart::add([
-                'id' => $product->id,
-                'name' => $product->product_name,
-                'qty' => floatval($request->qty ?? 1),
-                'price' => floatval($product->selling_price),
-                'weight' => 0,
+                'id'      => $product->id,
+                'name'    => $product->product_name,
+                'qty'     => floatval($request->qty ?? 1),
+                'price'   => floatval($product->selling_price),
+                'weight'  => 0,
                 'options' => [
                     'buying_price' => floatval($product->buying_price),
                     'product_code' => $product->product_code,
-                ]
+                ],
             ]);
 
             return redirect()->back()->with([
-                'message' => '✅ ' . $product->product_name . ' گیراوە',
-                'alert-type' => 'success'
+                'message'    => '✅ ' . $product->product_name . ' گیراوە',
+                'alert-type' => 'success',
             ]);
 
         } catch (\Exception $e) {
             return redirect()->back()->with([
-                'message' => 'خرابی: ' . $e->getMessage(),
-                'alert-type' => 'error'
+                'message'    => 'خرابی: ' . $e->getMessage(),
+                'alert-type' => 'error',
             ]);
         }
     }
@@ -202,32 +193,31 @@ class PosController extends Controller
     public function UpdateCartPrice(Request $request, $rowId)
     {
         try {
-            // ✅ VALIDATION: Check input
             $request->validate([
-                'price' => 'required|numeric|min:0'
+                'price' => 'required|numeric|min:0',
             ]);
 
             $item = Cart::get($rowId);
             if (!$item) {
                 return response()->json([
-                    'status' => 'error',
-                    'message' => 'Item not found'
+                    'status'  => 'error',
+                    'message' => 'Item not found',
                 ], 404);
             }
 
             Cart::update($rowId, [
-                'price' => floatval($request->price)
+                'price' => floatval($request->price),
             ]);
 
             return response()->json([
-                'status' => 'success',
-                'message' => 'نرخ نوێ کرایەوە'
+                'status'  => 'success',
+                'message' => 'نرخ نوێ کرایەوە',
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
-                'status' => 'error',
-                'message' => $e->getMessage()
+                'status'  => 'error',
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
@@ -238,38 +228,37 @@ class PosController extends Controller
     public function CartUpdate(Request $request, $rowId)
     {
         try {
-            // ✅ VALIDATION: Check input
             $request->validate([
-                'qty' => 'required|numeric|min:0.01',
-                'price' => 'nullable|numeric|min:0'
+                'qty'   => 'required|numeric|min:0.01',
+                'price' => 'nullable|numeric|min:0',
             ]);
 
             $item = Cart::get($rowId);
             if (!$item) {
                 return redirect()->back()->with([
-                    'message' => 'Item نەدۆزرایەوە',
-                    'alert-type' => 'error'
+                    'message'    => 'Item نەدۆزرایەوە',
+                    'alert-type' => 'error',
                 ]);
             }
 
             $options = $item->options ?? [];
-            $price = $request->has('price') ? floatval($request->price) : $item->price;
+            $price   = $request->has('price') ? floatval($request->price) : $item->price;
 
             Cart::update($rowId, [
-                'qty' => floatval($request->qty),
-                'price' => $price,
-                'options' => $options
+                'qty'     => floatval($request->qty),
+                'price'   => $price,
+                'options' => $options,
             ]);
 
             return redirect()->back()->with([
-                'message' => '✅ سەبەتەکە نوێ کرایەوە',
-                'alert-type' => 'success'
+                'message'    => '✅ سەبەتەکە نوێ کرایەوە',
+                'alert-type' => 'success',
             ]);
 
         } catch (\Exception $e) {
             return redirect()->back()->with([
-                'message' => 'خرابی: ' . $e->getMessage(),
-                'alert-type' => 'error'
+                'message'    => 'خرابی: ' . $e->getMessage(),
+                'alert-type' => 'error',
             ]);
         }
     }
@@ -283,16 +272,16 @@ class PosController extends Controller
             if (Cart::content()->has($rowId)) {
                 Cart::remove($rowId);
             }
-            
+
             return redirect()->back()->with([
-                'message' => '✅ ئایتم سڕایەوە',
-                'alert-type' => 'success'
+                'message'    => '✅ ئایتم سڕایەوە',
+                'alert-type' => 'success',
             ]);
 
         } catch (\Exception $e) {
             return redirect()->back()->with([
-                'message' => 'خرابی: ' . $e->getMessage(),
-                'alert-type' => 'error'
+                'message'    => 'خرابی: ' . $e->getMessage(),
+                'alert-type' => 'error',
             ]);
         }
     }
@@ -303,53 +292,50 @@ class PosController extends Controller
     public function CreateInvoice(Request $request)
     {
         try {
-            // ✅ VALIDATION: Check input
             $request->validate([
-                'customer_id' => 'required|exists:customers,id'
+                'customer_id' => 'required|exists:customers,id',
             ]);
 
             $contents = Cart::content();
 
             if ($contents->count() == 0) {
                 return redirect()->back()->with([
-                    'message' => 'سەبەتەکە خالیە',
-                    'alert-type' => 'error'
+                    'message'    => 'سەبەتەکە خالیە',
+                    'alert-type' => 'error',
                 ]);
             }
 
-            // ✅ OPTIMIZATION: Load only needed customer fields
-          $customer = Customer::select([
-    'id',
-    'name',
-    'phone',
-    'due',
-    'address',
-    'shopname'
-])->find($request->customer_id);
+            $customer = Customer::select([
+                    'id',
+                    'name',
+                    'phone',
+                    'due',
+                    'address',
+                    'shopname',
+                ])->find($request->customer_id);
 
-if (!$customer) {
-    return redirect()->back()->with([
-        'message' => 'کڕیار نەدۆزرایەوە',
-        'alert-type' => 'error'
-    ]);
-}
+            if (!$customer) {
+                return redirect()->back()->with([
+                    'message'    => 'کڕیار نەدۆزرایەوە',
+                    'alert-type' => 'error',
+                ]);
+            }
 
-// ✅ OPTIMIZATION: Calculate total in view, not controller
-$subTotal = collect($contents)->sum(function($item) {
-    return floatval($item->qty) * floatval($item->price);
-});
+            $subTotal = collect($contents)->sum(function ($item) {
+                return floatval($item->qty) * floatval($item->price);
+            });
 
-return view('backend.invoice.product_invoice', [
-    'contents' => $contents,
-    'customer' => $customer,
-    'customerDue' => floatval($customer->due ?? 0),
-    'subTotal' => $subTotal
-]);
+            return view('backend.invoice.product_invoice', [
+                'contents'    => $contents,
+                'customer'    => $customer,
+                'customerDue' => floatval($customer->due ?? 0),
+                'subTotal'    => $subTotal,
+            ]);
 
         } catch (\Exception $e) {
             return redirect()->back()->with([
-                'message' => 'خرابی: ' . $e->getMessage(),
-                'alert-type' => 'error'
+                'message'    => 'خرابی: ' . $e->getMessage(),
+                'alert-type' => 'error',
             ]);
         }
     }
@@ -360,7 +346,6 @@ return view('backend.invoice.product_invoice', [
     public function AllItem(Request $request)
     {
         try {
-            // ✅ OPTIMIZATION: Load only needed columns
             $products = Product::where('product_store', '>', 0)
                 ->select([
                     'id',
@@ -368,7 +353,7 @@ return view('backend.invoice.product_invoice', [
                     'product_code',
                     'product_store',
                     'selling_price',
-                    'buying_price'
+                    'buying_price',
                 ])
                 ->latest()
                 ->limit(100)
@@ -376,13 +361,13 @@ return view('backend.invoice.product_invoice', [
 
             return response()->json([
                 'status' => 'success',
-                'data' => $products
+                'data'   => $products,
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
-                'status' => 'error',
-                'message' => $e->getMessage()
+                'status'  => 'error',
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
@@ -394,25 +379,24 @@ return view('backend.invoice.product_invoice', [
     {
         try {
             $customer = Customer::select([
-    'id',
-    'name',
-    'phone',
-    'due',
-    'address',
-    'shopname'
-])->findOrFail($id);
+                    'id',
+                    'name',
+                    'phone',
+                    'due',
+                    'address',
+                    'shopname',
+                ])->findOrFail($id);
 
             return response()->json([
                 'status' => 'success',
-                'data' => $customer
+                'data'   => $customer,
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
-                'status' => 'error',
-                'message' => $e->getMessage()
+                'status'  => 'error',
+                'message' => $e->getMessage(),
             ], 404);
         }
     }
-
 }

@@ -593,7 +593,7 @@
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 <i class="mdi mdi-bank-transfer text-success me-2"></i>
-                                                <span>{{ $payment->supplier->supplier_name ?? 'نەناسراو' }}</span>
+                                                <span>{{ $payment->supplier->name ?? 'نەناسراو' }}</span>
                                             </div>
                                         </td>
                                         <td class="text-end text-success">
