@@ -109,6 +109,7 @@ public function ShowCustomer($id)
      public function UpdateCustomer(Request $request){
 
         $customer_id = $request->id;
+        $customer = Customer::findOrFail($customer_id);
 
         if ($request->file('image')) {
 
@@ -117,8 +118,7 @@ public function ShowCustomer($id)
         Image::make($image)->resize(300,300)->save('upload/customer/'.$name_gen);
         $save_url = 'upload/customer/'.$name_gen;
 
-
-       Customer::findOrFail($customer_id)->update([
+        $customer->update([
     'name' => $request->name,
     'phone' => $request->phone,
     'address' => $request->address,
@@ -127,8 +127,6 @@ public function ShowCustomer($id)
     'due' => $request->due ?? 0,
     'created_at' => Carbon::now(), 
 ]);
-
-       
 
          $notification = array(
             'message' => 'Customer Updated Successfully',
@@ -139,7 +137,7 @@ public function ShowCustomer($id)
              
         } else{
 
-            Customer::findOrFail($customer_id)->update([
+            $customer->update([
 
             'name' => $request->name,
             'phone' => $request->phone,
