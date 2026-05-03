@@ -84,15 +84,13 @@ class DashboardController extends Controller
                 'COALESCE(SUM(CAST(buying_price AS DECIMAL(15,4)) * CAST(product_store AS DECIMAL(15,4))), 0) as total'
             )->value('total') ?? 0;
 
-            // ✅ TODAY'S SALES (exclude cancelled)
-            $todaySales = Order::whereDate('created_at', Carbon::today())
+            // ✅ TODAY'S SALES + COUNT — single query instead of two
+            $todayRow = Order::whereDate('created_at', Carbon::today())
                 ->where('order_status', '!=', 'cancelled')
-                ->sum('sub_total') ?? 0;
-
-            // ✅ TODAY'S ORDERS COUNT (exclude cancelled)
-            $todayOrders = Order::whereDate('created_at', Carbon::today())
-                ->where('order_status', '!=', 'cancelled')
-                ->count() ?? 0;
+                ->selectRaw('COALESCE(SUM(sub_total), 0) as sales, COUNT(*) as cnt')
+                ->first();
+            $todaySales  = floatval($todayRow->sales ?? 0);
+            $todayOrders = intval($todayRow->cnt ?? 0);
 
             // ✅ TOTAL EXPENSES
             $totalExpenses = Expense::whereBetween('created_at', [$startDate, $endDate])
@@ -119,15 +117,17 @@ class DashboardController extends Controller
                 ->limit(5)
                 ->get();
 
-            // ✅ RECENT EXPENSES - SAFE
+            // ✅ RECENT EXPENSES - restrict to columns the view uses
             $recentExpenses = Expense::whereBetween('created_at', [$startDate, $endDate])
+                ->select(['id', 'amount', 'created_at'])
                 ->latest()
                 ->limit(5)
                 ->get();
 
-            // ✅ RECENT SUPPLIER PAYMENTS - SAFE
+            // ✅ RECENT SUPPLIER PAYMENTS - restrict columns: view uses supplier.name, payment_amount, payment_date only
             $recentSupplierPayments = SupplierPayment::whereBetween('payment_date', [$startDate, $endDate])
-                ->with('supplier')
+                ->select(['id', 'supplier_id', 'payment_amount', 'payment_date'])
+                ->with('supplier:id,name')
                 ->latest()
                 ->limit(5)
                 ->get();
