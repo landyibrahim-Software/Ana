@@ -49,6 +49,7 @@ class OrderController extends Controller
             // Save the order
             $order = Order::create([
                 'customer_id'    => $customer->id,
+                'user_id'        => auth()->id(),
                 'order_date'     => now(),
                 'order_status'   => 'pending',
                 'total_products' => $totalProducts,
@@ -393,6 +394,7 @@ class OrderController extends Controller
             $order->update([
                 'order_status'   => 'cancelled',
                 'payment_status' => 'cancelled',
+                'cancelled_by'   => auth()->id(),
                 'updated_at'     => now()
             ]);
 

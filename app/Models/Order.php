@@ -10,9 +10,11 @@ class Order extends Model
 
     protected $fillable = [
     'customer_id',
-    'order_date',
-    'order_status',
-    'total_products',
+        'user_id',
+        'cancelled_by',
+        'order_date',
+        'order_status',
+        'total_products',
     'sub_total',
     'invoice_no',
     'total',
@@ -35,6 +37,16 @@ protected $casts = [
     public function customer()
     {
         return $this->belongsTo(Customer::class, 'customer_id', 'id');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id', 'id');
+    }
+
+    public function cancellingUser()
+    {
+        return $this->belongsTo(User::class, 'cancelled_by', 'id');
     }
 
     // 🔗 Order → Order Details

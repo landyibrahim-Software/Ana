@@ -21,7 +21,11 @@ class CustomerController extends Controller
 
     public function ShowCustomer($id)
     {
-        $customer = Customer::findOrFail($id);
+        $customer = Customer::with([
+            'orders.user:id,name',
+            'orders.cancellingUser:id,name',
+            'payments.user:id,name',
+        ])->findOrFail($id);
 
         // ✅ OPTIMIZATION: Single aggregate query instead of 3 separate queries
         $orderStats = $customer->orders()
@@ -197,6 +201,7 @@ class CustomerController extends Controller
         // 1) Save payment record (pay later)
         Payment::create([
             'customer_id'    => $customer_id,
+            'user_id'        => auth()->id(),
             'payment_amount' => $payment_amount,
             'payment_date'   => now(),
             'payment_status' => 'completed',

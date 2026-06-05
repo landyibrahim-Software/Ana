@@ -138,6 +138,7 @@
                                         <th style="color: white; background-color: #343a40;">جۆر</th>
                                         <th style="color: white; background-color: #343a40;">بڕ</th>
                                         <th style="color: white; background-color: #343a40;">دۆخ</th>
+                                        <th style="color: white; background-color: #343a40;">بەکارهێنەر</th>
                                         <th style="color: white; background-color: #343a40;">بەرواری</th>
                                     </tr>
                                 </thead>
@@ -154,6 +155,9 @@
                                                 'sub_total' => $order->sub_total,
                                                 'pay' => $order->pay,
                                                 'order_status' => $order->order_status,
+                                                'user_name' => optional($order->order_status == 'cancelled'
+                                                    ? ($order->cancellingUser ?: $order->user)
+                                                    : $order->user)->name ?? 'N/A',
                                                 'date' => $order->created_at,
                                             ];
                                         }
@@ -164,6 +168,7 @@
                                                 'type' => 'payment',
                                                 'amount' => $payment->payment_amount,
                                                 'payment_status' => $payment->payment_status ?? 'completed',
+                                                'user_name' => optional($payment->user)->name ?? 'N/A',
                                                 'date' => $payment->payment_date ?? $payment->created_at,
                                             ];
                                         }
@@ -188,6 +193,7 @@
                                                         <span class="badge bg-success text-white">✓ پارە دراو</span>
                                                     @endif
                                                 </td>
+                                                <td>{{ $record['user_name'] }}</td>
                                                 <td>{{ \Carbon\Carbon::parse($record['date'])->format('Y-m-d H:i') }}</td>
                                             </tr>
                                         @else
@@ -201,12 +207,13 @@
                                                         <span class="badge bg-success text-white">✓ قبوڵ کرا</span>
                                                     @endif
                                                 </td>
+                                                <td>{{ $record['user_name'] }}</td>
                                                 <td>{{ \Carbon\Carbon::parse($record['date'])->format('Y-m-d H:i') }}</td>
                                             </tr>
                                         @endif
                                     @empty
                                         <tr>
-                                            <td colspan="4" class="text-center text-muted py-4">هیچ داواکاری یان پارەدانێک نەدۆزرایەوە</td>
+                                            <td colspan="5" class="text-center text-muted py-4">هیچ داواکاری یان پارەدانێک نەدۆزرایەوە</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
